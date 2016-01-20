@@ -14,11 +14,11 @@ pip install pynufft
 
 Inside the python environment, type:
 
->>>*import pynufft.pynufft
+>>>import pynufft.pynufft
 
->>>*pynufft.pynufft.test_1D() # test an 1-D case
+>>>pynufft.pynufft.test_1D() # test an 1-D case
 
->>>*pynufft.pynufft.test_2D() # test the 2D case
+>>>pynufft.pynufft.test_2D() # test the 2D case
 
 
 ## Features
