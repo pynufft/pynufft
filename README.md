@@ -23,18 +23,17 @@ Inside the python environment, type:
 
 ## Features
 
-Pynufft is written in python using only the standard numpy/scipy. Therefore, pynufft does not require other C library. 
+The pynufft is written in python, using the standard numpy/scipy packages. 
 
-Please cite 
+Therefore, the external dependency has been avoided. 
+
+if you find this python program useful, please cite:
 
 Lin J-M, Patterson AJ, Chang H-C, Gillard JH, Graves MJ. An iterative reduced field-of-view reconstruction for periodically rotated overlapping parallel lines with enhanced reconstruction (PROPELLER) MRI. Med Phys 2015;42(10):5757-5767.
 (http://www.ncbi.nlm.nih.gov/pubmed/26429249)
 
-if you find this python program useful.
-
-The algorithm was derived from MATLAB version of the following publication:
+The algorithm was modified from the MATLAB NUFFT program described in the following paper:
 Fessler JA, Sutton BP. Nonuniform fast Fourier transforms using min-max interpolation. IEEE Trans Signal Process 2003;51(2):560-574.
-
 
 ## Other nufft implementations in Python language
 
