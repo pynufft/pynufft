@@ -1,8 +1,8 @@
-pynufft: A pythonic non-uniform fast Fourier transform (NUFFT)
+### pynufft: A python non-uniform fast Fourier transform (NUFFT)
 
 ## What is non-uniform fast Fourier transform (NUFFT)?
 
-FFT is the standard method for calculating the frequency components of a signal. Normally, FFT only applies to equispaced grids. 
+While FFT is the standard method for calculating the frequency components of a signal, normally, FFT only applies to equispaced grids. 
 
 NUFFT can calculate the frequency components of non-equispaced locations.
 
@@ -40,5 +40,7 @@ Fessler JA, Sutton BP. Nonuniform fast Fourier transforms using min-max interpol
 python-nufft: Python bindings to Fortran nufft. (https://github.com/dfm/python-nufft/)
 
 pynfft: Python bindings of the C-library NFFT which is built on top of FFTW (https://github.com/ghisvail/pyNFFT)
+
+nufftpy: Pure python NUFFT of python-nufft (https://github.com/jakevdp/nufftpy). 
 
 
