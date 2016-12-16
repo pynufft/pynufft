@@ -21,8 +21,8 @@ setup(
 from setuptools import setup
 
 setup(name='pynufft',
-      version='0.2',
-      description='A pythonic non-uniform FFT (NUFFT)',
+      version='0.3',
+      description='A pythonic non-uniform FFT (pynufft)',
       author='Jyh-Miin Lin',
       author_email='jyhmiinlin@gmail.com',
       install_requires = ['numpy', 'scipy', 'matplotlib'],
