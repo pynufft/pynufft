@@ -1,183 +1,115 @@
-'''@package docstring
-@author: Jyh-Miin Lin
-@address: jyhmiinlin@gmail.com
-@date: 2016/1/18
-   
-    Pythonic non-uniform fast Fourier transform (NUFFT)
-    Please cite http://scitation.aip.org/content/aapm/journal/medphys/42/10/10.1118/1.4929560 
-    
-    This algorithm was proposed by
-    Fessler JA, Sutton BP. Nonuniform fast Fourier transforms using min-max interpolation. IEEE Trans Signal Process 2003;51(2):560-574.
-
-    Installation: 
-    pip install pynufft
-    
-    test:
-    import pynufft.pynufft
-    pynufft.pynufft.test_1D()
-    pynufft.pynufft.test_2D()
-    
-    Check test_1D() and test_2D() for usage
-    
 '''
+@package docstring
 
+Copyright (c) 2013-2016 Pynufft team.
+All rights reserved.
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+Redistributions of source code must retain the above copyright notice, this
+list of conditions and the following disclaimer. Redistributions in binary
+form must reproduce the above copyright notice, this list of conditions and
+the following disclaimer in the documentation and/or other materials provided
+with the distribution. Neither the name of Enthought nor the names of the
+Pynufft Developers may be used to endorse or promote products derived from
+this software without specific prior written permission.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 'AS IS'
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+'''
 import numpy
 import scipy.sparse
-
 import numpy.fft
- 
-
- 
-dtype = numpy.complex64
- 
-
-
 import scipy.signal
-
 import scipy.linalg
+import scipy.special
 
-try: 
-    xrange 
-except NameError: 
-    xrange = range
 
-def pipe_density(V): 
-    '''
-    An lsmr iterative solution. 
-    '''
-    
-    V1=V.getH()
-#     E = V.dot( V1.dot(    W   )   )
-#     W = W*(E+1.0e-17)/(E*E+1.0e-17)    
-    b = numpy.ones( (V.get_shape()[0] ,1) ,dtype  = numpy.complex64)  
-    from scipy.sparse.linalg import lsqr, lsmr
-        
-#     x1 =  lsqr(V, b , iter_lim=20, calc_var = True, damp = 0.001)
-    x1 =  lsmr(V, b , maxiter=100,  damp = 0.001)
-    
-    my_k_dens = x1[0]    # the first element is the answer
-    
-#     tmp_W =  lsqr(V1, my_k_dens, iter_lim=20, calc_var = True, damp = 0.001)
-    tmp_W =  lsmr(V1, my_k_dens , maxiter=10,  damp = 0.001)
-    
-    W = numpy.reshape( tmp_W[0], (V.get_shape()[0] ,1),order='F' ) # reshape vector
+dtype = numpy.complex64
 
- 
-    return W
-def checker(input_var,desire_size):
-    '''
-    check if debug = 1
-    '''
-
-    if input_var is None:
-        print('input_variable does not exist!')
-      
-    if desire_size is None:
-        print('desire_size does not exist!')  
-             
-    dd=numpy.size(desire_size)
-    dims = numpy.shape(input_var)
-#     print('dd=',dd,'dims=',dims)
-    if numpy.isnan(numpy.sum(input_var[:])):
-        print('input has NaN')
-      
-    if numpy.ndim(input_var) < dd:
-        print('input signal has too few dimensions')
-      
-    if dd > 1:
-        if dims[0:dd] != desire_size[0:dd]:
-            print(dims[0:dd])
-            print(desire_size)
-            print('input signal has wrong size1')
-    elif dd == 1:
-        if dims[0] != desire_size:
-            print(dims[0])
-            print(desire_size)
-            print('input signal has wrong size2')
-       
-    if numpy.mod(numpy.prod(dims),numpy.prod(desire_size)) != 0:
-        print('input signal shape is not multiples of desired size!')
-        
 def dirichlet(x):
     return numpy.sinc(x)
 
-def outer_sum(xx,yy):
-    nx=numpy.size(xx)
-    ny=numpy.size(yy)
-    
-    arg1 = numpy.tile(xx,(ny,1)).T
-    arg2 = numpy.tile(yy,(nx,1))
-    #cc = arg1 + arg2
-    
+def outer_sum(xx, yy):
+    nx = numpy.size(xx)
+    ny = numpy.size(yy)
+
+    arg1 = numpy.tile(xx, (ny, 1)).T
+    arg2 = numpy.tile(yy, (nx, 1))
     return arg1 + arg2
+
 
 def nufft_offset(om, J, K):
     '''
     For every om points(outside regular grids), find the nearest
-    central grid (from Kd dimension)  
+    central grid (from Kd dimension)
     '''
-    gam = 2.0*numpy.pi/(K*1.0);
-    k0 = numpy.floor(1.0*om / gam - 1.0*J/2.0) # new way
+    gam = 2.0 * numpy.pi / (K * 1.0)
+    k0 = numpy.floor(1.0 * om / gam - 1.0 * J / 2.0)  # new way
     return k0
+
 
 def nufft_alpha_kb_fit(N, J, K):
     '''
     find out parameters alpha and beta
     of scaling factor st['sn']
-    Note, when J = 1 , alpha is hardwired as [1,0,0...] 
+    Note, when J = 1 , alpha is hardwired as [1,0,0...]
     (uniform scaling factor)
     '''
-    beta=1
-    #chat=0
-    Nmid=(N-1.0)/2.0
-    
+    beta = 1
+    Nmid = (N - 1.0) / 2.0
     if N > 40:
-        #empirical L
-        L= 13
+        L = 13
     else:
-        L=numpy.ceil(N/3)
-        
-    nlist = numpy.arange(0,N)*1.0-Nmid
-#    print(nlist)
-    (kb_a,kb_m)=kaiser_bessel('string', J, 'best', 0, K/N)
-#    print(kb_a,kb_m)
+        L = numpy.ceil(N / 3)
+
+    nlist = numpy.arange(0, N) * 1.0 - Nmid
+    (kb_a, kb_m) = kaiser_bessel('string', J, 'best', 0, K / N)
     if J > 1:
-        sn_kaiser = 1 / kaiser_bessel_ft(nlist/K, J, kb_a, kb_m, 1.0)
-    elif J ==1:  # cases on grids
-        sn_kaiser = numpy.ones((1,N),dtype=dtype)
-#            print(sn_kaiser)
-    gam = 2*numpy.pi/K;
-    X_ant =beta*gam*nlist.reshape((N,1),order='F')
-    X_post= numpy.arange(0,L+1)
-    X_post=X_post.reshape((1,L+1),order='F') 
-    X=numpy.dot(X_ant, X_post) # [N,L]
-    X=numpy.cos(X)
-    sn_kaiser=sn_kaiser.reshape((N,1),order='F').conj()
-#    print(numpy.shape(X),numpy.shape(sn_kaiser))
-#   print(X)
-    #sn_kaiser=sn_kaiser.reshape(N,1)
-    X=numpy.array(X,dtype=dtype)
-    sn_kaiser=numpy.array(sn_kaiser,dtype=dtype)
-    coef = numpy.linalg.lstsq(X,sn_kaiser)[0] #(X \ sn_kaiser.H);
-#            print('coef',coef)
-    #alphas=[]
-    alphas=coef
+        sn_kaiser = 1 / kaiser_bessel_ft(nlist / K, J, kb_a, kb_m, 1.0)
+    elif J == 1:  # The case when samples are on regular grids
+        sn_kaiser = numpy.ones((1, N), dtype=dtype)
+    gam = 2 * numpy.pi / K
+    X_ant = beta * gam * nlist.reshape((N, 1), order='F')
+    X_post = numpy.arange(0, L + 1)
+    X_post = X_post.reshape((1, L + 1), order='F')
+    X = numpy.dot(X_ant, X_post)  # [N,L]
+    X = numpy.cos(X)
+    sn_kaiser = sn_kaiser.reshape((N, 1), order='F').conj()
+    X = numpy.array(X, dtype=dtype)
+    sn_kaiser = numpy.array(sn_kaiser, dtype=dtype)
+    coef = numpy.linalg.lstsq(X, sn_kaiser)[0]  # (X \ sn_kaiser.H);
+    alphas = coef
     if J > 1:
-        alphas[0]=alphas[0]
-        alphas[1:]=alphas[1:]/2.0      
-    elif J ==1: # cases on grids
-        alphas[0]=1.0
-        alphas[1:]=0.0                  
-    alphas=numpy.real(alphas)
+        alphas[0] = alphas[0]
+        alphas[1:] = alphas[1:] / 2.0
+    elif J == 1:  # cases on grids
+        alphas[0] = 1.0
+        alphas[1:] = 0.0
+    alphas = numpy.real(alphas)
     return (alphas, beta)
 
+
 def kaiser_bessel(x, J, alpha, kb_m, K_N):
-    if K_N != 2 : 
+    if K_N != 2:
         kb_m = 0
         alpha = 2.34 * J
     else:
-        kb_m = 0    # hardwritten in Fessler's code, because it was claimed as the best!
-        jlist_bestzn={2: 2.5, 
+        kb_m = 0
+
+        # Parameters in Fessler's code
+        # because it was experimentally determined to be the best!
+        # input: number of interpolation points
+        # output: Kaiser_bessel parameter
+
+        jlist_bestzn = {2: 2.5,
                         3: 2.27,
                         4: 2.31,
                         5: 2.34,
@@ -191,39 +123,33 @@ def kaiser_bessel(x, J, alpha, kb_m, K_N):
                         13: 2.35,
                         14: 2.35,
                         15: 2.35,
-                        16: 2.33 }
+                        16: 2.33}
+
         if J in jlist_bestzn:
-#            print('demo key',jlist_bestzn[J])
-            alpha = J*jlist_bestzn[J]
-            #for jj in tmp_key:
-            #tmp_key=abs(tmp_key-J*numpy.ones(len(tmp_key)))
-#            print('alpha',alpha)
+            alpha = J * jlist_bestzn[J]
         else:
-            #sml_idx=numpy.argmin(J-numpy.arange(2,17))
-            tmp_key=(jlist_bestzn.keys())
-            min_ind=numpy.argmin(abs(tmp_key-J*numpy.ones(len(tmp_key))))
-            p_J=tmp_key[min_ind]
+            tmp_key = (jlist_bestzn.keys())
+            min_ind = numpy.argmin(abs(tmp_key - J * numpy.ones(len(tmp_key))))
+            p_J = tmp_key[min_ind]
             alpha = J * jlist_bestzn[p_J]
-            print('well, this is not the best though',alpha)
-    kb_a=alpha
+    kb_a = alpha
     return (kb_a, kb_m)
+
 
 def kaiser_bessel_ft(u, J, alpha, kb_m, d):
     '''
-    interpolation weight for given J/alpha/kb-m 
+    interpolation weight for given J/alpha/kb-m
     '''
-#     import types
-    
-    # scipy.special.jv (besselj in matlab) only accept complex
-#     if u is not types.ComplexType:
-#         u=numpy.array(u,dtype=numpy.complex64)
-    u = u*(1.0+0.0j)
+
+    u = u * (1.0 + 0.0j)
     import scipy.special
-    z = numpy.sqrt( (2*numpy.pi*(J/2)*u)**2.0 - alpha**2.0 );
-    nu = d/2 + kb_m;
-    y = ((2*numpy.pi)**(d/2))* ((J/2)**d) * (alpha**kb_m) / scipy.special.iv(kb_m, alpha) * scipy.special.jv(nu, z) / (z**nu)
-    y = numpy.real(y);
+    z = numpy.sqrt((2 * numpy.pi * (J / 2) * u) ** 2.0 - alpha ** 2.0)
+    nu = d / 2 + kb_m
+    y = ((2 * numpy.pi) ** (d / 2)) * ((J / 2) ** d) * (alpha ** kb_m) / \
+        scipy.special.iv(kb_m, alpha) * scipy.special.jv(nu, z) / (z ** nu)
+    y = numpy.real(y)
     return y
+
 
 def nufft_scale1(N, K, alpha, beta, Nmid):
     '''
@@ -231,224 +157,240 @@ def nufft_scale1(N, K, alpha, beta, Nmid):
     '''
 #     import types
 #     if alpha is types.ComplexType:
-    alpha=numpy.real(alpha)
+    alpha = numpy.real(alpha)
 #         print('complex alpha may not work, but I just let it as')
-        
+
     L = len(alpha) - 1
     if L > 0:
-        sn = numpy.zeros((N,1))
-        n = numpy.arange(0,N).reshape((N,1),order='F')
-        i_gam_n_n0 = 1j * (2*numpy.pi/K)*( n- Nmid)* beta
-        for l1 in xrange(-L,L+1):
-            alf = alpha[abs(l1)];
+        sn = numpy.zeros((N, 1))
+        n = numpy.arange(0, N).reshape((N, 1), order='F')
+        i_gam_n_n0 = 1j * (2 * numpy.pi / K) * (n - Nmid) * beta
+        for l1 in range(-L, L + 1):
+            alf = alpha[abs(l1)]
             if l1 < 0:
                 alf = numpy.conj(alf)
-            sn = sn + alf*numpy.exp(i_gam_n_n0 * l1)
+            sn = sn + alf * numpy.exp(i_gam_n_n0 * l1)
     else:
-        sn = numpy.dot(alpha , numpy.ones((N,1),dtype=numpy.float32))
+        sn = numpy.dot(alpha, numpy.ones((N, 1)))
     return sn
+
 
 def nufft_scale(Nd, Kd, alpha, beta):
-    dd=numpy.size(Nd)
-    Nmid = (Nd-1)/2.0
+    dd = numpy.size(Nd)
+    Nmid = (Nd - 1) / 2.0
     if dd == 1:
-        sn = nufft_scale1(Nd, Kd, alpha, beta, Nmid);
-#    else:
-#        sn = 1
-#        for dimid in numpy.arange(0,dd):
-#            tmp =  nufft_scale1(Nd[dimid], Kd[dimid], alpha[dimid], beta[dimid], Nmid[dimid])
-#            sn = numpy.dot(list(sn), tmp.H)
+        sn = nufft_scale1(Nd, Kd, alpha, beta, Nmid)
+    else:
+        sn = 1
+        for dimid in numpy.arange(0, dd):
+            tmp = nufft_scale1(Nd[dimid], Kd[dimid], alpha[dimid],
+                               beta[dimid], Nmid[dimid])
+            sn = numpy.dot(list(sn), tmp.H)
     return sn
+
+
 def mat_inv(A):
-    '''
-    Abstraction for Penrose-Moore pseudo-inverse
-    '''
-    B = scipy.linalg.pinv2(A)  
- 
-    
+#     I = numpy.eye(A.shape[0], A.shape[1])
+    B = scipy.linalg.pinv2(A)
     return B
 
-def nufft_T(N, J, K , alpha, beta):
+
+def nufft_T(N, J, K, alpha, beta):
     '''
      equation (29) and (26)Fessler's paper
      create the overlapping matrix CSSC (diagonal dominent matrix)
-     of J points 
-     and then find out the pseudo-inverse of CSSC 
-     '''
+     of J points
+     and then find out the pseudo-inverse of CSSC '''
 
 #     import scipy.linalg
     L = numpy.size(alpha) - 1
 #     print('L = ', L, 'J = ',J, 'a b', alpha,beta )
-    cssc = numpy.zeros((J,J));
-    [j1, j2] = numpy.mgrid[1:J+1, 1:J+1]
-    overlapping_mat = j2 - j1 
-    
-    for l1 in xrange(-L,L+1):
-        for l2 in xrange(-L,L+1):
+    cssc = numpy.zeros((J, J))
+    [j1, j2] = numpy.mgrid[1:J + 1, 1:J + 1]
+    overlapping_mat = j2 - j1
+    for l1 in range(-L, L + 1):
+        for l2 in range(-L, L + 1):
             alf1 = alpha[abs(l1)]
 #             if l1 < 0: alf1 = numpy.conj(alf1)
             alf2 = alpha[abs(l2)]
 #             if l2 < 0: alf2 = numpy.conj(alf2)
             tmp = overlapping_mat + beta * (l1 - l2)
-#             tmp = numpy.sinc(1.0*tmp/(1.0*K/N)) # the interpolator
-            tmp = dirichlet(1.0*tmp/(1.0*K/N))
-            cssc = cssc + alf1 * numpy.conj(alf2) * tmp;
 
-#     cssc = scipy.linalg.inv(cssc )
-#     q,r  = scipy.linalg.qr(cssc,mode='full')
-#     cssc =  r.conj().T.dot(scipy.linalg.inv(q))
-#     cssc =  scipy.linalg.inv(r).dot(q.T.conj())
-#     T,Z = scipy.linalg.schur(cssc)
-#     cssc = Z.conj().T.dot(scipy.linalg.inv(T))*Z
-    
-    return mat_inv(cssc) 
+            tmp = dirichlet(1.0 * tmp / (1.0 * K / N))
+            cssc = cssc + alf1 * alf2 * tmp
+       
+    return mat_inv(cssc)
+
+
+def iterate_sum(rr, alf, r1):
+    rr = rr + alf * r1
+    return rr
+
+
+def iterate_l1(L, alpha, arg, beta, K, N, rr):
+    oversample_ratio = (1.0 * K / N)
+    import time
+    t0=time.time()
+    for l1 in range(-L, L + 1):
+        alf = alpha[abs(l1)] * 1.0
+#         if l1 < 0:
+#             alf = numpy.conj(alf)
+    #             r1 = numpy.sinc(1.0*(arg+1.0*l1*beta)/(1.0*K/N))
+        input_array = (arg + 1.0 * l1 * beta) / oversample_ratio
+        r1 = dirichlet(input_array)
+        rr = iterate_sum(rr, alf, r1)
+
+    return rr
+
 
 def nufft_r(om, N, J, K, alpha, beta):
     '''
     equation (30) of Fessler's paper
-    
+
     '''
-  
-    M = numpy.size(om) # 1D size
-    gam = 2.0*numpy.pi / (K*1.0)
-    nufft_offset0 = nufft_offset(om, J, K) # om/gam -  nufft_offset , [M,1]
-    dk = 1.0*om/gam -  nufft_offset0 # om/gam -  nufft_offset , [M,1]
-    arg = outer_sum( -numpy.arange(1,J+1)*1.0, dk)
+
+    M = numpy.size(om)  # 1D size
+    gam = 2.0 * numpy.pi / (K * 1.0)
+    nufft_offset0 = nufft_offset(om, J, K)  # om/gam -  nufft_offset , [M,1]
+    dk = 1.0 * om / gam - nufft_offset0  # om/gam -  nufft_offset , [M,1]
+    arg = outer_sum(-numpy.arange(1, J + 1) * 1.0, dk)
     L = numpy.size(alpha) - 1
 #     print('alpha',alpha)
-    rr = numpy.zeros((J,M))
-#     if L > 0: 
-#         rr = numpy.zeros((J,M))
-#                if J > 1:
-    for l1 in xrange(-L,L+1):
-        alf = alpha[abs(l1)]*1.0
-        if l1 < 0: alf = numpy.conj(alf) 
-#             r1 = numpy.sinc(1.0*(arg+1.0*l1*beta)/(1.0*K/N))
-        r1 = dirichlet(1.0*(arg+1.0*l1*beta)/(1.0*K/N))
-        rr = 1.0*rr + alf * r1;            # [J,M]
-#                elif J ==1:
-#                    rr=rr+1.0
-#     else: #L==0
-# #         rr = numpy.sinc(1.0*(arg+1.0*l1*beta)/(1.0*K/N))
-#         rr = dirichlet(1.0*(arg+1.0*l1*beta)/(1.0*K/N))
-    return (rr,arg)
-def SC(om, N, J, K, alpha, beta):
-    '''
-    equation (30) of Fessler's paper
-    
-    '''
-  
-    M = numpy.size(om) # 1D size
-    gam = 2.0*numpy.pi / (K*1.0)
-    nufft_offset0 = nufft_offset(om, J, K) # om/gam -  nufft_offset , [M,1]
-    dk = 1.0*om/gam -  nufft_offset0 # om/gam -  nufft_offset , [M,1] phase shifts for M points
-    arg = outer_sum( -numpy.arange(1,J+1)*1.0, dk) # phase shifts for JxM points, [J, M]
-#     print(numpy.shape(arg))
-    L = numpy.size(alpha) - 1
-#     print('alpha',alpha)
-    rr = numpy.zeros((J,M))
-#     if L > 0: 
-#         rr = numpy.zeros((J,M))
-#                if J > 1:
-    for l1 in xrange(-L,L+1):
-        alf = alpha[abs(l1)]*1.0
-        if l1 < 0: alf = numpy.conj(alf) 
-#             r1 = numpy.sinc(1.0*(arg+1.0*l1*beta)/(1.0*K/N))
-#         r1 = dirichlet(1.0*( 1.0*l1*beta)/(1.0*K/N))
-        r1 = dirichlet(1.0*(1.0*l1*beta)/(1.0*K/N))
-        rr = 1.0*rr + alf * r1;            # [J,M]
-#                elif J ==1:
-#                    rr=rr+1.0
-#     else: #L==0
-# #         rr = numpy.sinc(1.0*(arg+1.0*l1*beta)/(1.0*K/N))
-#         rr = dirichlet(1.0*(arg+1.0*l1*beta)/(1.0*K/N))
-    SC = rr.conj().T # [M, J]
-    return (SC,arg)
+    rr = numpy.zeros((J, M), dtype=numpy.float32)
+    rr = iterate_l1(L, alpha, arg, beta, K, N, rr)
+    return (rr, arg)
+
+
 def block_outer_prod(x1, x2):
     '''
-    multiply interpolators of different dimensions
+    multiply the amplitudes along different axes
     '''
-    (J1,M)=x1.shape
-    (J2,M)=x2.shape
+    (J1, M) = x1.shape
+    (J2, M) = x2.shape
 #    print(J1,J2,M)
-    xx1 = x1.reshape((J1,1,M),order='F') #[J1 1 M] from [J1 M]
-    xx1 = numpy.tile(xx1,(1,J2,1)) #[J1 J2 M], emulating ndgrid
-    xx2 = x2.reshape((1,J2,M),order='F') # [1 J2 M] from [J2 M]
-    xx2 = numpy.tile(xx2,(J1,1,1)) # [J1 J2 M], emulating ndgrid
-    
-#     ang_xx1=xx1/numpy.abs(xx1)
-#     ang_xx2=xx2/numpy.abs(xx2)
-    
-    y= xx1* xx2
-#     y= ang_xx1*ang_xx2*numpy.sqrt(xx1*xx1.conj())*numpy.sqrt( xx2*xx2.conj())
-    
-    # RMS
-    return y # [J1 J2 M]
+    xx1 = x1.reshape((J1, 1, M), order='F')  # [J1 1 M] from [J1 M]
+    xx1 = numpy.tile(xx1, (1, J2, 1))  # [J1 J2 M], emulating ndgrid
+    xx2 = x2.reshape((1, J2, M), order='F')  # [1 J2 M] from [J2 M]
+    xx2 = numpy.tile(xx2, (J1, 1, 1))  # [J1 J2 M], emulating ndgrid
+
+    y = xx1 * xx2
+
+    return y  # [J1 J2 M]
+
 
 def block_outer_sum(x1, x2):
-    (J1,M)=x1.shape
-    (J2,M)=x2.shape
-#    print(J1,J2,M)
-    xx1 = x1.reshape((J1,1,M),order='F') #[J1 1 M] from [J1 M]
-    xx1 = numpy.tile(xx1,(1,J2,1)) #[J1 J2 M], emulating ndgrid
-    xx2 = x2.reshape((1,J2,M),order='F') # [1 J2 M] from [J2 M]
-    xx2 = numpy.tile(xx2,(J1,1,1)) # [J1 J2 M], emulating ndgrid
-    y= xx1+ xx2
-    return y # [J1 J2 M]
+    '''
+    update the new index after adding a new axis
+    '''
+    (J1, M) = x1.shape
+    (J2, M) = x2.shape
+    xx1 = x1.reshape((J1, 1, M), order='F')  # [J1 1 M] from [J1 M]
+    xx1 = numpy.tile(xx1, (1, J2, 1))  # [J1 J2 M], emulating ndgrid
+    xx2 = x2.reshape((1, J2, M), order='F')  # [1 J2 M] from [J2 M]
+    xx2 = numpy.tile(xx2, (J1, 1, 1))  # [J1 J2 M], emulating ndgrid
+    y = xx1 + xx2
+    return y  # [J1 J2 M]
+
 
 def crop_slice_ind(Nd):
-    return [slice(0, Nd[_ss]) for _ss in xrange(0,len(Nd))]
+    '''
+    Return the "slice" of Nd size.
+    In Python language, "slice" means the index of a matrix.
+    Slice can provide a smaller "view" of a larger matrix. 
+    '''
+    return [slice(0, Nd[ss]) for ss in range(0, len(Nd))]
+
 
 class pynufft:
+    """
+    The class pynufft computes Non-Uniform Fast Fourier Transform (NUFFT).
 
-    def __init__(self,om, Nd, Kd,Jd,n_shift ):
+    Methods
+    ----------
+    __init__() : constructor
+        Input: 
+            None
+        Return: 
+            pynufft instance
+        Example: MyNufft = pynufft.pynufft()
+    plan(om, Nd, Kd, Jd) : to plan the pynufft object
+        Input:
+            om: M * ndims array: The locations of M non-uniform points in the ndims dimension. Normalized between [-pi, pi]
+            Nd: tuple with ndims elements. Image matrix size. Example: (256,256)
+            Kd: tuple with ndims elements. Oversampling k-space matrix size. Example: (512,512)
+            Jd: tuple with ndims elements. The number of adjacent points in the interpolator. Example: (6,6)
+        Return:
+            None
+    forward(x) : perform NUFFT
+        Input:
+            x: numpy.array. The input image on the regular grid. The size must be Nd. 
+        Output:
+            y: M array.The output M points array.
+             
+    backward(y): adjoint NUFFT (Hermitian transpose (a.k.a. conjugate transpose) of NUFFT)
+        Input:
+            y: M array.The input M points array.
+        Output:
+            x: numpy.array. The output image on the regular grid.
+            
+    inverse_DC(y): inverse NUFFT using Pipe's sampling density compensation (James Pipe, Magn. Res. Med., 1999)
+        Input: 
+            y: M array.The input M points array.
+        Output:
+            x: numpy.array. The output image on the regular grid.
+
+    """
+    def __init__(self):
         '''
-       constructor of pyNufft
+        Construct the pynufft instance
+        '''
+        pass
 
+    def plan(self, om, Nd, Kd, Jd):
+        '''
+        Plan pyNufft
+        Start from here
+        om: M * ndims array: The locations of M non-uniform points in the ndims dimension. Normalized between [-pi, pi]
+        Nd: tuple with ndims elements. Image matrix size. Example: (256,256)
+        Kd: tuple with ndims elements. Oversampling k-space matrix size. Example: (512,512)
+        Jd: tuple with ndims elements. The number of adjacent points in the interpolator. Example: (6,6)
+        '''
         
-        '''       
-
-        '''
-        Constructor: Start from here
-        '''
+        self.debug = 0  # debug
 
 
+        if type(Nd) != tuple:
+            raise TypeError('Nd must be tuple, e.g. (256, 256)')
 
-        if n_shift == None:
-#             n_shift=tuple(numpy.array(Nd)/2)
-            n_shift=tuple(numpy.array(Nd)*0)
-        self.debug = 0 # debug          
-        Nd=tuple(Nd) # convert Nd to tuple for consistent structure 
-        Jd=tuple(Jd) # convert Jd to tuple for consistent structure
-        Kd=tuple(Kd) # convert Kd to tuple for consistent structure
-        # n_shift: the fftshift position, it must be at center
-#         n_shift=tuple(numpy.array(Nd)/2)
-          
+        if type(Kd) != tuple:
+            raise TypeError('Kd must be tuple, e.g. (512, 512)')
+
+        if type(Jd) != tuple:
+            raise TypeError('Jd must be tuple, e.g. (6, 6)')
+
+        if (len(Nd) != len(Kd)) | (len(Nd) != len(Jd))  | len(Kd) != len(Jd):
+            raise KeyError('Nd, Kd, Jd must be in the same length, e.g. Nd=(256,256),Kd=(512,512),Jd=(6,6)')
 
         # dimensionality of input space (usually 2 or 3)
-        dd=numpy.size(Nd)
-        
-    #=====================================================================
-    # check input errors
-    #=====================================================================
-        st={}
-        ud={}
-        kd={}
- 
-        st['n_shift']=n_shift
-    #=======================================================================
-    # First, get alpha and beta: the weighting and freq
-    # of formula (28) of Fessler's paper 
-    # in order to create slow-varying image space scaling 
-    #=======================================================================
-        for dimid in xrange(0,dd):
+        dd = numpy.size(Nd)
 
-            (tmp_alpha,tmp_beta)=nufft_alpha_kb_fit(Nd[dimid], Jd[dimid], Kd[dimid])
-                
+    ###############################################################
+    # check input errors
+    ###############################################################
+        st = {}
+        ud = {}
+        kd = {}
+        n_shift = tuple(0*x for x in Nd)
+    ###############################################################
+    # First, get alpha and beta: the weighting and freq
+    # of formula (28) in Fessler's paper
+    # in order to create slow-varying image space scaling
+    ###############################################################
+        for dimid in range(0, dd):
+            (tmp_alpha, tmp_beta) = nufft_alpha_kb_fit(
+                Nd[dimid], Jd[dimid], Kd[dimid])
             st.setdefault('alpha', []).append(tmp_alpha)
             st.setdefault('beta', []).append(tmp_beta)
-
-        
         st['tol'] = 0
         st['Jd'] = Jd
         st['Nd'] = Nd
@@ -456,457 +398,418 @@ class pynufft:
         M = om.shape[0]
         st['M'] = M
         st['om'] = om
-        st['sn'] = numpy.array(1.0+0.0j)
-        dimid_cnt=1 
-    #=======================================================================
+        st['sn'] = numpy.array(1.0 + 0.0j)
+        dimid_cnt = 1
+    ###############################################################
     # create scaling factors st['sn'] given alpha/beta
     # higher dimension implementation
-    #=======================================================================
-        for dimid in xrange(0,dd):
-            tmp = nufft_scale(Nd[dimid], Kd[dimid], st['alpha'][dimid], st['beta'][dimid])
-
-            dimid_cnt=Nd[dimid]*dimid_cnt
-    #=======================================================================
+    ###############################################################
+        for dimid in range(0, dd):
+            tmp = nufft_scale(
+                Nd[dimid],
+                Kd[dimid],
+                st['alpha'][dimid],
+                st['beta'][dimid])
+            dimid_cnt = Nd[dimid] * dimid_cnt
+    ###############################################################
     # higher dimension implementation: multiply over all dimension
-    #=======================================================================
+    ###############################################################
+            st['sn'] = numpy.dot(st['sn'], tmp.T)
+            st['sn'] = numpy.reshape(st['sn'], (dimid_cnt, 1), order='F')
+            # JML do not apply scaling
 
-            st['sn'] =  numpy.dot(st['sn'] , tmp.T )
-            st['sn'] =   numpy.reshape(st['sn'],(dimid_cnt,1),order='F') # JML do not apply scaling
-
-        #=======================================================================
-        # if numpy.size(Nd) > 1: 
-        #=======================================================================
-            # high dimension, reshape for consistent out put
-            # order = 'F' is for fortran order otherwise it is C-type array 
-        st['sn'] = st['sn'].reshape(Nd,order='F') # [(Nd)]
-        #=======================================================================
+        # order = 'F' is for fortran order
+        st['sn'] = st['sn'].reshape(Nd, order='F')  # [(Nd)]
+        ###############################################################
         # else:
         #     st['sn'] = numpy.array(st['sn'],order='F')
-#         #=======================================================================
-            
-        st['sn']=numpy.real(st['sn']) # only real scaling is relevant 
+        ###############################################################
 
-        # [J? M] interpolation coefficient vectors.  will need kron of these later
-        for dimid in xrange(0,dd): # loop over dimensions
+        st['sn'] = numpy.real(st['sn'])  # only real scaling is relevant
+
+        # [J? M] interpolation coefficient vectors.
+        # Iterate over all dimensions and
+        # multiply the coefficients of all dimensions
+        for dimid in range(0, dd):  # loop over dimensions
             N = Nd[dimid]
             J = Jd[dimid]
             K = Kd[dimid]
             alpha = st['alpha'][dimid]
             beta = st['beta'][dimid]
-            #===================================================================
+            ###############################################################
             # formula 29 , 26 of Fessler's paper
-            #===================================================================
-            
-            T = nufft_T(N, J, K, alpha, beta) # pseudo-inverse of CSSC using large N approx [J? J?]
-            #==================================================================
+            ###############################################################
+
+            # pseudo-inverse of CSSC using large N approx [J? J?]
+            T = nufft_T(N, J, K, alpha, beta)
+            ###############################################################
             # formula 30  of Fessler's paper
-            #==================================================================
+            ###############################################################
 
-            (r,arg)=  nufft_r(om[:,dimid], N, J, K, alpha, beta) # large N approx [J? M]
-            
-            #==================================================================
+            (r, arg) = nufft_r(om[:, dimid], N, J,
+                               K, alpha, beta)  # large N approx [J? M]
+
+            ###############################################################
             # formula 25  of Fessler's paper
-            #==================================================================            
-            c=numpy.dot(T,r)
+            ###############################################################
+            c = numpy.dot(T, r)
 
-            #===================================================================
+            ###############################################################
             # grid intervals in radius
-            #===================================================================
-            gam = 2.0*numpy.pi/(K*1.0);
-            
-            phase_scale = 1.0j * gam * (N-1.0)/2.0
-            phase = numpy.exp(phase_scale * arg) # [J? M] linear phase
-            ud[dimid] = phase * c
-            # indices for the [J? M] interpolation kernel
-            # FORMULA 7
-            koff=nufft_offset(om[:,dimid], J, K)
-            # FORMULA 9, find the indexes on Kd grids, of each M point
-            kd[dimid]= numpy.mod(outer_sum( numpy.arange(1,J+1)*1.0, koff),K)
-            if self.debug > 0:
-                print('kd[',dimid,']',kd[dimid].shape)
-#             phase_kd[dimid] = - ( numpy.arange(0,1.0, 1.00/K) - 0.5 )*2.0*numpy.pi*n_shift[dimid]# new phase2
-             
-            if dimid > 0: # trick: pre-convert these indices into offsets!
-    #            ('trick: pre-convert these indices into offsets!')
-                kd[dimid] = kd[dimid]*numpy.prod(Kd[0:dimid])-1
+            ###############################################################
+            gam = 2.0 * numpy.pi / (K * 1.0)
 
-        kk = kd[0] # [J1 M] # pointers to indices
-        uu = ud[0] # [J1 M]
+            phase_scale = 1.0j * gam * (N - 1.0) / 2.0
+            phase = numpy.exp(phase_scale * arg)  # [J? M] linear phase
+            ud[dimid] = phase * c
+            # indices into oversampled FFT components
+            # FORMULA 7
+            koff = nufft_offset(om[:, dimid], J, K)
+            # FORMULA 9, find the indexes on Kd grids, of each M point
+            kd[dimid] = numpy.mod(
+                outer_sum(
+                    numpy.arange(
+                        1,
+                        J + 1) * 1.0,
+                    koff),
+                K)
+            if dimid > 0:  # trick: pre-convert these indices into offsets!
+                #            ('trick: pre-convert these indices into offsets!')
+                kd[dimid] = kd[dimid] * numpy.prod(Kd[0:dimid]) - 1
+
+        kk = kd[0]  # [J1 M] # pointers to indices
+        uu = ud[0]  # [J1 M]
         Jprod = Jd[0]
         Kprod = Kd[0]
-            
-        for dimid in xrange(1,dd):
-            Jprod = numpy.prod(Jd[:dimid+1])
-            Kprod = numpy.prod(Kd[:dimid+1])
-            if self.debug > 0:
-                print('Kprod',Kprod)
-            kk = block_outer_sum(kk, kd[dimid])+1 # outer sum of indices
-            kk = kk.reshape((Jprod, M),order='F')
+        for dimid in range(1, dd):
+            Jprod = numpy.prod(Jd[:dimid + 1])
+            Kprod = numpy.prod(Kd[:dimid + 1])
+            kk = block_outer_sum(kk, kd[dimid]) + 1  # outer sum of indices
+            kk = kk.reshape((Jprod, M), order='F')
+            # outer product of coefficients
+            uu = block_outer_prod(uu, ud[dimid])
+            uu = uu.reshape((Jprod, M), order='F')
+            # now kk and uu are [*Jd M]
+            # now kk and uu are [*Jd M]
+        # *numpy.tile(phase,[numpy.prod(Jd),1]) #    product(Jd)xM
+        uu = uu.conj()
+        mm = numpy.arange(0, M)  # indices from 0 to M-1
+        mm = numpy.tile(mm, [numpy.prod(Jd), 1])  # product(Jd)xM
+        # Now build sparse matrix from uu, mm, kk
+
+        # convert array to list
+        csrdata = numpy.reshape(uu, (Jprod * M, ), order='F')
+
+        # row indices, from 1 to M convert array to list
+        rowindx = numpy.reshape(mm, (Jprod * M, ), order='F')
+
+        # colume indices, from 1 to prod(Kd), convert array to list
+        colindx = numpy.reshape(kk, (Jprod * M, ), order='F')
+
+        # The shape of sparse matrix
+        csrshape = (M, numpy.prod(Kd))
+
+        # Build sparse matrix (interpolator)
+        st['p0'] = scipy.sparse.csr_matrix((csrdata, (rowindx, colindx)),
+                                           shape=csrshape)#.tocsr()
+        # Note: the sparse matrix requires the following linear phase,
+        #       which moves the image to the center of the image
+
+        self.st = st
+        self.Nd = self.st['Nd']  # backup
+        self.sn = self.st['sn']  # backup
+        self.ndims=len(self.st['Nd']) # dimension
+        self.st['p'] = self.linear_phase(n_shift)  
+        # calculate the linear phase thing
+        
+        self.st['W'] = self.pipe_density()
  
-              
-            uu = block_outer_prod(uu, ud[dimid]) # outer product of coefficients
-            uu = uu.reshape((Jprod, M),order='F')
- 
-        uu = uu.conj()#*numpy.tile(phase,[numpy.prod(Jd),1]) #    product(Jd)xM
-        mm = numpy.arange(0,M) # indices from 0 to M-1
-        mm = numpy.tile(mm,[numpy.prod(Jd),1]) #    product(Jd)xM
-
-        st['p0'] = scipy.sparse.coo_matrix( # build sparse matrix from uu, mm, kk
-                                          (     numpy.reshape(uu,(Jprod*M,),order='F'), # convert array to list
-                                                (numpy.reshape(mm,(Jprod*M,),order='F'), # row indices, from 1 to M convert array to list
-                                                 numpy.reshape(kk,(Jprod*M,),order='F') # colume indices, from 1 to prod(Kd), convert array to list
-                                                           )
-                                                    ),
-                                        shape=(M,numpy.prod(Kd)) # shape of the matrix
-                                          ).tocsc() #  order = 'F'  
-        self.st=st
-        self.Nd = self.st['Nd'] # backup
-        self.sn = self.st['sn'] # backup
-        self.linear_phase( n_shift  ) # calculate the linear phase thing
-#         self.pipe_density() # recalculate the density compensation
-
-       
-
     def pipe_density(self):
         '''
-        Create the density function by the iterative solution 
+        Create the density function by iterative solution
+        Generate pHp matrix
         '''
-        self.st['W'] = pipe_density(self.st['p'])
-        self.st['w'] =  numpy.abs(( self.st['p'].conj().T.dot(numpy.ones(self.st['W'].shape,dtype = numpy.float32))))#**2) ))
-        tmp_max = numpy.max(self.st['w'])
-        self.st['w'] = self.st['w'] /tmp_max
+#         W = pipe_density(self.st['p'])
+        # sampling density function
+        
+        W = numpy.ones((self.st['M'],),dtype=dtype)
+        V1= self.st['p'].getH()
+    #     VVH = V.dot(V.getH()) 
+        
+        for pp in range(0,1):
+#             E = self.st['p'].dot(V1.dot(W))
+            E = self.forward(self.backward(W))
+            W = W/E
+        
+#         pHp = V1.dot(self.st['p'])
+        # Precomputing the regridding matrix * interpolation matrix
+#         W_diag = scipy.sparse.diags(W,0, dtype=dtype,format="csr")
+#         pHWp = V1.dot(W_diag.dot(self.st['p']))
+        
+        return W
+        # density of the k-space, reduced size
 
-        if self.debug > 0:
-            print('shape of tmp',numpy.shape(self.st['w'] ))
-
-    def linear_phase(self, n_shift ):
+    def linear_phase(self, n_shift):
         '''
-        Select the center of FOV 
+        This method shifts the interpolation matrix self.st['p0']
+        and create a shifted interpolation matrix self.st['p']
+        
+        Parameters
+        ----------
+        n_shift : tuple
+            Input shifts. integers 
+    
+        Raises
+        ------
+        ValueError
+            If `s` and `axes` have different length.
+        IndexError
+            If an element of `axes` is larger than than the number of axes of `a`.        
+            
         '''
         om = self.st['om']
         M = self.st['M']
-        phase=numpy.exp(1.0j* numpy.sum(om*numpy.tile( tuple( numpy.array(n_shift) + numpy.array(self.st['Nd'])/2  ),(M,1)) , 1))  # add-up all the linear phasees in all axes,
-        
-        self.st['p'] = scipy.sparse.diags(phase ,0).dot(self.st['p0'] ) # multiply the diagonal, linear phase before the gridding matrix
-  
-    def forward(self,x):
-        '''
-        foward(x): forward transform of pynufft
-        
-        Compute dd-dimensional Non-uniform transform of signal/image x
-        where d is the dimension of the data x.
-        
-        INPUT: 
-          case 1:  x: ndarray, [Nd[0], Nd[1], ... , Kd[dd-1] ]
-          case 2:  x: ndarray, [Nd[0], Nd[1], ... , Kd[dd-1], Lprod]
-            
-        OUTPUT: 
-          case 1: X: ndarray, [M, 1], where M is the number of non-uniform points M =st['M']
-          case 2: X: ndarray, [M, Lprod] (Lprod=1 in case 1)
-                    where M is the number of non-uniform points M =st['M']
-        '''
-        
-        st=self.st
-        Nd = st['Nd']
+        final_shifts = tuple(
+            numpy.array(n_shift) +
+            numpy.array(
+                self.st['Nd']) /
+            2)
+        phase = numpy.exp(
+            1.0j *
+            numpy.sum(
+                om *
+                numpy.tile(
+                    final_shifts,
+                    (M,
+                     1)),
+                1))
+        # add-up all the linear phasees in all axes,
 
-        dd = numpy.size(Nd)
-
-        # exceptions
-        if self.debug==0:
-            pass
-        else:
-            checker(x,Nd)
-        
-        if numpy.ndim(x) == dd:
-            Lprod = 1
-        elif numpy.ndim(x) > dd: # multi-channel data
-            Lprod = numpy.size(x)/numpy.prod(Nd)
-        '''
-        Now transform Nd grids to Kd grids(not be reshaped)
-        '''
-        Xk=self.Nd2Kd(x, 1)
-        
-        # interpolate using precomputed sparse matrix
-        if Lprod > 1:
-            X = numpy.reshape(st['p'].dot(Xk),(st['M'],)+( Lprod,),order='F')
-        else:
-            X = numpy.reshape(st['p'].dot(Xk),(st['M'],1),order='F')
-        if self.debug==0:
-            pass
-        else:
-            checker(X,st['M']) # check output
-        return X
-    
-    def adjoint(self,X):
-        '''
-        adjoint(x): adjoint operator of pynufft
-        
-        from [M x Lprod] non-uinform points, compute its adjoint of 
-        Non-uniform Fourier transform 
-
-        
-        INPUT: 
-          X: ndarray, [M, Lprod] (Lprod=1 in case 1)
-            where M =st['M']
-          
-        OUTPUT: 
-          x: ndarray, [Nd[0], Nd[1], ... , Kd[dd-1], Lprod]
-            
-        '''
-#     extract attributes from structure
-        st=self.st
-
-        Nd = st['Nd']
-#         Kd = st['Kd']
-        if self.debug==0:
-            pass
-        else:
-            checker(X,st['M']) # check X of correct shape
+        p = scipy.sparse.diags(phase, 0).dot(self.st['p0'])
+        return p  # shifted sparse matrix
 
 
-        Xk_all = st['p'].getH().dot(X) 
-        # Multiply X with interpolator st['p'] [prod(Kd) Lprod]
+    def forward(self, x):
         '''
-        Now transform Kd grids to Nd grids(not be reshaped)
+        This method computes the Non-Uniform Fast Fourier Transform.
+        input:
+            x: Nd array
+        output:
+            y: (M,) array
         '''
-        x = self.Kd2Nd(Xk_all, 1)
-        
-        if self.debug==0:
-            pass
-        else:        
-            checker(x,Nd) # check output
-        
+        y = self.k2y(self.xx2k(self.x2xx(x)))
+
+        return y
+
+    def backward(self, y):
+        '''
+        backward method (not inverse, see inverse_DC() method) computes the adjoint transform
+        (conjugate transpose, or Hermitian transpose) of forward
+        Non-Uniform Fast Fourier Transform.
+        input:
+            y: non-uniform data, (M,) array
+        output:
+            x: adjoint image, Nd array
+        '''        
+        x = self.xx2x(self.k2xx(self.y2k(y)))
+
         return x
 
-    def Nd2Kd(self,x, weight_flag):
-        '''
-        Now transform Nd grids to Kd grids(not be reshaped)
+    def forwardbackward(self, x):
+
+        x2 = self.backward(self.forward(x))
         
-        '''
-        #print('661 x.shape',x.shape)        
+#         x2 = self.xx2x(self.k2xx(self.k2k(self.xx2k(self.x2xx(x)))))
         
-        st=self.st
-        Nd = st['Nd']
-        Kd = st['Kd']
-        dims = numpy.shape(x)
-        dd = numpy.size(Nd)
-
-        if self.debug==0:
-            pass
-        else:
-            checker(x,Nd)
-
-        if numpy.ndim(x) == dd:   
-            if weight_flag == 1:
-                x = x * st['sn']
-            else:
-                pass 
-
-            Xk = self.emb_fftn(x, Kd,range(0,dd))
-
-            Xk = numpy.reshape(Xk, (numpy.prod(Kd),),order='F')
-            
-        else:# otherwise, collapse all excess dimensions into just one
-            xx = numpy.reshape(x, [numpy.prod(Nd), numpy.prod(dims[(dd):])],order='F')  # [*Nd *L]
-            L = numpy.shape(xx)[1]
-    #        print('L=',L)
-    #        print('Lprod',Lprod)
-            Xk = numpy.zeros( (numpy.prod(Kd), L),dtype=dtype) # [*Kd *L]
-            for ll in xrange(0,L):
-                xl = numpy.reshape(xx[:,ll], Nd,order='F') # l'th signal
-                if weight_flag == 1:
-                    xl = xl * st['sn'] # scaling factors
-                else:
-                    pass
-                Xk[:,ll] = numpy.reshape(self.emb_fftn(xl, Kd,range(0,dd)),
-                                         (numpy.prod(Kd),),order='F')
-        if self.debug==0:
-            pass
-        else:                
-            checker(Xk,numpy.prod(Kd))        
-        return Xk
-    
-    def Kd2Nd(self,Xk_all,weight_flag):
+        return x2
+    def forward_modulate_backward(self, x):
         
-        st=self.st
-
-        Nd = st['Nd']
-        Kd = st['Kd']
-        dd = len(Nd)
-        if self.debug==0:
-            pass
-        else:
-            checker(Xk_all,numpy.prod(Kd)) # check X of correct shape
-
-        dims = numpy.shape(Xk_all)
-        Lprod= numpy.prod(dims[1:]) # how many channel * slices
-
-        if numpy.size(dims) == 1:
-            Lprod = 1
-        else:
-            Lprod = dims[1]  
-            
-                  
-        x=numpy.zeros(Kd+(Lprod,),dtype=dtype)  # [*Kd *L]
-
-#         if Lprod > 1:
-
-        Xk = numpy.reshape(Xk_all, Kd+(Lprod,) , order='F')
+        x2 = self.backward(self.st['W']*self.forward(x))
         
-        for ll in xrange(0,Lprod):  # ll = 0, 1,... Lprod-1
-            x[...,ll] =  self.emb_ifftn(Xk[...,ll],Kd,range(0,dd))#.flatten(order='F'))
-
-        x = x[crop_slice_ind(Nd)]
-
-
-        if weight_flag == 0:
-            pass
-            
-        else: #weight_flag =1 scaling factors
-            snc = st['sn'].conj()
-            for ll in xrange(0,Lprod):  # ll = 0, 1,... Lprod-1    
-                x[...,ll] = x[...,ll]*snc  #% scaling factors
-
-        if self.debug==0:
-            pass # turn off checker
-        else:
-            checker(x,Nd) # checking size of x divisible by Nd
-        return x
-      
-    def emb_fftn(self, input_x, output_dim, act_axes):
+#         x2 = self.xx2x(self.k2xx(self.k2k(self.xx2k(self.x2xx(x)))))
+        
+        return x2
+    def inverse_DC(self,y):
         '''
-        The abstraction for fast Fourier transform
+        reconstruction of non-uniform data y into image
+        using density compensation method
+        input: 
+            y: (M,) array
+        output:
+            x2: Nd array
         '''
-        output_x=numpy.zeros(output_dim, dtype=dtype)
-
-        output_x[crop_slice_ind(input_x.shape)] = input_x
-
-
-
-        output_x=numpy.fft.fftn(output_x, output_dim, act_axes)
-
-        return output_x
-  
-    def emb_ifftn(self, input_x, output_dim, act_axes):
+        x2 = self.backward(self.st['W']*y)
+        return x2
+    def x2xx(self, x):
         '''
-        The abstraction for inverse fast Fourier transform
+        scaling of the image, generate Nd
+        input:
+            x: 2D image
+        output:
+            xx: scaled 2D image
         '''
-        output_x=numpy.zeros(output_dim, dtype=dtype)
+        xx = x * self.st['sn']
+        return xx
+    def y2k_DC(self,y):
+        '''
+        converting the non-uniform data (y: (M,) array) to k-spectrum (Kd array)
+        k-spectrum requires another numpy.fft.fftshift to move the k-space center.
+        input:
+            y: (M,) array
+        output
+            k: Kd array
+        '''
+        k = self.y2k(y*self.st['W'])
+        return k
+    def xx2k(self, xx):
+        '''
+        fft of the image
+        input:
+            xx:    scaled 2D image
+        output:
+            k:    k-space grid
+        '''
+        dd = numpy.size(self.st['Kd'])      
+        output_x = numpy.zeros(self.st['Kd'], dtype=dtype)
+        output_x[crop_slice_ind(xx.shape)] = xx
+        k = numpy.fft.fftn(output_x, self.st['Kd'], range(0, dd))
 
-        output_x[crop_slice_ind(input_x.shape)] = input_x 
- 
-        output_x=numpy.fft.ifftn(output_x, output_dim, act_axes)
-
-        return output_x 
-def test_1D():
-# import several modules
-    import numpy 
-    import matplotlib.pyplot
-
-    import os
-    path = os.path.abspath(__file__)
-    dir_path = os.path.dirname(path)
-
-#create 1D curve from 2D image
-    image = numpy.loadtxt(dir_path+'/phantom_256_256.txt') 
-    profile_1d = image[:,128]
-#determine the location of samples
-    om = numpy.loadtxt(dir_path+'/om1D.txt')[0:]
-    om = numpy.reshape(om,(numpy.size(om),1),order='F')
-# reconstruction parameters
-    Nd =(256,) # image space size
-    Kd =(512,) # k-space size
-      
-    Jd =(6,) # interpolation size
-# initiation of the object
-    NufftObj = pynufft(om, Nd,Kd,Jd,None)
-# simulate "data"
-    data= NufftObj.forward(profile_1d)
-#adjoint(reverse) of the forward transform
-
-
-    NufftObj.pipe_density() # recalculate the density compensation
-    
-    profile_distorted= NufftObj.adjoint(data*NufftObj.st['W'])[:,0]
-
- 
-#Showing histogram of sampling locations
-#     matplotlib.pyplot.hist(om,20)
-#     matplotlib.pyplot.title('histogram of the sampling locations')
-#     matplotlib.pyplot.show()
-#show reconstruction
-    matplotlib.pyplot.subplot(1,2,1)
- 
-    matplotlib.pyplot.plot(profile_1d)
-    matplotlib.pyplot.title('original') 
-    matplotlib.pyplot.ylim([0,1]) 
-            
-
-             
-    matplotlib.pyplot.subplot(1,2,2)
-    matplotlib.pyplot.plot(numpy.abs(profile_distorted)) 
-    matplotlib.pyplot.title('profile_distorted')
- 
-    matplotlib.pyplot.show()  
-         
-    
-def test_2D():
- 
-    import numpy 
-    import matplotlib.pyplot
-#     import os
-#     path = os.path.dirname(self.__file__)
-    import os
-    path = os.path.abspath(__file__)
-    dir_path = os.path.dirname(path)
-#     print(dir_path)
-    cm = matplotlib.cm.gray
-    # load example image    
- 
-    image = numpy.loadtxt(dir_path+'/phantom_256_256.txt') 
-    image[128,128]= 1.0   
-    Nd =(256,256) # image space size
-    Kd =(512,512) # k-space size   
-    Jd =(6,6) # interpolator size
-     
-    # load k-space points
-    om = numpy.loadtxt(dir_path+'/om.txt')
-     
-    #create object
-  
-#      
-    NufftObj = pynufft(om, Nd,Kd,Jd, None)   
-     
-#     NufftObj = pynufft.pynufft.pynufft(om, Nd,Kd,Jd, None)   
-
-    data= NufftObj.forward(image )
-    
-    NufftObj.pipe_density() # recalculate the density compensation
-    
-    image_blur = NufftObj.adjoint(data*NufftObj.st['W'])
-#     image_recon = Normalize(image_recon)
- 
-    matplotlib.pyplot.plot(om[:,0],om[:,1],'x')
-    matplotlib.pyplot.show()
- 
-    norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1.0) 
-    norm2=matplotlib.colors.Normalize(vmin=0.0, vmax=5.0e-2)
-    # display images
-    matplotlib.pyplot.subplot(2,2,1)
-    matplotlib.pyplot.imshow(image,
-                             norm = norm,cmap =cm,interpolation = 'nearest')
-    matplotlib.pyplot.title('true image')   
+        return k
+    def k2vec(self,k):
+        
+        k_vec = numpy.reshape(k, (numpy.prod(self.st['Kd']), ), order='F')
    
-    matplotlib.pyplot.subplot(2,2,2)
-    matplotlib.pyplot.imshow(image_blur[:,:,0].real,
-                              norm = norm2,cmap= cm,interpolation = 'nearest')
-    matplotlib.pyplot.title('blurred image') 
- 
-     
-    matplotlib.pyplot.show()      
+        return k_vec
+    
+    def vec2y(self,k_vec):
+        '''
+        gridding: 
+        
+        '''
+        y = self.st['p'].dot(k_vec)
+        
+        return y
+    def k2y(self, k):
+        '''
+        2D k-space grid to 1D array
+        input:
+            k:    k-space grid,
+        output:
+            y: non-Cartesian data
+        '''
+        
+        y = self.vec2y(self.k2vec(k)) #numpy.reshape(self.st['p'].dot(Xk), (self.st['M'], ), order='F')
+        
+        return y
+    def y2vec(self, y):
+        '''
+       regridding non-uniform data, (unsorted vector)
+        '''
+        k_vec = self.st['p'].getH().dot(y)
+        
+        return k_vec
+    def vec2k(self, k_vec):
+        '''
+        Sorting the vector to k-spectrum Kd array
+        '''
+        k = numpy.reshape(k_vec, self.st['Kd'], order='F')
+        
+        return k
+    
+    def y2k(self, y):
+        '''
+        input:
+            y:    non-uniform data, (M,) array
+        output:
+            k:    k-spectrum on the Kd grid (Kd array)
+        '''
+        
+        k_vec = self.y2vec(y)
+        
+        k = self.vec2k(k_vec)
+        
+        return k
+
+    def k2xx(self, k):
+        '''
+        Transform regular k-space (Kd array) to scaled image xx (Nd array)
+        '''
+        dd = numpy.size(self.st['Kd'])
+        
+        xx = numpy.fft.ifftn(k, self.st['Kd'], range(0, dd))
+        
+        xx = xx[crop_slice_ind(self.st['Nd'])]
+        return xx
+
+    def xx2x(self, xx):
+        '''
+        Rescaled image xx (Nd array) to x (Nd array)
+        '''
+        x = self.x2xx(xx)
+        return x
+    def k2k(self, k):
+        '''
+        gridding and regridding of k-spectrum 
+        input 
+            k: Kd array, 
+        output 
+            k: Kd array
+        '''
+        Xk = numpy.reshape(k, (numpy.prod(self.st['Kd']), ), order='F')
+#         y = numpy.reshape(self.st['p'].dot(Xk), (self.st['M'], ), order='F')        
+        k = self.st['pHp'].dot(Xk)
+        k = numpy.reshape(k, self.st['Kd'], order='F')
+        return k
+
+def test_2D():
+    import numpy
+    import matplotlib.pyplot
+    # load example image
+    image = numpy.loadtxt('phantom_256_256.txt')
+    print('loading image...')
+    matplotlib.pyplot.imshow(image.real, cmap=matplotlib.cm.gray)
+    matplotlib.pyplot.show()
+    
+    
+    Nd = (256, 256)  # image size
+    print('setting image dimension Nd...', Nd)
+    Kd = (512, 512)  # k-space size
+    print('setting spectrum dimension Kd...', Kd)
+    Jd = (6, 6)  # interpolation size
+    print('setting interpolation size Jd...', Jd)
+    # load k-space points
+    om = numpy.loadtxt('om.txt')
+    print('setting non-uniform coordinates...')
+    matplotlib.pyplot.plot(om[::10,0],om[::10,1],'o')
+    matplotlib.pyplot.title('non-uniform coordinates')
+    matplotlib.pyplot.xlabel('axis 0')
+    matplotlib.pyplot.ylabel('axis 1')
+    matplotlib.pyplot.show()
+
+    NufftObj = pynufft()
+    NufftObj.plan(om, Nd, Kd, Jd)
+    
+    y = NufftObj.forward(image)
+    print('setting non-uniform data')
+    print('y is an (M,) list',type(y), y.shape)
+    
+    kspectrum = NufftObj.y2k_DC(y)
+    shifted_kspectrum = numpy.fft.fftshift(kspectrum, axes=(0,1))
+    print('getting the k-space spectrum, shape =',kspectrum.shape)
+    print('Showing the shifted k-space spectrum')
+    
+    matplotlib.pyplot.imshow( shifted_kspectrum.real, cmap = matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=-100, vmax=100))
+    matplotlib.pyplot.title('shifted k-space spectrum')
+    matplotlib.pyplot.show()
+    
+    image2 = NufftObj.backward(y * NufftObj.st['W'])
+
+    matplotlib.pyplot.imshow(image2.real, cmap=matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1))
+    matplotlib.pyplot.show()
+
 
 if __name__ == '__main__':
-#     import cProfile
-#     test_1D()
-    test_2D()   
-     
+    '''
+    Test the module pynufft
+    '''
+    test_2D()
