@@ -27,6 +27,7 @@ setup(name='pynufft',
       author='Jyh-Miin Lin',
       long_description=read_md('README.md'),
       author_email='jyhmiinlin@gmail.com',
+      url = 'https://github.com/jyhmiinlin/pynufft', # use the URL to the github repo
       install_requires = ['numpy', 'scipy', 'matplotlib'],
       license='MIT',
       packages=['pynufft'],
