@@ -78,7 +78,7 @@ kspectrum = pynufft.y2k_DC(y)
 
 The speed of pynufft is suboptimal, because FFTW is currently unsupported in Numpy/Scipy. 
 
-However, you can download commercial Python packages to accelerate pynufft. These commercial packages such as Anaconda or Intel Python are free for 
+However, pynufft can enjoy the full speed of MKL FFT inside the Anaconda Python environment.
 
 ## Other nufft implementations in Python:
 
