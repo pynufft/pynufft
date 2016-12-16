@@ -2,37 +2,35 @@
 
 ## Pythonic Non-uniform fast Fourier transform (NUFFT)
 
-FFT is the standard method for calculating the frequency components of a signal. However, FFT only applies to equispaced grids. 
+FFT is the standard method that estimates the frequency components on equispaced grids.
 
-NUFFT can calculate the frequency components at non-equispaced locations.
+NUFFT can calculate the frequency components outside grids.
 
 
 ## Installation:
 
-from pypi:
+From pypi:
 
-pip install pynufft
+$ pip install pynufft
 
-from github:
+From github:
 
-git clone https://github.com/jyhmiinlin/pynufft
+$ git clone https://github.com/jyhmiinlin/pynufft
 
-python setup.py install
+$ python setup.py install
 
 ## Example:
 
 Inside the Python environment, type:
 
->>>import pynufft.pynufft
+>>> import pynufft.pynufft
 
->>>pynufft.pynufft.test_2D() # test the 2D case
+>>> pynufft.pynufft.test_2D() # test the 2D case
 
 
 ## Features
 
-pynufft is written in Python, using the standard Numpy/Scipy packages. Therefore, the external dependency has been avoided. 
-
-Numpy, Scipy, Matplotlib are prerequisites.
+pynufft is written in Python, using the standard Numpy/Scipy packages. Numpy, Scipy, Matplotlib are prerequisites.
 
 ## Summary
 
