@@ -85,11 +85,11 @@ nufftpy: Pure Python NUFFT of Python-nufft (https://github.com/jakevdp/nufftpy).
 
 pynufft received financial supports from the Ministry of Science and Technology under grant MOST 105-2221-E-002-142-MY3.
 
-If you find pynufft useful, please cite:
-
-Fessler's min-max NUFFT paper:
+If you find pynufft useful, please cite Fessler's min-max NUFFT paper. 
 Fessler JA, Sutton BP. Nonuniform fast Fourier transforms using min-max interpolation. IEEE Trans Signal Process 2003;51(2):560-574.
 
-And cite this page:
+Please open an issue if you have any question related to pynufft.
+
+### Bibtex of this page
 
 @Misc{pynufft, author = {Jyh-Miin Lin}, title = {{Pynufft}: {Python} non-uniform fast {F}ourier transform}, year = {2013--}, url = "https://github.com/jyhmiinlin/pynufft", note = {Online; https://github.com/jyhmiinlin/pynufft; Dec 2016} }
