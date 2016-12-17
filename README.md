@@ -1,6 +1,5 @@
-# pynufft 0.3: A Pythonic non-uniform fast Fourier transform
+# pynufft: Python non-uniform fast Fourier transform
 
-### Pythonic Non-uniform fast Fourier transform (NUFFT)
 
 FFT is the standard method that estimates the frequency components on equispaced grids.
 
