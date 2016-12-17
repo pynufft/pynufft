@@ -16,7 +16,7 @@
 from setuptools import setup
 
 setup(name='pynufft',
-      version='0.3.1.5',
+      version='0.3.1.6',
       description='A pythonic non-uniform FFT (pynufft)',
       author='Jyh-Miin Lin',
       author_email='jyhmiinlin@gmail.com',
