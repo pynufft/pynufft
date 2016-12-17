@@ -87,8 +87,13 @@ pynufft received financial supports from the Ministry of Science and Technology 
 
 If you find pynufft useful, please cite:
 
-Lin J-M, Patterson AJ, Chang H-C, Gillard JH, Graves MJ. An iterative reduced field-of-view reconstruction for periodically rotated overlapping parallel lines with enhanced reconstruction 
-(http://www.ncbi.nlm.nih.gov/pubmed/26429249)
+@Misc{,
+  author =    {Jyh-Miin Lin},
+  title =     {{PyNufft}: {Python} non-uniform fast Fourier transform},
+  year =      {2013--},
+  url = "https://github.com/jyhmiinlin/pynufft",
+  note = {[Online; accessed <today>]}
+}
 
-And Fessler's min-max MATLAB NUFFT program, described in the following paper:
+And Fessler's min-max NUFFT paper:
 Fessler JA, Sutton BP. Nonuniform fast Fourier transforms using min-max interpolation. IEEE Trans Signal Process 2003;51(2):560-574.
