@@ -1,1 +1,2 @@
-include pynufft/*.txt
+include pynufft/data/*.txt
+include *.md

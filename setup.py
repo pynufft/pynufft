@@ -1,17 +1,11 @@
-from setuptools import setup
-try:
-    from pypandoc import convert
-    read_md = lambda f: convert(f, 'rst')
-except ImportError:
-    print("warning: pypandoc module not found, could not convert Markdown to RST")
-    read_md = lambda f: open(f, 'r').read()
+#from setuptools import setup
+#try:
+#    from pypandoc import convert
+#    read_md = lambda f: convert(f, 'rst')
+#except ImportError:
+#    print("warning: pypandoc module not found, could not convert Markdown to RST")
+#    read_md = lambda f: open(f, 'r').read()
 
-#setup(
-#    # name, version, ...
-#    name=
-#    long_description=read_md('README.md'),
-#    install_requires=[]
-#)
 
 
 #import os
@@ -22,10 +16,9 @@ except ImportError:
 from setuptools import setup
 
 setup(name='pynufft',
-      version='0.3',
+      version='0.3.1.5',
       description='A pythonic non-uniform FFT (pynufft)',
       author='Jyh-Miin Lin',
-      long_description=read_md('README.md'),
       author_email='jyhmiinlin@gmail.com',
       url = 'https://github.com/jyhmiinlin/pynufft', # use the URL to the github repo
       install_requires = ['numpy', 'scipy', 'matplotlib'],

@@ -36,18 +36,18 @@ pynufft is written in Python, using the standard Numpy/Scipy packages. Numpy, Sc
 
 Please find the example in test_2D().
 
-The forward transform (the foward() method) involves the following steps:
+The forward transform (the forward() method) involves the following steps:
 
 1. Scaling (the x2xx() method)
 
 2. FFT (the xx2k() method)
 
-3. Convert kspectrum from array to vector: (the k2vec() method)
+3. Convert spectrum from array to vector: (the k2vec() method)
 
 4. Interpolation (the vec2y() method)
 
 
-The adjoint transform (the bacward() method) involves the following steps:
+The adjoint transform (the backward() method) involves the following steps:
 
 1. Adjoint interpolation (the y2vec() method)
 
@@ -86,7 +86,7 @@ pynfft: Python bindings around the NFFT C-library, which uses the speed of FFTW,
 
 nufftpy: Pure Python NUFFT of Python-nufft (https://github.com/jakevdp/nufftpy). 
 
-## Acknowlegements
+## Acknowledgements
 
 pynufft received financial supports from the Ministry of Science and Technology under grant MOST 105-2221-E-002-142-MY3.
 
