@@ -46,7 +46,7 @@ The forward transform (the forward() method) involves the following steps:
 4. Interpolation (the vec2y() method)
 
 
-The adjoint transform (the backward() method) involves the following steps:
+The adjoint transform (the adjoint() method) involves the following steps:
 
 1. Adjoint interpolation (the y2vec() method)
 
@@ -82,7 +82,7 @@ nufftpy: Pure Python NUFFT of Python-nufft (https://github.com/jakevdp/nufftpy).
 
 ### Acknowledgements
 
-pynufft received financial supports from the Ministry of Science and Technology under grant MOST 105-2221-E-002-142-MY3.
+pynufft was funded by the Ministry of Science and Technology, Cambridge Overseas Trust and Ministry of Education.  
 
 If you find pynufft useful, please cite Fessler's min-max NUFFT paper. 
 Fessler JA, Sutton BP. Nonuniform fast Fourier transforms using min-max interpolation. IEEE Trans Signal Process 2003;51(2):560-574.

@@ -3,7 +3,7 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2016 pynufft team
+Copyright (c) 2013 - 2016 pynufft team
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -30,18 +30,19 @@ import scipy.signal
 import scipy.linalg
 import scipy.special
 
-dtype = numpy.complex64
+
 
 def dirichlet(x):
     return numpy.sinc(x)
 
 def outer_sum(xx, yy):
-    nx = numpy.size(xx)
-    ny = numpy.size(yy)
-
-    arg1 = numpy.tile(xx, (ny, 1)).T
-    arg2 = numpy.tile(yy, (nx, 1))
-    return arg1 + arg2
+    return numpy.add.outer(xx,yy)
+#     nx = numpy.size(xx)
+#     ny = numpy.size(yy)
+# 
+#     arg1 = numpy.tile(xx, (ny, 1)).T
+#     arg2 = numpy.tile(yy, (nx, 1))
+#     return arg1 + arg2
 
 
 def nufft_offset(om, J, K):
@@ -54,7 +55,7 @@ def nufft_offset(om, J, K):
     return k0
 
 
-def nufft_alpha_kb_fit(N, J, K):
+def nufft_alpha_kb_fit(N, J, K, dtype):
     '''
     find out parameters alpha and beta
     of scaling factor st['sn']
@@ -302,6 +303,9 @@ def crop_slice_ind(Nd):
 class pynufft:
     """
     The class pynufft computes Non-Uniform Fast Fourier Transform (NUFFT).
+    Using Fessler and Sutton's min-max interpolator algorithm.
+    
+    "Fessler JA, Sutton BP. Nonuniform fast Fourier transforms using min-max interpolation. IEEE Trans Signal Process 2003;51(2):560-574."
 
     Methods
     ----------
@@ -325,13 +329,23 @@ class pynufft:
         Output:
             y: M array.The output M points array.
              
-    backward(y): adjoint NUFFT (Hermitian transpose (a.k.a. conjugate transpose) of NUFFT)
+    adjoint(y): adjoint NUFFT (Hermitian transpose (a.k.a. conjugate transpose) of NUFFT)
+                Note: adjoint is not the inverse of forward NUFFT,
+                because Non-uniform coordinates cause uneven density,
+                which must be compensated by "density compensation (DC)"
+                See inverse_DC() method
         Input:
             y: M array.The input M points array.
         Output:
             x: numpy.array. The output image on the regular grid.
             
     inverse_DC(y): inverse NUFFT using Pipe's sampling density compensation (James Pipe, Magn. Res. Med., 1999)
+                Note: adjoint is not the inverse of forward NUFFT,
+                because Non-uniform coordinates cause uneven density,
+                which must be compensated by "density compensation (DC)"
+                Note: A more accurate inverse NUFFT requires iterative reconstruction,
+                    such as conjugate gradient method (CG) or other optimization methods. 
+                
         Input: 
             y: M array.The input M points array.
         Output:
@@ -342,7 +356,7 @@ class pynufft:
         '''
         Construct the pynufft instance
         '''
-        pass
+        self.dtype = numpy.complex64
 
     def plan(self, om, Nd, Kd, Jd):
         '''
@@ -386,7 +400,8 @@ class pynufft:
     ###############################################################
         for dimid in range(0, dd):
             (tmp_alpha, tmp_beta) = nufft_alpha_kb_fit(
-                Nd[dimid], Jd[dimid], Kd[dimid])
+                Nd[dimid], Jd[dimid], Kd[dimid],
+                                             self.dtype)
             st.setdefault('alpha', []).append(tmp_alpha)
             st.setdefault('beta', []).append(tmp_beta)
         st['tol'] = 0
@@ -498,7 +513,7 @@ class pynufft:
         # convert array to list
         csrdata = numpy.reshape(uu, (Jprod * M, ), order='F')
 
-        # row indices, from 1 to M convert array to list
+        # row indices, from 1 to M, convert array to list
         rowindx = numpy.reshape(mm, (Jprod * M, ), order='F')
 
         # colume indices, from 1 to prod(Kd), convert array to list
@@ -508,7 +523,7 @@ class pynufft:
         csrshape = (M, numpy.prod(Kd))
 
         # Build sparse matrix (interpolator)
-        st['p0'] = scipy.sparse.csr_matrix((csrdata, (rowindx, colindx)),
+        st['p'] = scipy.sparse.csr_matrix((csrdata, (rowindx, colindx)),
                                            shape=csrshape)#.tocsr()
         # Note: the sparse matrix requires the following linear phase,
         #       which moves the image to the center of the image
@@ -517,7 +532,8 @@ class pynufft:
         self.Nd = self.st['Nd']  # backup
         self.sn = self.st['sn']  # backup
         self.ndims=len(self.st['Nd']) # dimension
-        self.st['p'] = self.linear_phase(n_shift)  
+        self.linear_phase(n_shift)  
+        
         # calculate the linear phase thing
         
         self.st['W'] = self.pipe_density()
@@ -530,13 +546,13 @@ class pynufft:
 #         W = pipe_density(self.st['p'])
         # sampling density function
         
-        W = numpy.ones((self.st['M'],),dtype=dtype)
+        W = numpy.ones((self.st['M'],),dtype=self.dtype)
         V1= self.st['p'].getH()
     #     VVH = V.dot(V.getH()) 
         
         for pp in range(0,1):
 #             E = self.st['p'].dot(V1.dot(W))
-            E = self.forward(self.backward(W))
+            E = self.forward(self.adjoint(W))
             W = W/E
         
 #         pHp = V1.dot(self.st['p'])
@@ -583,8 +599,8 @@ class pynufft:
                 1))
         # add-up all the linear phasees in all axes,
 
-        p = scipy.sparse.diags(phase, 0).dot(self.st['p0'])
-        return p  # shifted sparse matrix
+        self.st['p'] = scipy.sparse.diags(phase, 0).dot(self.st['p'])
+        return 0  # shifted sparse matrix
 
 
     def forward(self, x):
@@ -599,9 +615,9 @@ class pynufft:
 
         return y
 
-    def backward(self, y):
+    def adjoint(self, y):
         '''
-        backward method (not inverse, see inverse_DC() method) computes the adjoint transform
+        adjoint method (not inverse, see inverse_DC() method) computes the adjoint transform
         (conjugate transpose, or Hermitian transpose) of forward
         Non-Uniform Fast Fourier Transform.
         input:
@@ -613,16 +629,16 @@ class pynufft:
 
         return x
 
-    def forwardbackward(self, x):
+    def forwardadjoint(self, x):
 
-        x2 = self.backward(self.forward(x))
+        x2 = self.adjoint(self.forward(x))
         
 #         x2 = self.xx2x(self.k2xx(self.k2k(self.xx2k(self.x2xx(x)))))
         
         return x2
-    def forward_modulate_backward(self, x):
+    def forward_modulate_adjoint(self, x):
         
-        x2 = self.backward(self.st['W']*self.forward(x))
+        x2 = self.adjoint(self.st['W']*self.forward(x))
         
 #         x2 = self.xx2x(self.k2xx(self.k2k(self.xx2k(self.x2xx(x)))))
         
@@ -636,11 +652,15 @@ class pynufft:
         output:
             x2: Nd array
         '''
-        x2 = self.backward(self.st['W']*y)
+        x2 = self.adjoint(self.st['W']*y)
         return x2
     def x2xx(self, x):
         '''
-        scaling of the image, generate Nd
+        
+        scaling of the image, generate Nd array
+        Scaling of image is equivalent to convolution in k-space.
+        Thus, scaling improves the accuracy of k-space interpolation.
+          
         input:
             x: 2D image
         output:
@@ -650,8 +670,12 @@ class pynufft:
         return xx
     def y2k_DC(self,y):
         '''
-        converting the non-uniform data (y: (M,) array) to k-spectrum (Kd array)
+        Density compensated, adjoint transform of the non-uniform data (y: (M,) array) to k-spectrum (Kd array)
+                Note: adjoint is not the inverse of forward NUFFT,
+                because Non-uniform coordinates cause uneven density,
+                which must be compensated by "density compensation (DC)"
         k-spectrum requires another numpy.fft.fftshift to move the k-space center.
+        
         input:
             y: (M,) array
         output
@@ -668,7 +692,7 @@ class pynufft:
             k:    k-space grid
         '''
         dd = numpy.size(self.st['Kd'])      
-        output_x = numpy.zeros(self.st['Kd'], dtype=dtype)
+        output_x = numpy.zeros(self.st['Kd'], dtype=self.dtype)
         output_x[crop_slice_ind(xx.shape)] = xx
         k = numpy.fft.fftn(output_x, self.st['Kd'], range(0, dd))
 
@@ -716,6 +740,8 @@ class pynufft:
     
     def y2k(self, y):
         '''
+        Conjugate transpose of min-max interpolator
+        
         input:
             y:    non-uniform data, (M,) array
         output:
@@ -742,6 +768,9 @@ class pynufft:
     def xx2x(self, xx):
         '''
         Rescaled image xx (Nd array) to x (Nd array)
+        
+        Thus, rescaling improves the accuracy of k-space interpolation.
+        
         '''
         x = self.x2xx(xx)
         return x
@@ -806,7 +835,7 @@ def test_2D():
     matplotlib.pyplot.title('shifted k-space spectrum')
     matplotlib.pyplot.show()
     
-    image2 = NufftObj.backward(y * NufftObj.st['W'])
+    image2 = NufftObj.adjoint(y * NufftObj.st['W'])
 
     matplotlib.pyplot.imshow(image2.real, cmap=matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1))
     matplotlib.pyplot.show()

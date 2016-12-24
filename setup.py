@@ -16,8 +16,8 @@
 from setuptools import setup
 
 setup(name='pynufft',
-      version='0.3.1.6',
-      description='A pythonic non-uniform FFT (pynufft)',
+      version='0.3.1.7',
+      description='Python non-uniform FFT (pynufft)',
       author='Jyh-Miin Lin',
       author_email='jyhmiinlin@gmail.com',
       url = 'https://github.com/jyhmiinlin/pynufft', # use the URL to the github repo
