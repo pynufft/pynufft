@@ -22,9 +22,12 @@ $ python setup.py install
 
 Inside the Python environment, type:
 
->>> import pynufft.pynufft
 
->>> pynufft.pynufft.test_2D() # test the 2D case
+>>> import pynufft.pynufft as pnft
+
+>>> pnft.test_installation() # test required files
+
+>>> pnft.test_2D() # test the 2D case
 
 
 ### Features
@@ -33,7 +36,9 @@ pynufft is written in Python, using the standard Numpy/Scipy packages. Numpy, Sc
 
 ### Summary
 
-Please find the example in test_2D().
+A "getting start" tutorial will become availabe in the near future (Early ). 
+
+Currently, please find the example in test_2D().
 
 The forward transform (the forward() method) involves the following steps:
 
@@ -54,7 +59,7 @@ The adjoint transform (the adjoint() method) involves the following steps:
 
 3. IFFT (the k2xx() method)
 
-4. Rescaling (the x22x() method)
+4. Rescaling (the x2xx() method)
 
 
 If y is the data from the forward transform:
@@ -68,9 +73,10 @@ k-space spectrum can be obtained from the data (y):
 
 ### Limitations
 
-The speed of pynufft is suboptimal, because FFTW is currently unsupported in Numpy/Scipy. 
+In Numpy, the default fft library is fftpack, so the speed of NUFFT transform may be suboptimal.
+However, pynufft can run with the fast FFT inside the Anaconda Python environment (which is based on Intel's Math Kernel library (MKL)).
 
-However, pynufft can enjoy the full speed of MKL FFT inside the Anaconda Python environment.
+
 
 ### Other nufft implementations in Python:
 
@@ -82,7 +88,7 @@ nufftpy: Pure Python NUFFT of Python-nufft (https://github.com/jakevdp/nufftpy).
 
 ### Acknowledgements
 
-pynufft was funded by Cambridge Trust and the Ministry of Science and Technology, Cambridge Overseas Trust and Ministry of Education.  
+pynufft was funded by the Ministry of Science and Technology, Cambridge Overseas Trust and Ministry of Education.  
 
 If you find pynufft useful, please cite Fessler's min-max NUFFT paper. 
 Fessler JA, Sutton BP. Nonuniform fast Fourier transforms using min-max interpolation. IEEE Trans Signal Process 2003;51(2):560-574.

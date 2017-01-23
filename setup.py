@@ -16,7 +16,7 @@
 from setuptools import setup
 
 setup(name='pynufft',
-      version='0.3.1.8',
+      version='0.3.2.8',
       description='Python non-uniform fast Fourier transform (pynufft)',
       author='Jyh-Miin Lin',
       author_email='jyhmiinlin@gmail.com',
@@ -24,8 +24,8 @@ setup(name='pynufft',
       install_requires = ['numpy', 'scipy', 'matplotlib'],
       license='MIT',
       packages=['pynufft'],
-      package_dir={'pynufft':'pynufft'},
-      package_data={'pynufft':['data/*.txt']},
+      package_dir={'pynufft':'.'},
+      package_data={'pynufft':['./data/*.npz', './example/*.py']},
       include_package_data=True,
       zip_safe=False)
 	

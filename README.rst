@@ -13,5 +13,6 @@ Example:
 
 Inside the python environment, type:
 
-            | import pynufft.pynufft
-            | pynufft.pynufft.test\_2D() # test the 2D case
+            | import pynufft.pynufft as pnft
+            | pnft.test\_installation() # test required files
+            | pnft.test\_2D() # test the 2D case

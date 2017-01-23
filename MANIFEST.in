@@ -1,2 +1,3 @@
-include pynufft/data/*.txt
+include data/*.npz
 include *.md
+include example/*.py
