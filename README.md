@@ -5,6 +5,8 @@ FFT is the standard method that estimates the frequency components at equispaced
 
 NUFFT can calculate the frequency components at non-equispaced locations.
 
+A minimal "getting start" tutorial is available at http://jyhmiinlin.github.io/pynufft/ .
+
 
 ### Installation:
 
@@ -30,15 +32,7 @@ Inside the Python environment, type:
 >>> pnft.test_2D() # test the 2D case
 
 
-### Features
-
-pynufft is written in Python, using the standard Numpy/Scipy packages. Numpy, Scipy, Matplotlib are prerequisites.
-
 ### Summary
-
-A "getting start" tutorial will become availabe in the near future (Early Feb 2017). 
-
-The pynufft user manual documents Python non-uniform fast Fourier transform, a Python program for non-uniform fast Fourier transform.
 
 Pynufft implements Fessler's min-max NUFFT, with the following features:
 
