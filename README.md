@@ -1,9 +1,9 @@
 # pynufft: Python non-uniform fast Fourier transform
 
 
-FFT is the standard method that estimates the frequency components on equispaced grids.
+FFT is the standard method that estimates the frequency components at equispaced locations.
 
-NUFFT can calculate the frequency components outside grids.
+NUFFT can calculate the frequency components at non-equispaced locations.
 
 
 ### Installation:
@@ -36,47 +36,25 @@ pynufft is written in Python, using the standard Numpy/Scipy packages. Numpy, Sc
 
 ### Summary
 
-A "getting start" tutorial will become availabe in the near future (Early ). 
+A "getting start" tutorial will become availabe in the near future (Early Feb 2017). 
 
-Currently, please find the example in test_2D().
+The pynufft user manual documents Python non-uniform fast Fourier transform, a Python program for non-uniform fast Fourier transform.
 
-The forward transform (the forward() method) involves the following steps:
+Pynufft implements Fessler's min-max NUFFT, with the following features:
 
-1. Scaling (the x2xx() method)
-
-2. FFT (the xx2k() method)
-
-3. Convert spectrum from array to vector: (the k2vec() method)
-
-4. Interpolation (the vec2y() method)
-
-
-The adjoint transform (the adjoint() method) involves the following steps:
-
-1. Adjoint interpolation (the y2vec() method)
-
-2. Convert kspectrum from vector to array: (the vec2k() method)
-
-3. IFFT (the k2xx() method)
-
-4. Rescaling (the x2xx() method)
-
-
-If y is the data from the forward transform:
->>>> y=pynufft.forward(image)
-
-The inverse transform (the inverse_DC() method) implemented the density compensation method of J. Pipe, Magnetic Resonance in Medicine, 1999
->>>>image=pynufft.inverse_DC(y)
-
-k-space spectrum can be obtained from the data (y):
->>>>kspectrum = pynufft.y2k_DC(y)
+- Written in pure Python.
+- Based on numerical libraries, such as Numpy, Scipy (matplotlib for displaying examples).
+- Provides the python interface including forward transform, adjoint transform and other routines.
+- Provides 1D/2D/3D examples for further developments.
+- (Experimental) Supporting NUFFT on NVIDIA's graphic processing units (GPUs).
 
 ### Limitations
 
 In Numpy, the default fft library is fftpack, so the speed of NUFFT transform may be suboptimal.
-However, pynufft can run with the fast FFT inside the Anaconda Python environment (which is based on Intel's Math Kernel library (MKL)).
 
+Python was limited by Global Interpret Lock (GIL). So you would need cython to release GIL and speed up for loops.
 
+However, Anaconda Python environment and Intel's Python seems to provide openmp support for many critical computations.
 
 ### Other nufft implementations in Python:
 
