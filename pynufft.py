@@ -650,7 +650,7 @@ class NUFFT:
         x = (self.k2xx(self.vec2k(b2)))/self.st['sn'] 
          
         return x
-    def forwardadjoint(self, x):
+    def selfadjoint(self, x):
 
         x2 = self.adjoint(self.forward(x))
         
