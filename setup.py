@@ -16,7 +16,7 @@
 from setuptools import setup
 
 setup(name='pynufft',
-      version='0.3.2.8',
+      version='0.3.2.9',
       description='Python non-uniform fast Fourier transform (pynufft)',
       author='Jyh-Miin Lin',
       author_email='jyhmiinlin@gmail.com',
