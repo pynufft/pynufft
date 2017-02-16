@@ -7,8 +7,26 @@ NUFFT can calculate the frequency components at non-equispaced locations.
 
 A minimal "getting start" tutorial is available at http://jyhmiinlin.github.io/pynufft/ .
 
+### New in version 0.3.2.9
 
-### Installation:
+Experimental support of NVIDIA's graphic processing unit (GPU).
+The experimental class gpuNUFFT requires pycuda, scikit-cuda, and python-cuda-cffi.
+
+scikit-cuda could be installed from standard pypi:
+
+$ pip install scikit-cuda
+
+python-cuda-cffi requires source and CUDA 8.0:
+
+$ git clone https://github.com/grlee77/python-cuda-cffi.git
+$ cd python-cuda-cffi
+$ python3 setup.py install
+
+gpuNUFFT class has been tested on Linux but hasn't been tested on Windows.
+
+The results of 1D and 2D are identical to results of CPU pynufft. However, the 3D pynufft is yet to be tested.
+
+### Install pynufft:
 
 From pypi:
 
