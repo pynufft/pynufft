@@ -80,7 +80,11 @@ nufftpy: Pure Python NUFFT of Python-nufft (https://github.com/jakevdp/nufftpy).
 
 pynufft was funded by the Ministry of Science and Technology, Cambridge Overseas Trust and Ministry of Education.  
 
-If you find pynufft useful, please cite Fessler's min-max NUFFT paper. 
+If you find pynufft useful, please cite:
+
+Jyh-Miin Lin and Hsiao-Wen Chung, Pynufft: python non-uniform fast Fourier transform for MRI, Building Bridges in Medical Sciences 2017, St John's College, CB2 1TP Cambridge, UK, 2017
+
+And Fessler and Sutton's min-max NUFFT algorithm:
 Fessler JA, Sutton BP. Nonuniform fast Fourier transforms using min-max interpolation. IEEE Trans Signal Process 2003;51(2):560-574.
 
 Please open an issue if you have any question related to pynufft.
