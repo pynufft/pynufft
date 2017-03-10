@@ -91,6 +91,9 @@ Please open an issue if you have any question related to pynufft.
 
 ### Cite pynufft
 
-@Misc{pynufft, author = {Jyh-Miin Lin}, title = {{Pynufft}: {Python} non-uniform fast {F}ourier transform}, year = {2013--}, url = "https://github.com/jyhmiinlin/pynufft", note = {Online; https://github.com/jyhmiinlin/pynufft; Dec 2016} }
-
-[![DOI](https://zenodo.org/badge/49985083.svg)](https://zenodo.org/badge/latestdoi/49985083)
+@INPROCEEDINGS{lin2017bbmc_pynufft,
+	author = {Jyh-Miin Lin and Hsiao-Wen Chung},
+	booktitle = {Building Bridges in Medical Sciences 2017, St John's College, CB2 1TP Cambridge, UK},
+	title = {{Pynufft: python non-uniform fast Fourier transform for MRI}},
+	year = {2017}
+}
