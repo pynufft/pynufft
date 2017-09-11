@@ -1,40 +1,88 @@
-###########################################################################################
-# The MIT License (MIT)
-# 
-# Copyright (c) 2013 - 2016 pynufft team
-# 
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-# 
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-# 
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
-###########################################################################################
+'''
+@package docstring
 
-import scipy
-import scipy.sparse
+The MIT License (MIT)
+
+Copyright (c) 2013-2017 pynufft team
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+'''
 import numpy
+import scipy.sparse
 import numpy.fft
 import scipy.signal
 import scipy.linalg
 import scipy.special
-# from helper import *
 
+
+dtype = numpy.complex64
+
+
+def indxmap_copy(Nd, Kd):
+    """
+    Building the array index for copying two arrays of sizes Nd and Kd
+    
+    The output array2 is either truncated (if Nd > Kd) or zero-padded (if Nd < Kd)
+    
+    input: Nd: tuple, the dimensions of array1
+                Kd: tuple, the dimensions of array2
+    output: inlist: the index of the input array1
+                    outlist: the index of the output array2
+                    nelem: the product of all the smaller lengths along each dimension
+    example:
+    
+    
+    """
+    ndim = len(Nd)
+    kdim = len(Kd)
+    if ndim != kdim:
+        print("mismatched dimensions!")
+        print("Nd and Kd must have the same dimensions")
+        raise
+    else:
+        nelem = 1
+        min_dim = ()
+        for pp in range(ndim - 1, -1,-1):
+            YY = numpy.minimum(Nd[pp], Kd[pp])
+            nelem *= YY
+            min_dim = (YY,) + min_dim 
+        mylist = numpy.arange(0, nelem).astype(numpy.int32)
+#             a=mylist
+        BB=()
+        for pp in range(ndim - 1, 0, -1):
+             a = numpy.floor(mylist/min_dim[pp])
+             b = mylist%min_dim[pp]
+             mylist = a
+             BB=(b,) + BB
+            
+        
+        inlist = mylist
+        outlist = mylist
+        for pp in range(0, ndim-1):
+            inlist = inlist*Nd[pp+1] + BB[pp]
+            outlist = outlist*Kd[pp+1] + BB[pp]
+
+    return inlist.astype(numpy.int32), outlist.astype(numpy.int32), nelem.astype(numpy.int32)
 
 def dirichlet(x):
     return numpy.sinc(x)
- 
+
 def outer_sum(xx, yy):
     return numpy.add.outer(xx,yy)
 #     nx = numpy.size(xx)
@@ -43,32 +91,32 @@ def outer_sum(xx, yy):
 #     arg1 = numpy.tile(xx, (ny, 1)).T
 #     arg2 = numpy.tile(yy, (nx, 1))
 #     return arg1 + arg2
- 
- 
+
+
 def nufft_offset(om, J, K):
-    """
+    '''
     For every om points(outside regular grids), find the nearest
     central grid (from Kd dimension)
-    """
+    '''
     gam = 2.0 * numpy.pi / (K * 1.0)
     k0 = numpy.floor(1.0 * om / gam - 1.0 * J / 2.0)  # new way
     return k0
- 
- 
-def nufft_alpha_kb_fit(N, J, K, dtype):
-    """
+
+
+def nufft_alpha_kb_fit(N, J, K):
+    '''
     find out parameters alpha and beta
     of scaling factor st['sn']
     Note, when J = 1 , alpha is hardwired as [1,0,0...]
     (uniform scaling factor)
-    """
+    '''
     beta = 1
     Nmid = (N - 1.0) / 2.0
     if N > 40:
         L = 13
     else:
-        L = numpy.ceil(N / 3)
- 
+        L = numpy.ceil(N / 3).astype(numpy.int16)
+
     nlist = numpy.arange(0, N) * 1.0 - Nmid
     (kb_a, kb_m) = kaiser_bessel('string', J, 'best', 0, K / N)
     if J > 1:
@@ -84,7 +132,7 @@ def nufft_alpha_kb_fit(N, J, K, dtype):
     sn_kaiser = sn_kaiser.reshape((N, 1), order='F').conj()
     X = numpy.array(X, dtype=dtype)
     sn_kaiser = numpy.array(sn_kaiser, dtype=dtype)
-    coef = numpy.linalg.lstsq(X, sn_kaiser)[0]  # (X \ sn_kaiser.H);
+    coef = numpy.linalg.lstsq(numpy.nan_to_num(X), numpy.nan_to_num(sn_kaiser))[0]
     alphas = coef
     if J > 1:
         alphas[0] = alphas[0]
@@ -94,20 +142,20 @@ def nufft_alpha_kb_fit(N, J, K, dtype):
         alphas[1:] = 0.0
     alphas = numpy.real(alphas)
     return (alphas, beta)
- 
- 
+
+
 def kaiser_bessel(x, J, alpha, kb_m, K_N):
     if K_N != 2:
         kb_m = 0
         alpha = 2.34 * J
     else:
         kb_m = 0
- 
+
         # Parameters in Fessler's code
         # because it was experimentally determined to be the best!
         # input: number of interpolation points
         # output: Kaiser_bessel parameter
- 
+
         jlist_bestzn = {2: 2.5,
                         3: 2.27,
                         4: 2.31,
@@ -123,7 +171,7 @@ def kaiser_bessel(x, J, alpha, kb_m, K_N):
                         14: 2.35,
                         15: 2.35,
                         16: 2.33}
- 
+
         if J in jlist_bestzn:
             alpha = J * jlist_bestzn[J]
         else:
@@ -133,13 +181,13 @@ def kaiser_bessel(x, J, alpha, kb_m, K_N):
             alpha = J * jlist_bestzn[p_J]
     kb_a = alpha
     return (kb_a, kb_m)
- 
- 
+
+
 def kaiser_bessel_ft(u, J, alpha, kb_m, d):
-    """
+    '''
     interpolation weight for given J/alpha/kb-m
-    """
- 
+    '''
+
     u = u * (1.0 + 0.0j)
     import scipy.special
     z = numpy.sqrt((2 * numpy.pi * (J / 2) * u) ** 2.0 - alpha ** 2.0)
@@ -148,17 +196,17 @@ def kaiser_bessel_ft(u, J, alpha, kb_m, d):
         scipy.special.iv(kb_m, alpha) * scipy.special.jv(nu, z) / (z ** nu)
     y = numpy.real(y)
     return y
- 
- 
+
+
 def nufft_scale1(N, K, alpha, beta, Nmid):
-    """
+    '''
     calculate image space scaling factor
-    """
+    '''
 #     import types
 #     if alpha is types.ComplexType:
     alpha = numpy.real(alpha)
 #         print('complex alpha may not work, but I just let it as')
- 
+
     L = len(alpha) - 1
     if L > 0:
         sn = numpy.zeros((N, 1))
@@ -172,8 +220,8 @@ def nufft_scale1(N, K, alpha, beta, Nmid):
     else:
         sn = numpy.dot(alpha, numpy.ones((N, 1)))
     return sn
- 
- 
+
+
 def nufft_scale(Nd, Kd, alpha, beta):
     dd = numpy.size(Nd)
     Nmid = (Nd - 1) / 2.0
@@ -186,21 +234,21 @@ def nufft_scale(Nd, Kd, alpha, beta):
                                beta[dimid], Nmid[dimid])
             sn = numpy.dot(list(sn), tmp.H)
     return sn
- 
- 
+
+
 def mat_inv(A):
 #     I = numpy.eye(A.shape[0], A.shape[1])
     B = scipy.linalg.pinv2(A)
     return B
- 
- 
+
+
 def nufft_T(N, J, K, alpha, beta):
-    """
+    '''
      equation (29) and (26)Fessler's paper
      create the overlapping matrix CSSC (diagonal dominent matrix)
      of J points
-     and then find out the pseudo-inverse of CSSC """
- 
+     and then find out the pseudo-inverse of CSSC '''
+
 #     import scipy.linalg
     L = numpy.size(alpha) - 1
 #     print('L = ', L, 'J = ',J, 'a b', alpha,beta )
@@ -214,18 +262,18 @@ def nufft_T(N, J, K, alpha, beta):
             alf2 = alpha[abs(l2)]
 #             if l2 < 0: alf2 = numpy.conj(alf2)
             tmp = overlapping_mat + beta * (l1 - l2)
- 
+
             tmp = dirichlet(1.0 * tmp / (1.0 * K / N))
             cssc = cssc + alf1 * alf2 * tmp
-        
-    return mat_inv(cssc)
- 
- 
+       
+    return cssc
+
+
 def iterate_sum(rr, alf, r1):
     rr = rr + alf * r1
     return rr
- 
- 
+
+
 def iterate_l1(L, alpha, arg, beta, K, N, rr):
     oversample_ratio = (1.0 * K / N)
     import time
@@ -238,16 +286,16 @@ def iterate_l1(L, alpha, arg, beta, K, N, rr):
         input_array = (arg + 1.0 * l1 * beta) / oversample_ratio
         r1 = dirichlet(input_array)
         rr = iterate_sum(rr, alf, r1)
- 
+
     return rr
- 
- 
+
+
 def nufft_r(om, N, J, K, alpha, beta):
-    """
+    '''
     equation (30) of Fessler's paper
- 
-    """
- 
+
+    '''
+
     M = numpy.size(om)  # 1D size
     gam = 2.0 * numpy.pi / (K * 1.0)
     nufft_offset0 = nufft_offset(om, J, K)  # om/gam -  nufft_offset , [M,1]
@@ -258,12 +306,12 @@ def nufft_r(om, N, J, K, alpha, beta):
     rr = numpy.zeros((J, M), dtype=numpy.float32)
     rr = iterate_l1(L, alpha, arg, beta, K, N, rr)
     return (rr, arg)
- 
- 
+
+
 def block_outer_prod(x1, x2):
-    """
+    '''
     multiply the amplitudes along different axes
-    """
+    '''
     (J1, M) = x1.shape
     (J2, M) = x2.shape
 #    print(J1,J2,M)
@@ -271,16 +319,16 @@ def block_outer_prod(x1, x2):
     xx1 = numpy.tile(xx1, (1, J2, 1))  # [J1 J2 M], emulating ndgrid
     xx2 = x2.reshape((1, J2, M), order='F')  # [1 J2 M] from [J2 M]
     xx2 = numpy.tile(xx2, (J1, 1, 1))  # [J1 J2 M], emulating ndgrid
- 
+
     y = xx1 * xx2
- 
+
     return y  # [J1 J2 M]
- 
- 
+
+
 def block_outer_sum(x1, x2):
-    """
+    '''
     update the new index after adding a new axis
-    """
+    '''
     (J1, M) = x1.shape
     (J2, M) = x2.shape
     xx1 = x1.reshape((J1, 1, M), order='F')  # [J1 1 M] from [J1 M]
@@ -289,23 +337,20 @@ def block_outer_sum(x1, x2):
     xx2 = numpy.tile(xx2, (J1, 1, 1))  # [J1 J2 M], emulating ndgrid
     y = xx1 + xx2
     return y  # [J1 J2 M]
- 
- 
+
+
 def crop_slice_ind(Nd):
-    """
+    '''
     Return the "slice" of Nd size.
     In Python language, "slice" means the index of a matrix.
     Slice can provide a smaller "view" of a larger matrix. 
-    """
+    '''
     return [slice(0, Nd[ss]) for ss in range(0, len(Nd))]
 
 
 class NUFFT:
     """
     The class pynufft computes Non-Uniform Fast Fourier Transform (NUFFT).
-    Using Fessler and Sutton's min-max interpolator algorithm.
-    
-    "Fessler JA, Sutton BP. Nonuniform fast Fourier transforms using min-max interpolation. IEEE Trans Signal Process 2003;51(2):560-574."
 
     Methods
     ----------
@@ -330,22 +375,12 @@ class NUFFT:
             y: M array.The output M points array.
              
     adjoint(y): adjoint NUFFT (Hermitian transpose (a.k.a. conjugate transpose) of NUFFT)
-                Note: adjoint is not the inverse of forward NUFFT,
-                because Non-uniform coordinates cause uneven density,
-                which must be compensated by "density compensation (DC)"
-                See inverse_DC() method
         Input:
             y: M array.The input M points array.
         Output:
             x: numpy.array. The output image on the regular grid.
             
     inverse_DC(y): inverse NUFFT using Pipe's sampling density compensation (James Pipe, Magn. Res. Med., 1999)
-                Note: adjoint is not the inverse of forward NUFFT,
-                because Non-uniform coordinates cause uneven density,
-                which must be compensated by "density compensation (DC)"
-                Note: A more accurate inverse NUFFT requires iterative reconstruction,
-                    such as conjugate gradient method (CG) or other optimization methods. 
-                
         Input: 
             y: M array.The input M points array.
         Output:
@@ -353,20 +388,21 @@ class NUFFT:
 
     """
     def __init__(self):
-        """
+        '''
         Construct the pynufft instance
-        """
-        self.dtype = numpy.complex64
+        '''
+        self.dtype=numpy.complex64
+        pass
 
     def plan(self, om, Nd, Kd, Jd):
-        """
+        '''
         Plan pyNufft
         Start from here
         om: M * ndims array: The locations of M non-uniform points in the ndims dimension. Normalized between [-pi, pi]
         Nd: tuple with ndims elements. Image matrix size. Example: (256,256)
         Kd: tuple with ndims elements. Oversampling k-space matrix size. Example: (512,512)
         Jd: tuple with ndims elements. The number of adjacent points in the interpolator. Example: (6,6)
-        """
+        '''
         
         self.debug = 0  # debug
 
@@ -400,8 +436,7 @@ class NUFFT:
     ###############################################################
         for dimid in range(0, dd):
             (tmp_alpha, tmp_beta) = nufft_alpha_kb_fit(
-                Nd[dimid], Jd[dimid], Kd[dimid],
-                                             self.dtype)
+                Nd[dimid], Jd[dimid], Kd[dimid])
             st.setdefault('alpha', []).append(tmp_alpha)
             st.setdefault('beta', []).append(tmp_beta)
         st['tol'] = 0
@@ -458,17 +493,31 @@ class NUFFT:
             ###############################################################
             # formula 30  of Fessler's paper
             ###############################################################
-#             if len(om.shape):
-#                 (r, arg) = nufft_r(om[:, ], N, J,
-#                                K, alpha, beta)  # large N approx [J? M]
-#             else:
+
             (r, arg) = nufft_r(om[:, dimid], N, J,
                                K, alpha, beta)  # large N approx [J? M]
 
             ###############################################################
             # formula 25  of Fessler's paper
             ###############################################################
-            c = numpy.dot(T, r)
+            
+#             T = numpy.linalg.pinv(T)
+#             c = numpy.dot(T, r)
+            
+            ###############################################################
+            # least square fitting r = T.dot(c)
+            ###############################################################            
+                        
+            tmp_q, tmp_r = numpy.linalg.qr(T)
+            
+            tmp_r = numpy.linalg.inv(tmp_r)
+            
+            tmp_q = tmp_q.conj().T
+            
+
+            tmp_t = tmp_r.dot(tmp_q)
+            
+            c = tmp_t.dot(r)
 
             ###############################################################
             # grid intervals in radius
@@ -480,9 +529,6 @@ class NUFFT:
             ud[dimid] = phase * c
             # indices into oversampled FFT components
             # FORMULA 7
-#             if len(om.shape) == 1:
-#                 koff = nufft_offset(om[:, ], J, K)
-#             else:
             koff = nufft_offset(om[:, dimid], J, K)
             # FORMULA 9, find the indexes on Kd grids, of each M point
             kd[dimid] = numpy.mod(
@@ -492,9 +538,26 @@ class NUFFT:
                         J + 1) * 1.0,
                     koff),
                 K)
-            if dimid > 0:  # trick: pre-convert these indices into offsets!
+            """
+                JML: For GPU computing, indexing must be C-order (row-major)
+                In-place reshaping in F-order does not work for pyopencl.
+                Multi-dimensional cuda or opencl arrays are row-major (order="C"), which  starts from the higher dimensions.
+                This simplifies the interpolation step, where reshaping to F-order is too costy if not impossible.
+                Note: This is different from the above MATLAB indexing(for fortran order, colum major, low-dimension first 
+            """
+
+            if dimid < dd - 1:  # trick: pre-convert these indices into offsets!
                 #            ('trick: pre-convert these indices into offsets!')
-                kd[dimid] = kd[dimid] * numpy.prod(Kd[0:dimid]) - 1
+                kd[dimid] = kd[dimid] * numpy.prod(Kd[dimid+1:dd]) - 1 
+            """
+            Note: F-order matrices must be reshaped into an 1D array before sparse matrix-vector multiplication.
+            The original F-order (in Fessler and Sutton 2003) is not suitable for GPU array (C-order).
+            In-place reshaping in F-order works for numpy.
+            
+            """
+#             if dimid > 0:  # trick: pre-convert these indices into offsets!
+#                 #            ('trick: pre-convert these indices into offsets!')
+#                 kd[dimid] = kd[dimid] * numpy.prod(Kd[0:dimid]) - 1         
 
         kk = kd[0]  # [J1 M] # pointers to indices
         uu = ud[0]  # [J1 M]
@@ -519,7 +582,7 @@ class NUFFT:
         # convert array to list
         csrdata = numpy.reshape(uu, (Jprod * M, ), order='F')
 
-        # row indices, from 1 to M, convert array to list
+        # row indices, from 1 to M convert array to list
         rowindx = numpy.reshape(mm, (Jprod * M, ), order='F')
 
         # colume indices, from 1 to prod(Kd), convert array to list
@@ -530,50 +593,157 @@ class NUFFT:
 
         # Build sparse matrix (interpolator)
         st['p'] = scipy.sparse.csr_matrix((csrdata, (rowindx, colindx)),
-                                           shape=csrshape)#.tocsr()
+                                           shape=csrshape)#.tocsc()
+        
         # Note: the sparse matrix requires the following linear phase,
         #       which moves the image to the center of the image
-
+        st['p'].prune()
         self.st = st
         self.Nd = self.st['Nd']  # backup
         self.sn = self.st['sn']  # backup
         self.ndims=len(self.st['Nd']) # dimension
         self.linear_phase(n_shift)  
-        
         # calculate the linear phase thing
-        
-        self.st['W'] = self.pipe_density()
- 
+        self.st['pH'] = self.st['p'].getH().tocsr()
+        self.st['pHp']=  self.st['pH'].dot(self.st['p'])
+        self.NdCPUorder, self.KdCPUorder, self.nelem =     indxmap_copy(self.st['Nd'], self.st['Kd'])
+#         self.st['W'] = self.pipe_density()
         self.shape = (self.st['M'], numpy.prod(self.st['Nd']))
         
+#         print('untrimmed',self.st['pHp'].nnz)
+#         self.truncate_selfadjoint(1e-1)
+#         print('trimmed', self.st['pHp'].nnz)
  
-    def pipe_density(self):
-        """
+    def _matvec(self, x_vec):
+        '''
+        dot operation provided for scipy.sparse.linalg
+        wrapper of self.forward()
+        '''
+        
+        x2 = numpy.reshape(x_vec, self.st['Nd'], order='F')
+        
+        return self.forward(x2) 
+    def _adjoint(self,  y):
+        '''
+        
+        '''
+        x = self.adjoint(y)
+        print('xshape',x.shape)
+        x_vec = numpy.reshape(x, (numpy.prod(self.st['Nd']),), order='F')
+        print('x_vec.shape',x_vec.shape)
+        return x_vec    
+    def solver(self,y, solver=None, *args, **kwargs):
+#         print(solver)
+#         print(solver == 'dc')
+#         print(solver  ==  'cg' or 'bicgstab')
+#         print(solver  == 'bicgstab')
+
+        if ('cgs' == solver) or ('qmr' ==solver) or ('minres'==solver):
+            raise TypeError(solver +' requires real symmetric matrix')
+        
+
+        if None ==  solver:
+            solver  =   'cg'
+     
+
+        if 'dc'   ==  solver:
+            """
+            Density compensation method
+            self.st['W'] will be computed if doesn't exist
+            If self.st['W'] exist then x2 = self.adjoint(self.st['W']*y)
+            input: 
+                y: (M,) array
+            output:
+                x2: Nd array
+            """
+            print(solver)
+#             try:
+# 
+#                 x = self.adjoint(self.st['W']*y)
+# 
+#             except: 
+
+            self.st['W'] = self.pipe_density( *args, **kwargs)
+
+            x = self.adjoint(self.st['W']*y)
+
+            return x
+        elif ('lsmr'==solver) or ('lsqr'==solver):
+                """
+                Assymetric matrix A
+                Minimize L2 norm of |y-Ax|_2 or |y-Ax|_2+|x|_2
+                Very stable 
+                """
+                A = self.st['p']
+                methods={'lsqr':scipy.sparse.linalg.lsqr,
+                                    'lsmr':scipy.sparse.linalg.lsmr,}
+                k2 = methods[solver](A,  y, *args, **kwargs)#,show=True)
+  
+     
+                xx = self.k2xx(self.vec2k(k2[0]))
+                x= xx/self.st['sn']
+                return x#, k2[1:]        
+        else:
+            
+            A =self.st['p'].getH().dot(self.st['p'])
+            
+            methods={'cg':scipy.sparse.linalg.cg,   
+                                 'bicgstab':scipy.sparse.linalg.bicgstab, 
+                                 'bicg':scipy.sparse.linalg.bicg, 
+#                                  'cgs':scipy.sparse.linalg.cgs, 
+                                 'gmres':scipy.sparse.linalg.gmres, 
+                                 'lgmres':scipy.sparse.linalg.lgmres, 
+#                                  'minres':scipy.sparse.linalg.minres, 
+#                                  'qmr':scipy.sparse.linalg.qmr, 
+                                 }
+            k2 = methods[solver](A,  self.st['p'].getH().dot(y), *args, **kwargs)#,show=True)
+
+
+            xx = self.k2xx(self.vec2k(k2[0]))
+            x= xx/self.st['sn']
+            return x#     , k2[1:]                               
+#             return x2
+    
+    def pipe_density(self,maxiter):
+        '''
         Create the density function by iterative solution
         Generate pHp matrix
-        """
+        '''
 #         W = pipe_density(self.st['p'])
         # sampling density function
-        
-        W = numpy.ones((self.st['M'],),dtype=self.dtype)
-        V1= self.st['p'].getH()
-    #     VVH = V.dot(V.getH()) 
-        
-        for pp in range(0,1):
-#             E = self.st['p'].dot(V1.dot(W))
-            E = self.forward(self.adjoint(W))
-            W = W/E
-        
-#         pHp = V1.dot(self.st['p'])
-        # Precomputing the regridding matrix * interpolation matrix
-#         W_diag = scipy.sparse.diags(W,0, dtype=dtype,format="csr")
-#         pHWp = V1.dot(W_diag.dot(self.st['p']))
+
+        try:
+            if maxiter < self.last_iter:
+            
+                W = self.st['W']
+            else: #maxiter > self.last_iter
+                W = self.st['W']
+                for pp in range(0,maxiter - self.last_iter):
+ 
+    #             E = self.st['p'].dot(V1.dot(W))
+                    E = self.forward(self.adjoint(W))
+                    W = (W/E)             
+                self.last_iter = maxiter   
+        except:
+       
+                   
+            W = numpy.ones((self.st['M'],),dtype=self.dtype)
+    #         V1= self.st['p'].getH()
+        #     VVH = V.dot(V.getH()) 
+            
+            for pp in range(0,maxiter):
+    #             E = self.st['p'].dot(V1.dot(W))
+ 
+                E = self.forward(self.adjoint(W))
+                W = (W/E)
+
+            self.last_iter = maxiter
         
         return W
         # density of the k-space, reduced size
 
     def linear_phase(self, n_shift):
-        """
+        '''
         This method shifts the interpolation matrix self.st['p0']
         and create a shifted interpolation matrix self.st['p']
         
@@ -589,7 +759,7 @@ class NUFFT:
         IndexError
             If an element of `axes` is larger than than the number of axes of `a`.        
             
-        """
+        '''
         om = self.st['om']
         M = self.st['M']
         final_shifts = tuple(
@@ -610,76 +780,54 @@ class NUFFT:
 
         self.st['p'] = scipy.sparse.diags(phase, 0).dot(self.st['p'])
         return 0  # shifted sparse matrix
+    def truncate_selfadjoint(self, tol):
+        indix=numpy.abs(self.st['pHp'].data)< tol
+        self.st['pHp'].data[indix]=0
 
-    def _matvec(self, x_vec):
-        '''
-        dot operation provided for scipy.sparse.linalg
-        wrapper of self.forward()
-        '''
-        
-        x2 = numpy.reshape(x_vec, self.st['Nd'], order='F')
-        
-        return self.forward(x2)
-    def _adjoint(self,  y):
-        '''
-        
-        '''
-        x = self.adjoint(y)
-        print('xshape',x.shape)
-        x_vec = numpy.reshape(x, (numpy.prod(self.st['Nd']),), order='F')
-        print('x_vec.shape',x_vec.shape)
-        return x_vec
+        self.st['pHp'].eliminate_zeros()
 
     def forward(self, x):
-        """
+        '''
         This method computes the Non-Uniform Fast Fourier Transform.
         input:
             x: Nd array
         output:
             y: (M,) array
-        """
+        '''
         y = self.k2y(self.xx2k(self.x2xx(x)))
 
         return y
 
     def adjoint(self, y):
-        """
-        adjoint method (not inverse, see inverse_DC() method) computes the adjoint transform
+        '''
+        backward method (not inverse, see inverse_DC() method) computes the adjoint transform
         (conjugate transpose, or Hermitian transpose) of forward
         Non-Uniform Fast Fourier Transform.
         input:
             y: non-uniform data, (M,) array
         output:
             x: adjoint image, Nd array
-        """        
+        '''        
         x = self.xx2x(self.k2xx(self.y2k(y)))
 
         return x
-    def inverse_cg(self, y):
-        '''
-        conjugate inverse iteration
-        '''
-        
-#         b = self.st['p'].getH().dot(y)  
-#         
-#         A =  (self.st['p'].getH().dot(self.st['p'])).tocsc()
-#         A.eliminate_zeros()        
-#        from scipy.sparse import csc_matrix, linalg as sla
-#        lu = sla.spilu(A)
-#         import scipy.sparse.linalg as splinalg        
-#         b2 = splinalg.spsolve(A, b, permc_spec="MMD_AT_PLUS_A")
-#         b2 = splinalg.bicg(A, b, tol=1e-2,maxiter=200 )[0]
-        b2 = scipy.sparse.linalg.lsmr(self.st['p'], y, maxiter=300)[0]
-        x = (self.k2xx(self.vec2k(b2)))/self.st['sn'] 
-         
-        return x
+
     def selfadjoint(self, x):
 
-        x2 = self.adjoint(self.forward(x))
+#         x2 = self.adjoint(self.forward(x))
         
-#         x2 = self.xx2x(self.k2xx(self.k2k(self.xx2k(self.x2xx(x)))))
+        x2 = self.xx2x(self.k2xx(self.k2k(self.xx2k(self.x2xx(x)))))
+#         x2 = self.k2xx(self.k2k(self.xx2k(x)))
         
         return x2
+    def forwardbackward2(self, x):
+
+#         x2 = self.adjoint(self.forward(x))
+        
+#         x2 = self.xx2x(self.k2xx(self.k2k_diag(self.xx2k(self.x2xx(x)))))
+        x2 = self.k2xx(self.k2k_diag(self.xx2k(x)))
+        
+        return x2    
     def forward_modulate_adjoint(self, x):
         
         x2 = self.adjoint(self.st['W']*self.forward(x))
@@ -688,109 +836,101 @@ class NUFFT:
         
         return x2
     def inverse_DC(self,y):
-        """
+        '''
         reconstruction of non-uniform data y into image
         using density compensation method
         input: 
             y: (M,) array
         output:
             x2: Nd array
-        """
+        '''
         x2 = self.adjoint(self.st['W']*y)
         return x2
     def x2xx(self, x):
-        """
-        
-        scaling of the image, generate Nd array
-        Scaling of image is equivalent to convolution in k-space.
-        Thus, scaling improves the accuracy of k-space interpolation.
-          
+        '''
+        scaling of the image, generate Nd
         input:
             x: 2D image
         output:
             xx: scaled 2D image
-        """
+        '''
         xx = x * self.st['sn']
         return xx
     def y2k_DC(self,y):
-        """
-        Density compensated, adjoint transform of the non-uniform data (y: (M,) array) to k-spectrum (Kd array)
-                Note: adjoint is not the inverse of forward NUFFT,
-                because Non-uniform coordinates cause uneven density,
-                which must be compensated by "density compensation (DC)"
+        '''
+        converting the non-uniform data (y: (M,) array) to k-spectrum (Kd array)
         k-spectrum requires another numpy.fft.fftshift to move the k-space center.
-        
         input:
             y: (M,) array
         output
             k: Kd array
-        """
+        '''
         k = self.y2k(y*self.st['W'])
         return k
     def xx2k(self, xx):
-        """
+        '''
         fft of the image
         input:
             xx:    scaled 2D image
         output:
             k:    k-space grid
-        """
-        dd = numpy.size(self.st['Kd'])      
-        output_x = numpy.zeros(self.st['Kd'], dtype=self.dtype)
-        output_x[crop_slice_ind(xx.shape)] = xx
-        k = numpy.fft.fftn(output_x, self.st['Kd'], range(0, dd))
+        '''
+#         dd = numpy.size(self.st['Kd'])      
+        output_x = numpy.zeros(self.st['Kd'], dtype=self.dtype,order='C')
+#         output_x[crop_slice_ind(xx.shape)] = xx
+        output_x.flat[self.KdCPUorder]=xx.flat[self.NdCPUorder]
+        k = numpy.fft.fftn(output_x, self.st['Kd'], range(0, self.ndims))
 
         return k
     def k2vec(self,k):
         
-        k_vec = numpy.reshape(k, (numpy.prod(self.st['Kd']), ), order='F')
+        k_vec = numpy.reshape(k, (numpy.prod(self.st['Kd']), ), order='C')
    
         return k_vec
     
     def vec2y(self,k_vec):
-        """
+        '''
         gridding: 
         
-        """
+        '''
         y = self.st['p'].dot(k_vec)
         
         return y
     def k2y(self, k):
-        """
+        '''
         2D k-space grid to 1D array
         input:
             k:    k-space grid,
         output:
             y: non-Cartesian data
-        """
+        '''
         
         y = self.vec2y(self.k2vec(k)) #numpy.reshape(self.st['p'].dot(Xk), (self.st['M'], ), order='F')
         
         return y
     def y2vec(self, y):
-        """
+        '''
        regridding non-uniform data, (unsorted vector)
-        """
-        k_vec = self.st['p'].getH().dot(y)
+        '''
+#         k_vec = self.st['p'].getH().dot(y)
+        k_vec = self.st['pH'].dot(y)
         
         return k_vec
     def vec2k(self, k_vec):
-        """
+        '''
         Sorting the vector to k-spectrum Kd array
-        """
-        k = numpy.reshape(k_vec, self.st['Kd'], order='F')
+        '''
+        k = numpy.reshape(k_vec, self.st['Kd'], order='C')
         
         return k
     
     def y2k(self, y):
-        """
-        Conjugate transpose of min-max interpolator
-        
+        '''
         input:
             y:    non-uniform data, (M,) array
         output:
             k:    k-spectrum on the Kd grid (Kd array)
-        """
+        '''
         
         k_vec = self.y2vec(y)
         
@@ -799,38 +939,42 @@ class NUFFT:
         return k
 
     def k2xx(self, k):
-        """
+        '''
         Transform regular k-space (Kd array) to scaled image xx (Nd array)
-        """
-        dd = numpy.size(self.st['Kd'])
+        '''
+#         dd = numpy.size(self.st['Kd'])
         
-        xx = numpy.fft.ifftn(k, self.st['Kd'], range(0, dd))
-        
-        xx = xx[crop_slice_ind(self.st['Nd'])]
+        k = numpy.fft.ifftn(k, self.st['Kd'], range(0, self.ndims))
+        xx= numpy.zeros(self.st['Nd'],dtype=dtype, order='C')
+        xx.flat[self.NdCPUorder]=k.flat[self.KdCPUorder]
+#         xx = xx[crop_slice_ind(self.st['Nd'])]
         return xx
 
     def xx2x(self, xx):
-        """
+        '''
         Rescaled image xx (Nd array) to x (Nd array)
-        
-        Thus, rescaling improves the accuracy of k-space interpolation.
-        
-        """
+        '''
         x = self.x2xx(xx)
         return x
     def k2k(self, k):
-        """
+        '''
         gridding and regridding of k-spectrum 
         input 
             k: Kd array, 
         output 
             k: Kd array
-        """
-        Xk = numpy.reshape(k, (numpy.prod(self.st['Kd']), ), order='F')
-#         y = numpy.reshape(self.st['p'].dot(Xk), (self.st['M'], ), order='F')        
+        '''
+
+        Xk = self.k2vec(k)
+         
         k = self.st['pHp'].dot(Xk)
-        k = numpy.reshape(k, self.st['Kd'], order='F')
+        k = self.vec2k(k)
         return k
+    
+    def k2k_diag(self,k):
+        k = k*self.st['w']
+        return k
+
 
 def test_installation():
     '''
@@ -896,23 +1040,34 @@ def test_2D():
     print('setting non-uniform data')
     print('y is an (M,) list',type(y), y.shape)
     
-    kspectrum = NufftObj.y2k_DC(y)
-    shifted_kspectrum = numpy.fft.fftshift(kspectrum, axes=(0,1))
-    print('getting the k-space spectrum, shape =',kspectrum.shape)
+#     kspectrum = NufftObj.xx2k( NufftObj.solver(y,solver='bicgstab',maxiter = 100))
+    image_restore = NufftObj.solver(y, solver='cg',maxiter=10)
+    shifted_kspectrum = numpy.fft.fftshift( numpy.fft.fftn( numpy.fft.fftshift(image_restore)))
+    print('getting the k-space spectrum, shape =',shifted_kspectrum.shape)
     print('Showing the shifted k-space spectrum')
     
     matplotlib.pyplot.imshow( shifted_kspectrum.real, cmap = matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=-100, vmax=100))
     matplotlib.pyplot.title('shifted k-space spectrum')
     matplotlib.pyplot.show()
     
-    image2 = NufftObj.adjoint(y * NufftObj.st['W'])
-
-
+    image2 = NufftObj.solver(y, 'dc', maxiter = 25)
+  
+  
     matplotlib.pyplot.imshow(image2.real, cmap=matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1))
     matplotlib.pyplot.show()
-
-    image2 = NufftObj.inverse_cg(y)
-    matplotlib.pyplot.imshow(image2.real, cmap=matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1))
+    maxiter =4
+    counter = 1
+    for solver in ('dc','bicg','bicgstab','cg', 'gmres','lgmres',  'lsmr', 'lsqr'):
+        if 'lsqr' == solver:
+            image2 = NufftObj.solver(y, solver,iter_lim=maxiter)
+        else:
+            image2 = NufftObj.solver(y, solver,maxiter=maxiter)
+#     image2 = NufftObj.solver(y, solver='bicgstab',maxiter=30)
+        matplotlib.pyplot.subplot(2,4,counter)
+        matplotlib.pyplot.imshow(image2.real, cmap=matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1))
+        matplotlib.pyplot.title(solver)
+        print(counter, solver)
+        counter += 1
     matplotlib.pyplot.show()
 
 def test_asoperator():
@@ -965,7 +1120,7 @@ def test_asoperator():
     
     A = scipy.sparse.linalg.LinearOperator(NufftObj.shape, matvec=NufftObj._matvec, rmatvec=NufftObj._adjoint, dtype=NufftObj.dtype)
 #     scipy.sparse.linalg.aslinearoperator(A)
-    print(A.shape)
+    
     print(type(A))
 #     y1 = A.matvec(x_vec)
     print('y1.shape',numpy.shape(y1))  
