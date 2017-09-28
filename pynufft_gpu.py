@@ -86,7 +86,7 @@ import scipy.linalg
 import skcuda.fft as cu_fft
 import skcuda.misc as cu_misc
 import skcuda.linalg as cu_linalg
-cu_linalg.init()
+# cu_linalg.init()
 cuda_cffi.cusparse.init()
 #cuda_cffi.cusolver.init()
 

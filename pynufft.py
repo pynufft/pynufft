@@ -380,7 +380,7 @@ class NUFFT:
         Output:
             x: numpy.array. The output image on the regular grid.
             
-    inverse_DC(y): inverse NUFFT using Pipe's sampling density compensation (James Pipe, Magn. Res. Med., 1999)
+    inverse_DC(y) deprecate: inverse NUFFT using Pipe's sampling density compensation (James Pipe, Magn. Res. Med., 1999)
         Input: 
             y: M array.The input M points array.
         Output:
@@ -597,7 +597,7 @@ class NUFFT:
         
         # Note: the sparse matrix requires the following linear phase,
         #       which moves the image to the center of the image
-        st['p'].prune()
+        st['p'].prune() # Scipy sparse: removing empty space after all non-zero elements.
         self.st = st
         self.Nd = self.st['Nd']  # backup
         self.sn = self.st['sn']  # backup
@@ -633,76 +633,9 @@ class NUFFT:
         print('x_vec.shape',x_vec.shape)
         return x_vec    
     def solver(self,y, solver=None, *args, **kwargs):
-#         print(solver)
-#         print(solver == 'dc')
-#         print(solver  ==  'cg' or 'bicgstab')
-#         print(solver  == 'bicgstab')
+        import _solver.solver_cpu
+        return _solver.solver_cpu.solver(self,  y,  solver, *args, **kwargs)
 
-        if ('cgs' == solver) or ('qmr' ==solver) or ('minres'==solver):
-            raise TypeError(solver +' requires real symmetric matrix')
-        
-
-        if None ==  solver:
-            solver  =   'cg'
-     
-
-        if 'dc'   ==  solver:
-            """
-            Density compensation method
-            self.st['W'] will be computed if doesn't exist
-            If self.st['W'] exist then x2 = self.adjoint(self.st['W']*y)
-            input: 
-                y: (M,) array
-            output:
-                x2: Nd array
-            """
-            print(solver)
-#             try:
-# 
-#                 x = self.adjoint(self.st['W']*y)
-# 
-#             except: 
-
-            self.st['W'] = self.pipe_density( *args, **kwargs)
-
-            x = self.adjoint(self.st['W']*y)
-
-            return x
-        elif ('lsmr'==solver) or ('lsqr'==solver):
-                """
-                Assymetric matrix A
-                Minimize L2 norm of |y-Ax|_2 or |y-Ax|_2+|x|_2
-                Very stable 
-                """
-                A = self.st['p']
-                methods={'lsqr':scipy.sparse.linalg.lsqr,
-                                    'lsmr':scipy.sparse.linalg.lsmr,}
-                k2 = methods[solver](A,  y, *args, **kwargs)#,show=True)
-  
-     
-                xx = self.k2xx(self.vec2k(k2[0]))
-                x= xx/self.st['sn']
-                return x#, k2[1:]        
-        else:
-            
-            A =self.st['p'].getH().dot(self.st['p'])
-            
-            methods={'cg':scipy.sparse.linalg.cg,   
-                                 'bicgstab':scipy.sparse.linalg.bicgstab, 
-                                 'bicg':scipy.sparse.linalg.bicg, 
-#                                  'cgs':scipy.sparse.linalg.cgs, 
-                                 'gmres':scipy.sparse.linalg.gmres, 
-                                 'lgmres':scipy.sparse.linalg.lgmres, 
-#                                  'minres':scipy.sparse.linalg.minres, 
-#                                  'qmr':scipy.sparse.linalg.qmr, 
-                                 }
-            k2 = methods[solver](A,  self.st['p'].getH().dot(y), *args, **kwargs)#,show=True)
-
-
-            xx = self.k2xx(self.vec2k(k2[0]))
-            x= xx/self.st['sn']
-            return x#     , k2[1:]                               
-#             return x2
     
     def pipe_density(self,maxiter):
         '''
@@ -800,7 +733,7 @@ class NUFFT:
 
     def adjoint(self, y):
         '''
-        backward method (not inverse, see inverse_DC() method) computes the adjoint transform
+        backward method (not inverse, see solver() method) computes the adjoint transform
         (conjugate transpose, or Hermitian transpose) of forward
         Non-Uniform Fast Fourier Transform.
         input:
@@ -816,36 +749,11 @@ class NUFFT:
 
 #         x2 = self.adjoint(self.forward(x))
         
-        x2 = self.xx2x(self.k2xx(self.k2k(self.xx2k(self.x2xx(x)))))
-#         x2 = self.k2xx(self.k2k(self.xx2k(x)))
+        x2 = self.xx2x(self.k2xx(self.k2y2k(self.xx2k(self.x2xx(x)))))
+#         x2 = self.k2xx(self.k2y2k(self.xx2k(x)))
         
         return x2
-    def forwardbackward2(self, x):
 
-#         x2 = self.adjoint(self.forward(x))
-        
-#         x2 = self.xx2x(self.k2xx(self.k2k_diag(self.xx2k(self.x2xx(x)))))
-        x2 = self.k2xx(self.k2k_diag(self.xx2k(x)))
-        
-        return x2    
-    def forward_modulate_adjoint(self, x):
-        
-        x2 = self.adjoint(self.st['W']*self.forward(x))
-        
-#         x2 = self.xx2x(self.k2xx(self.k2k(self.xx2k(self.x2xx(x)))))
-        
-        return x2
-    def inverse_DC(self,y):
-        '''
-        reconstruction of non-uniform data y into image
-        using density compensation method
-        input: 
-            y: (M,) array
-        output:
-            x2: Nd array
-        '''
-        x2 = self.adjoint(self.st['W']*y)
-        return x2
     def x2xx(self, x):
         '''
         scaling of the image, generate Nd
@@ -856,17 +764,7 @@ class NUFFT:
         '''
         xx = x * self.st['sn']
         return xx
-    def y2k_DC(self,y):
-        '''
-        converting the non-uniform data (y: (M,) array) to k-spectrum (Kd array)
-        k-spectrum requires another numpy.fft.fftshift to move the k-space center.
-        input:
-            y: (M,) array
-        output
-            k: Kd array
-        '''
-        k = self.y2k(y*self.st['W'])
-        return k
+
     def xx2k(self, xx):
         '''
         fft of the image
@@ -956,7 +854,7 @@ class NUFFT:
         '''
         x = self.x2xx(xx)
         return x
-    def k2k(self, k):
+    def k2y2k(self, k):
         '''
         gridding and regridding of k-spectrum 
         input 
@@ -971,9 +869,6 @@ class NUFFT:
         k = self.vec2k(k)
         return k
     
-    def k2k_diag(self,k):
-        k = k*self.st['w']
-        return k
 
 
 def test_installation():
@@ -1005,7 +900,7 @@ def test_2D():
     import matplotlib.pyplot
     # load example image
 #     image = numpy.loadtxt(DATA_PATH +'phantom_256_256.txt')
-    image = scipy.misc.face(gray=True)
+    image = scipy.misc.ascent()
     
     image = scipy.misc.imresize(image, (256,256))
     
@@ -1049,13 +944,20 @@ def test_2D():
     matplotlib.pyplot.imshow( shifted_kspectrum.real, cmap = matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=-100, vmax=100))
     matplotlib.pyplot.title('shifted k-space spectrum')
     matplotlib.pyplot.show()
-    
     image2 = NufftObj.solver(y, 'dc', maxiter = 25)
+    image3 = NufftObj.solver(y, 'L1LAD',maxiter=100, rho= 1)
+    image4 = NufftObj.solver(   y,'L1OLS',maxiter=100, rho= 1)
+    matplotlib.pyplot.subplot(1,3,1)
+    matplotlib.pyplot.imshow(image, cmap=matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1))
+    matplotlib.pyplot.subplot(1,3,2)
+    matplotlib.pyplot.imshow(image3.real, cmap=matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1))
+    matplotlib.pyplot.subplot(1,3,3)
+    matplotlib.pyplot.imshow(image4.real, cmap=matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1))
+    matplotlib.pyplot.show()  
   
-  
-    matplotlib.pyplot.imshow(image2.real, cmap=matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1))
-    matplotlib.pyplot.show()
-    maxiter =4
+#     matplotlib.pyplot.imshow(image2.real, cmap=matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1))
+#     matplotlib.pyplot.show()
+    maxiter =25
     counter = 1
     for solver in ('dc','bicg','bicgstab','cg', 'gmres','lgmres',  'lsmr', 'lsqr'):
         if 'lsqr' == solver:
