@@ -1,9 +1,9 @@
 R="""
-KERNEL void cAbsVec( GLOBAL_MEM const ${ctype} *indata, 
-                                    GLOBAL_MEM            ${ctype} *outdata)
+KERNEL void cAbsVec( GLOBAL_MEM const float2 *indata, 
+                                    GLOBAL_MEM            float2 *outdata)
 {
     const int gid =  get_global_id(0);
-    ${ctype} tmp = indata[gid];
+    float2 tmp = indata[gid];
     tmp.x = sqrt( tmp.x*tmp.x+tmp.y*tmp.y);
     //tmp.x =  sqrt(tmp.x);
     tmp.y = 0.0;

@@ -1,11 +1,11 @@
 from numpy import complex64
 R="""
-KERNEL void cAnisoShrink(const  ${ctype} threshold,
-                                GLOBAL_MEM const ${ctype} *indata,
-                                GLOBAL_MEM  ${ctype} *outdata)
+KERNEL void cAnisoShrink(const  float2 threshold,
+                                GLOBAL_MEM const float2 *indata,
+                                GLOBAL_MEM  float2 *outdata)
 {
 const uint gid =  get_global_id(0); 
-${ctype} tmp; // temporay register
+float2 tmp; // temporay register
 tmp = indata[gid];
 //float zero = 0.0;
 //tmp.x=sign(tmp.x)*max(fabs(tmp.x)-threshold.x, zero); 

@@ -1,8 +1,8 @@
 R="""
 KERNEL void cMultiplyConjVec( 
-        GLOBAL_MEM ${ctype} *a,
-        GLOBAL_MEM ${ctype} *b,
-        GLOBAL_MEM ${ctype} *dest)
+        GLOBAL_MEM float2 *a,
+        GLOBAL_MEM float2 *b,
+        GLOBAL_MEM float2 *dest)
 {// dest[i]=conj(a[i]) * b[i] 
 const int i=get_global_id(0);
 dest[i].x=a[i].x*b[i].x+a[i].y*b[i].y;

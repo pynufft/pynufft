@@ -1,8 +1,8 @@
 R="""
 KERNEL void cAddVec( 
-        GLOBAL_MEM ${ctype} *a,
-        GLOBAL_MEM ${ctype} *b,
-        GLOBAL_MEM ${ctype} *dest)
+        GLOBAL_MEM float2 *a,
+        GLOBAL_MEM float2 *b,
+        GLOBAL_MEM float2 *dest)
 {const int i = get_global_id(0);
 dest[i]= a[i]+b[i];
 };

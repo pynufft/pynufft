@@ -1136,5 +1136,5 @@ def test_init():
 
 if __name__ == '__main__':
     import cProfile
-    test_init()
-#     cProfile.run('test_init()')
+#    test_init()
+    cProfile.run('test_init()')
