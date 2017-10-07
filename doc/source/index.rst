@@ -11,6 +11,8 @@ Welcome to pynufft's Documentation
    intro
    getstart
    misc
+   eg
+   versionhistory
    api
 
 

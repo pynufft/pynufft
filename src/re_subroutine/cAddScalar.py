@@ -1,3 +1,11 @@
+"""
+cAddScalar
+=================================
+KERNEL void cAddScalar(const float2 CA,   
+                    GLOBAL_MEM float2 *CX)
+Offload add to heterogeneous devices.
+"""
+
 from numpy import complex64
 R="""
 KERNEL void cAddScalar(const float2 CA,

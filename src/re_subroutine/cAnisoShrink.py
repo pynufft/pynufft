@@ -1,3 +1,12 @@
+"""
+cAnisoShrink
+======================================
+KERNEL void cAnisoShrink(const  float2 threshold,
+                                GLOBAL_MEM const float2 *indata,
+                                GLOBAL_MEM  float2 *outdata)
+"""
+
+
 from numpy import complex64
 R="""
 KERNEL void cAnisoShrink(const  float2 threshold,

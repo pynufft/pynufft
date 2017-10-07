@@ -1,0 +1,17 @@
+using OpenCL API
+device =  <pyopencl.Device 'GeForce GTX 965M' on 'NVIDIA CUDA' at 0x27ba060>
+loading image...
+x close? =  True
+xx close? =  True
+k close? =  True
+y close? =  True
+k2 close? =  True
+x close? =  True
+0.022795820236206056
+0.003126685619354248
+gy close? =  True
+acceleration= 7.2907298690662925
+L1LAD
+L1LAD
+21.105348587036133 2.6026511192321777
+acceleration= 8.1091731546649

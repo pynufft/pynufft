@@ -1,3 +1,12 @@
+"""
+KERNEL void cSelect(
+    GLOBAL_MEM const  int *order1,
+    GLOBAL_MEM const  int *order2,
+    GLOBAL_MEM const float2 *indata,
+    GLOBAL_MEM       float2 *outdata)
+"""
+
+
 R="""
 KERNEL void cSelect(
     GLOBAL_MEM const  int *order1,

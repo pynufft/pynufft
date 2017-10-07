@@ -7,4 +7,5 @@ Miscellaneousness
    misc/matlab
    misc/dft
    misc/fft
+   misc/fftw
    

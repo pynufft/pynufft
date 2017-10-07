@@ -1,3 +1,8 @@
+"""
+KERNEL void cAbsVec( GLOBAL_MEM const float2 *indata, 
+                                GLOBAL_MEM  float2 *outdata)
+Offload abs to heterogeneous devices.
+"""
 R="""
 KERNEL void cAbsVec( GLOBAL_MEM const float2 *indata, 
                                     GLOBAL_MEM            float2 *outdata)

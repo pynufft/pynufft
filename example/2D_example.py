@@ -14,11 +14,11 @@ except:
     print('warning: pynufft  not found in system library')
     print('Try to import the local pynufft now')
     import sys
-    sys.path.append('../pynufft')
-    from pynufft import pynufft
+    sys.path.append('../')
+    from pynufft import NUFFT
     import pkg_resources
 
-    DATA_PATH = pkg_resources.resource_filename('pynufft', '../data/')
+    DATA_PATH = pkg_resources.resource_filename('pynufft', './data/')
 
 
 
@@ -53,7 +53,7 @@ matplotlib.pyplot.xlabel('axis 0')
 matplotlib.pyplot.ylabel('axis 1')
 matplotlib.pyplot.show()
 
-NufftObj = pynufft()
+NufftObj = NUFFT()
 NufftObj.plan(om, Nd, Kd, Jd)
 
 y = NufftObj.forward(image)

@@ -1,3 +1,17 @@
+"""
+cSparseMatVec
+==============================================
+KERNEL void cSparseMatVec(    
+      const    uint    dim,
+      GLOBAL_MEM const uint *rowDelimiters, 
+      GLOBAL_MEM const uint *cols,
+      GLOBAL_MEM const float2 *val,
+      GLOBAL_MEM const float2 *vec, 
+      GLOBAL_MEM float2 *out)
+      
+Offload Sparse Matrix Vector Multiplication to heterogeneous devices.
+"""
+
 R="""
 KERNEL void cSparseMatVec(    
       const    uint    dim,

@@ -1,44 +1,49 @@
-
+"""
+HSA solvers
+======================================
+"""
 import numpy, scipy
 dtype = numpy.complex64
 # def  L1LAD():
 import scipy
 import numpy
 def indxmap_diff(Nd):
-    """
-    Build indexes for image gradient
-    input: 
-                Nd: tuple, the size of image
-    output: 
-                d_indx: tuple
-                        Diff(x) = x.flat[d_indx[0]] - x.flat
-                dt_indx: tuple,  index of the adjoint Diff
-                    Diff_t(x) =  x.flat[dt_indx[0]] - x.flat
-    """
-    ndims = len(Nd)
-    Ndprod = numpy.prod(Nd)
-    mylist = numpy.arange(0, Ndprod).astype(numpy.int32)
-    mylist = numpy.reshape(mylist, Nd)
-    d_indx = []
-    dt_indx = []
-    for pp in range(0, ndims):
-        d_indx = d_indx + [ numpy.reshape(   numpy.roll(  mylist, +1 , pp  ), (Ndprod,)  ,order='C').astype(numpy.int32) ,]
-        dt_indx = dt_indx + [ numpy.reshape(   numpy.roll(  mylist, -1 , pp  ) , (Ndprod,) ,order='C').astype(numpy.int32) ,]
-
-    return d_indx,  dt_indx  
+        """
+        
+        Build indexes for image gradient
+        input: 
+                    Nd: tuple, the size of image
+        output: 
+                    d_indx: tuple
+                            Diff(x) = x.flat[d_indx[0]] - x.flat
+                    dt_indx: tuple,  index of the adjoint Diff
+                        Diff_t(x) =  x.flat[dt_indx[0]] - x.flat
+                        
+        """
+        ndims = len(Nd)
+        Ndprod = numpy.prod(Nd)
+        mylist = numpy.arange(0, Ndprod).astype(numpy.int32)
+        mylist = numpy.reshape(mylist, Nd)
+        d_indx = []
+        dt_indx = []
+        for pp in range(0, ndims):
+            d_indx = d_indx + [ numpy.reshape(   numpy.roll(  mylist, +1 , pp  ), (Ndprod,)  ,order='C').astype(numpy.int32) ,]
+            dt_indx = dt_indx + [ numpy.reshape(   numpy.roll(  mylist, -1 , pp  ) , (Ndprod,) ,order='C').astype(numpy.int32) ,]
+    
+        return d_indx,  dt_indx  
 def cDiff(x, d_indx):
-    a2=numpy.asarray(x.copy(),order='C')
-    a2.flat =   a2 .flat[d_indx] - a2 .flat
-    return a2
+        a2=numpy.asarray(x.copy(),order='C')
+        a2.flat =   a2 .flat[d_indx] - a2 .flat
+        return a2
 def _create_kspace_sampling_density(nufft):
-    y = numpy.ones((nufft.st['M'],),dtype = numpy.complex64)
-    nufft.y = nufft.thr.to_device(y)
-    nufft._y2k()
-    w =  numpy.abs( nufft.k_Kd2.get())#**2) ))
-
-    nufft.st['w'] = w#self.nufftobj.vec2k(w)
-    RTR=nufft.st['w'] # see __init__() in class "nufft"
-    return RTR
+        y = numpy.ones((nufft.st['M'],),dtype = numpy.complex64)
+        nufft.y = nufft.thr.to_device(y)
+        nufft._y2k()
+        w =  numpy.abs( nufft.k_Kd2.get())#**2) ))
+    
+        nufft.st['w'] = w#self.nufftobj.vec2k(w)
+        RTR=nufft.st['w'] # see __init__() in class "nufft"
+        return RTR
 def _create_laplacian_kernel(nufft):
 #===============================================================================
 # #        # Laplacian oeprator, convolution kernel in spatial domain
@@ -95,6 +100,9 @@ def L1LAD(nufft, gy, maxiter, rho  ): # main function of solver
     dd = []
     d_indx, dt_indx = indxmap_diff(nufft.st['Nd'])
     ndims = len(nufft.st['Nd'])
+    s_tmp = []
+    for pp in range(0, ndims):
+        s_tmp += [0, ]
     for jj in range(    0,  ndims): # n_dims + 1 for wavelets
         d_indx[jj] = nufft.thr.to_device(d_indx[jj])
         dt_indx[jj] = nufft.thr.to_device(dt_indx[jj])
@@ -133,30 +141,31 @@ def L1LAD(nufft, gy, maxiter, rho  ): # main function of solver
         nufft.cMultiplyScalar( dtype(mu), rhs, local_size=None, global_size=int(nufft.Ndprod))
         
 #         print(rhs.get())
-        in_cDiff = nufft.thr.copy_array(dd[0])
-        
-        in_cDiff -= bb[0]
-        
-#         out_cDiff = nufft.thr.empty_like(in_cDiff) 
-        nufft.cDiff(dt_indx[0], in_cDiff, tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
-        
-#         tmp_gpu *= LMBD
-        nufft.cMultiplyScalar( dtype(LMBD), tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
-        
-        rhs += tmp_gpu
+        for pp in range(0, ndims): 
+            in_cDiff = nufft.thr.copy_array(dd[pp])
+            
+            in_cDiff -= bb[pp]
+            
+    #         out_cDiff = nufft.thr.empty_like(in_cDiff) 
+            nufft.cDiff(dt_indx[pp], in_cDiff, tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
+            
+    #         tmp_gpu *= LMBD
+            nufft.cMultiplyScalar( dtype(LMBD), tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
+            
+            rhs += tmp_gpu
         
 #         print(rhs.get())
-        in_cDiff = nufft.thr.copy_array(dd[1])
-        
-        in_cDiff -= bb[1]
-        
-#         out_cDiff = nufft.thr.empty_like(in_cDiff) 
-        nufft.cDiff(dt_indx[1], in_cDiff, tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
-        
-#         tmp_gpu *= LMBD
-        nufft.cMultiplyScalar( dtype(LMBD), tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
-        
-        rhs += tmp_gpu
+#         in_cDiff = nufft.thr.copy_array(dd[1])
+#         
+#         in_cDiff -= bb[1]
+#         
+# #         out_cDiff = nufft.thr.empty_like(in_cDiff) 
+#         nufft.cDiff(dt_indx[1], in_cDiff, tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
+#         
+# #         tmp_gpu *= LMBD
+#         nufft.cMultiplyScalar( dtype(LMBD), tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
+#         
+#         rhs += tmp_gpu
         
 #         print(rhs.get())
     
@@ -178,8 +187,10 @@ def L1LAD(nufft, gy, maxiter, rho  ): # main function of solver
 
 #         zz[0] = cDiff(xkp1,  d_indx[0])
 #         zz[1] = cDiff(xkp1,  d_indx[1])
-        nufft.cDiff(d_indx[0],  xkp1, zz[0],  local_size=None, global_size=int(nufft.Ndprod))
-        nufft.cDiff(d_indx[1],  xkp1, zz[1],  local_size=None, global_size=int(nufft.Ndprod))
+        for pp in range(0, ndims):
+            nufft.cDiff(d_indx[pp],  xkp1, zz[pp],  local_size=None, global_size=int(nufft.Ndprod)) 
+#         nufft.cDiff(d_indx[0],  xkp1, zz[0],  local_size=None, global_size=int(nufft.Ndprod))
+#         nufft.cDiff(d_indx[1],  xkp1, zz[1],  local_size=None, global_size=int(nufft.Ndprod))
         
 
 #         zf = AHA(xkp1)  -AHy
@@ -191,19 +202,24 @@ def L1LAD(nufft, gy, maxiter, rho  ): # main function of solver
         '''
         soft-thresholding the edges
         '''
-
-        s1 = zz[0] + bb[0]
-        
-        s2 = zz[1] + bb[1]
+        for pp in range(0, ndims):
+            s_tmp[pp] = zz[pp] + bb[pp]
+#         s1 = zz[0] + bb[0]
+#         
+#         s2 = zz[1] + bb[1]
         
 #         s = s1**2 + s2**2
 #         s1 *= s1
-        
-        nufft.cMultiplyConjVec(s1, s1, tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
-        s = nufft.thr.copy_array(tmp_gpu)
-#         s2 *= s2
-        nufft.cMultiplyConjVec(s2, s2, tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
-        s += tmp_gpu
+            nufft.cMultiplyConjVec(s_tmp[pp], s_tmp[pp], tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
+            if pp > 0:
+                s += tmp_gpu
+            else: # pp == 0
+                s = nufft.thr.copy_array(tmp_gpu)
+#         nufft.cMultiplyConjVec(s1, s1, tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
+#         s = nufft.thr.copy_array(tmp_gpu)
+# #         s2 *= s2
+#         nufft.cMultiplyConjVec(s2, s2, tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
+#         s += tmp_gpu
         
 #         s = s1 + s2
         
@@ -220,11 +236,13 @@ def L1LAD(nufft, gy, maxiter, rho  ): # main function of solver
 #         dd[0] = s1*r
 #         dd[1] = s2*r
 #         dd[0] = s1*tmp_gpu
-        nufft.cMultiplyVec(s1, tmp_gpu, dd[0], local_size=None, global_size=int(nufft.Ndprod)) 
+        for pp in range(0, ndims):
+            nufft.cMultiplyVec(s_tmp[pp], tmp_gpu, dd[pp], local_size=None, global_size=int(nufft.Ndprod)) 
+#         nufft.cMultiplyVec(s1, tmp_gpu, dd[0], local_size=None, global_size=int(nufft.Ndprod)) 
         
 #         dd[1] = s2*tmp_gpu
         
-        nufft.cMultiplyVec(s2, tmp_gpu, dd[1], local_size=None, global_size=int(nufft.Ndprod))
+#         nufft.cMultiplyVec(s2, tmp_gpu, dd[1], local_size=None, global_size=int(nufft.Ndprod))
         
         tmp_gpu = zf+bf
         
@@ -238,9 +256,10 @@ def L1LAD(nufft, gy, maxiter, rho  ): # main function of solver
          
 #                 df =     sy
         # end of shrinkage
-
-        bb[0] += zz[0] - dd[0] 
-        bb[1] += zz[1] - dd[1] 
+        for pp in range(0, ndims):
+            bb[pp] += zz[pp] - dd[pp]
+#         bb[0] += zz[0] - dd[0] 
+#         bb[1] += zz[1] - dd[1] 
         bf += zf - df 
 #                 self._update_b() # update b based on the current u
 #         print(outer)
@@ -278,6 +297,9 @@ def L1OLS(nufft, gy, maxiter, rho  ): # main function of solver
     dd = []
     d_indx, dt_indx = indxmap_diff(nufft.st['Nd'])
     ndims = len(nufft.st['Nd'])
+    s_tmp = []
+    for pp in range(0, ndims):
+        s_tmp += [0, ]
     for jj in range(    0,  ndims): # n_dims + 1 for wavelets
         d_indx[jj] = nufft.thr.to_device(d_indx[jj])
         dt_indx[jj] = nufft.thr.to_device(dt_indx[jj])
@@ -290,9 +312,9 @@ def L1OLS(nufft, gy, maxiter, rho  ): # main function of solver
         zz += [nufft.thr.copy_array(z_gpu),]
         bb += [nufft.thr.copy_array(z_gpu),]
         dd +=  [nufft.thr.copy_array(z_gpu),]
-    zf = nufft.thr.copy_array(z_gpu)
-    bf = nufft.thr.copy_array(z_gpu)
-    df = nufft.thr.copy_array(z_gpu)
+#     zf = nufft.thr.copy_array(z_gpu)
+#     bf = nufft.thr.copy_array(z_gpu)
+#     df = nufft.thr.copy_array(z_gpu)
 
     n_dims = len(nufft.st['Nd'])#numpy.size(uf.shape)
     
@@ -316,30 +338,31 @@ def L1OLS(nufft, gy, maxiter, rho  ): # main function of solver
         nufft.cMultiplyScalar( dtype(mu), rhs, local_size=None, global_size=int(nufft.Ndprod))
         
 #         print(rhs.get())
-        in_cDiff = nufft.thr.copy_array(dd[0])
-        
-        in_cDiff -= bb[0]
-        
-#         out_cDiff = nufft.thr.empty_like(in_cDiff) 
-        nufft.cDiff(dt_indx[0], in_cDiff, tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
-        
-#         tmp_gpu *= LMBD
-        nufft.cMultiplyScalar( dtype(LMBD), tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
-        
-        rhs += tmp_gpu
+        for pp in range(0, ndims): 
+            in_cDiff = nufft.thr.copy_array(dd[pp])
+            
+            in_cDiff -= bb[pp]
+            
+    #         out_cDiff = nufft.thr.empty_like(in_cDiff) 
+            nufft.cDiff(dt_indx[pp], in_cDiff, tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
+            
+    #         tmp_gpu *= LMBD
+            nufft.cMultiplyScalar( dtype(LMBD), tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
+            
+            rhs += tmp_gpu
         
 #         print(rhs.get())
-        in_cDiff = nufft.thr.copy_array(dd[1])
-        
-        in_cDiff -= bb[1]
-        
-#         out_cDiff = nufft.thr.empty_like(in_cDiff) 
-        nufft.cDiff(dt_indx[1], in_cDiff, tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
-        
-#         tmp_gpu *= LMBD
-        nufft.cMultiplyScalar( dtype(LMBD), tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
-        
-        rhs += tmp_gpu
+#         in_cDiff = nufft.thr.copy_array(dd[1])
+#         
+#         in_cDiff -= bb[1]
+#         
+# #         out_cDiff = nufft.thr.empty_like(in_cDiff) 
+#         nufft.cDiff(dt_indx[1], in_cDiff, tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
+#         
+# #         tmp_gpu *= LMBD
+#         nufft.cMultiplyScalar( dtype(LMBD), tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
+#         
+#         rhs += tmp_gpu
         
 #         print(rhs.get())
     
@@ -361,8 +384,10 @@ def L1OLS(nufft, gy, maxiter, rho  ): # main function of solver
 
 #         zz[0] = cDiff(xkp1,  d_indx[0])
 #         zz[1] = cDiff(xkp1,  d_indx[1])
-        nufft.cDiff(d_indx[0],  xkp1, zz[0],  local_size=None, global_size=int(nufft.Ndprod))
-        nufft.cDiff(d_indx[1],  xkp1, zz[1],  local_size=None, global_size=int(nufft.Ndprod))
+        for pp in range(0, ndims):
+            nufft.cDiff(d_indx[pp],  xkp1, zz[pp],  local_size=None, global_size=int(nufft.Ndprod)) 
+#         nufft.cDiff(d_indx[0],  xkp1, zz[0],  local_size=None, global_size=int(nufft.Ndprod))
+#         nufft.cDiff(d_indx[1],  xkp1, zz[1],  local_size=None, global_size=int(nufft.Ndprod))
         
 
 #         zf = AHA(xkp1)  -AHy
@@ -374,19 +399,24 @@ def L1OLS(nufft, gy, maxiter, rho  ): # main function of solver
         '''
         soft-thresholding the edges
         '''
-
-        s1 = zz[0] + bb[0]
-        
-        s2 = zz[1] + bb[1]
+        for pp in range(0, ndims):
+            s_tmp[pp] = zz[pp] + bb[pp]
+#         s1 = zz[0] + bb[0]
+#         
+#         s2 = zz[1] + bb[1]
         
 #         s = s1**2 + s2**2
 #         s1 *= s1
-        
-        nufft.cMultiplyConjVec(s1, s1, tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
-        s = nufft.thr.copy_array(tmp_gpu)
-#         s2 *= s2
-        nufft.cMultiplyConjVec(s2, s2, tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
-        s += tmp_gpu
+            nufft.cMultiplyConjVec(s_tmp[pp], s_tmp[pp], tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
+            if pp > 0:
+                s += tmp_gpu
+            else: # pp == 0
+                s = nufft.thr.copy_array(tmp_gpu)
+#         nufft.cMultiplyConjVec(s1, s1, tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
+#         s = nufft.thr.copy_array(tmp_gpu)
+# #         s2 *= s2
+#         nufft.cMultiplyConjVec(s2, s2, tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
+#         s += tmp_gpu
         
 #         s = s1 + s2
         
@@ -403,11 +433,13 @@ def L1OLS(nufft, gy, maxiter, rho  ): # main function of solver
 #         dd[0] = s1*r
 #         dd[1] = s2*r
 #         dd[0] = s1*tmp_gpu
-        nufft.cMultiplyVec(s1, tmp_gpu, dd[0], local_size=None, global_size=int(nufft.Ndprod)) 
+        for pp in range(0, ndims):
+            nufft.cMultiplyVec(s_tmp[pp], tmp_gpu, dd[pp], local_size=None, global_size=int(nufft.Ndprod)) 
+#         nufft.cMultiplyVec(s1, tmp_gpu, dd[0], local_size=None, global_size=int(nufft.Ndprod)) 
         
 #         dd[1] = s2*tmp_gpu
         
-        nufft.cMultiplyVec(s2, tmp_gpu, dd[1], local_size=None, global_size=int(nufft.Ndprod))
+#         nufft.cMultiplyVec(s2, tmp_gpu, dd[1], local_size=None, global_size=int(nufft.Ndprod))
         
 #         tmp_gpu = zf+bf
         
@@ -421,9 +453,10 @@ def L1OLS(nufft, gy, maxiter, rho  ): # main function of solver
          
 #                 df =     sy
         # end of shrinkage
-
-        bb[0] += zz[0] - dd[0] 
-        bb[1] += zz[1] - dd[1] 
+        for pp in range(0, ndims):
+            bb[pp] += zz[pp] - dd[pp]
+#         bb[0] += zz[0] - dd[0] 
+#         bb[1] += zz[1] - dd[1] 
 #         bf += zf - df 
 #                 self._update_b() # update b based on the current u
 #         print(outer)
@@ -435,7 +468,6 @@ def L1OLS(nufft, gy, maxiter, rho  ): # main function of solver
 #     print('here')
     nufft.x_Nd = nufft.thr.copy_array(xkp1)
     return 0
-#     return xkp1 #(u,u_stack)
 
 def solver(nufft,gy, solver=None,  maxiter=30, *args, **kwargs):
     """

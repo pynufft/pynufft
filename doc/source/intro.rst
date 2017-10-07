@@ -26,5 +26,4 @@ Users of pynufft should be familiar with discrete Fourier transform (DFT).
 .. toctree::
    :maxdepth: 2
    
-   introduction/installation
    introduction/nufft
