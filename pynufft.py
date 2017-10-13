@@ -97,15 +97,7 @@ class NUFFT:
         x2 = numpy.reshape(x_vec, self.st['Nd'], order='F')
         
         return self.forward(x2) 
-#     def _adjoint(self,  y):
-#         '''
-#         
-#         '''
-#         x = self.adjoint(y)
-#         print('xshape',x.shape)
-#         x_vec = numpy.reshape(x, (numpy.prod(self.st['Nd']),), order='F')
-#         print('x_vec.shape',x_vec.shape)
-#         return x_vec    
+
     def solver(self,y, solver=None, *args, **kwargs):
         import src._solver.solver_cpu
         return src._solver.solver_cpu.solver(self,  y,  solver, *args, **kwargs)
@@ -351,7 +343,7 @@ def test_installation():
     '''
     import pkg_resources
     PYNUFFT_PATH = pkg_resources.resource_filename('pynufft', './')
-    DATA_PATH = pkg_resources.resource_filename('pynufft', 'data/')
+    DATA_PATH = pkg_resources.resource_filename('pynufft', 'src/data/')
     import os.path
     
     
@@ -368,7 +360,7 @@ def test_installation():
 def test_2D():
     import pkg_resources
     
-    DATA_PATH = pkg_resources.resource_filename('pynufft', 'data/')
+    DATA_PATH = pkg_resources.resource_filename('pynufft', 'src/data/')
 #     PHANTOM_FILE = pkg_resources.resource_filename('pynufft', 'data/phantom_256_256.txt')
     import numpy
     import matplotlib.pyplot
@@ -450,7 +442,7 @@ def test_asoperator():
     
     import pkg_resources
     
-    DATA_PATH = pkg_resources.resource_filename('pynufft', 'data/')
+    DATA_PATH = pkg_resources.resource_filename('pynufft', 'src/data/')
 #     PHANTOM_FILE = pkg_resources.resource_filename('pynufft', 'data/phantom_256_256.txt')
     import numpy
     import matplotlib.pyplot

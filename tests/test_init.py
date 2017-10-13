@@ -16,7 +16,7 @@ def test_init():
     # load example image
     import pkg_resources
     
-    DATA_PATH = pkg_resources.resource_filename('pynufft', 'data/')
+    DATA_PATH = pkg_resources.resource_filename('pynufft', './src/data/')
 #     PHANTOM_FILE = pkg_resources.resource_filename('pynufft', 'data/phantom_256_256.txt')
     import numpy
     import matplotlib.pyplot
@@ -47,12 +47,12 @@ def test_init():
 #         else:
 #             n_shift=tuple(list(n_shift)+numpy.array(Nd)/2)
     import pynufft
-    nfft = cpu.NUFFT()  # CPU
+    nfft = pynufft.NUFFT()  # CPU
     nfft.plan(om, Nd, Kd, Jd)
 #     nfft.initialize_gpu()
     import scipy.sparse
 #     scipy.sparse.save_npz('tests/test.npz', nfft.st['p'])
-    from hsa.NUFFT import NUFFT
+    from pynufft_hsa import NUFFT
     NufftObj = NUFFT()
 
     NufftObj.plan(om, Nd, Kd, Jd)

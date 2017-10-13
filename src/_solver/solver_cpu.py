@@ -5,29 +5,30 @@ CPU solvers
 
 import scipy
 import numpy
-def indxmap_diff(Nd):
-        """
-        Build indexes for image gradient
-        input: 
-                Nd: tuple, the size of image
-        output: 
-                d_indx: tuple
-                        Diff(x) = x.flat[d_indx[0]] - x.flat
-                dt_indx: tuple,  index of the adjoint Diff
-                    Diff_t(x) =  x.flat[dt_indx[0]] - x.flat
-        """
-        
-        ndims = len(Nd)
-        Ndprod = numpy.prod(Nd)
-        mylist = numpy.arange(0, Ndprod).astype(numpy.int32)
-        mylist = numpy.reshape(mylist, Nd)
-        d_indx = ()
-        dt_indx = ()
-        for pp in range(0, ndims):
-            d_indx = d_indx + ( numpy.reshape(   numpy.roll(  mylist, +1 , pp  ), (Ndprod,)  ,order='C').astype(numpy.int32) ,)
-            dt_indx = dt_indx + ( numpy.reshape(   numpy.roll(  mylist, -1 , pp  ) , (Ndprod,) ,order='C').astype(numpy.int32) ,)
-
-            return d_indx,  dt_indx  
+from .._helper.helper import *
+# def indxmap_diff(Nd):
+#         """
+#         Build indexes for image gradient
+#         input: 
+#                 Nd: tuple, the size of image
+#         output: 
+#                 d_indx: tuple
+#                         Diff(x) = x.flat[d_indx[0]] - x.flat
+#                 dt_indx: tuple,  index of the adjoint Diff
+#                     Diff_t(x) =  x.flat[dt_indx[0]] - x.flat
+#         """
+#         
+#         ndims = len(Nd)
+#         Ndprod = numpy.prod(Nd)
+#         mylist = numpy.arange(0, Ndprod).astype(numpy.int32)
+#         mylist = numpy.reshape(mylist, Nd)
+#         d_indx = ()
+#         dt_indx = ()
+#         for pp in range(0, ndims):
+#             d_indx = d_indx + ( numpy.reshape(   numpy.roll(  mylist, +1 , pp  ), (Ndprod,)  ,order='C').astype(numpy.int32) ,)
+#             dt_indx = dt_indx + ( numpy.reshape(   numpy.roll(  mylist, -1 , pp  ) , (Ndprod,) ,order='C').astype(numpy.int32) ,)
+# 
+#         return d_indx,  dt_indx  
 def cDiff(x, d_indx):
         """
         Compute image gradient
@@ -46,39 +47,39 @@ def _create_kspace_sampling_density(nufft):
         nufft.st['w'] = w#self.nufftobj.vec2k(w)
         RTR=nufft.st['w'] # see __init__() in class "nufft"
         return RTR
-def _create_laplacian_kernel(nufft):    
-        """
-        Compute Laplacian kernel for inner loop
-        """        
-#===============================================================================
-# #        # Laplacian oeprator, convolution kernel in spatial domain
-#         # related to constraint
-#===============================================================================
-        uker = numpy.zeros(nufft.st['Kd'][:],dtype=numpy.complex64,order='C')
-        n_dims= numpy.size(nufft.st['Nd'])
-    
-        if n_dims == 1:
-            uker[0] = -2.0
-            uker[1] = 1.0
-            uker[-1] = 1.0
-        elif n_dims == 2:
-            uker[0,0] = -4.0
-            uker[1,0] = 1.0
-            uker[-1,0] = 1.0
-            uker[0,1] = 1.0
-            uker[0,-1] = 1.0
-        elif n_dims == 3:  
-            uker[0,0,0] = -6.0
-            uker[1,0,0] = 1.0
-            uker[-1,0,0] = 1.0
-            uker[0,1,0] = 1.0
-            uker[0,-1,0] = 1.0
-            uker[0,0,1] = 1.0
-            uker[0,0,-1] = 1.0                      
-    
-        uker =numpy.fft.fftn(uker) #, self.nufftobj.st['Kd'], range(0,numpy.ndim(uker)))
-        return uker  
- 
+# def _create_laplacian_kernel(nufft):    
+#         """
+#         Compute Laplacian kernel for inner loop
+#         """        
+# #===============================================================================
+# # #        # Laplacian oeprator, convolution kernel in spatial domain
+# #         # related to constraint
+# #===============================================================================
+#         uker = numpy.zeros(nufft.st['Kd'][:],dtype=numpy.complex64,order='C')
+#         n_dims= numpy.size(nufft.st['Nd'])
+#     
+#         if n_dims == 1:
+#             uker[0] = -2.0
+#             uker[1] = 1.0
+#             uker[-1] = 1.0
+#         elif n_dims == 2:
+#             uker[0,0] = -4.0
+#             uker[1,0] = 1.0
+#             uker[-1,0] = 1.0
+#             uker[0,1] = 1.0
+#             uker[0,-1] = 1.0
+#         elif n_dims == 3:  
+#             uker[0,0,0] = -6.0
+#             uker[1,0,0] = 1.0
+#             uker[-1,0,0] = 1.0
+#             uker[0,1,0] = 1.0
+#             uker[0,-1,0] = 1.0
+#             uker[0,0,1] = 1.0
+#             uker[0,0,-1] = 1.0                      
+#     
+#         uker =numpy.fft.fftn(uker) #, self.nufftobj.st['Kd'], range(0,numpy.ndim(uker)))
+#         return uker  
+#  
 def L1LAD(nufft, y, maxiter, rho  ): # main function of solver
     """
     L1-total variation least absolute deviation 
@@ -93,7 +94,7 @@ def L1LAD(nufft, y, maxiter, rho  ): # main function of solver
         x2 = nufft.adjoint(y)
         return x2
     
-    uker = mu*_create_kspace_sampling_density(nufft)   - LMBD* _create_laplacian_kernel(nufft)
+    uker = mu*_create_kspace_sampling_density(nufft)   - LMBD* create_laplacian_kernel(nufft)
     
     AHy = AH(y)
     
@@ -128,9 +129,11 @@ def L1LAD(nufft, y, maxiter, rho  ): # main function of solver
 #             for inner in numpy.arange(0,nInner):
             
         # solve Ku = rhs
-            
+        
         rhs = mu*(AHyk + df - bf)   # right hand side
+        
         for pp in range(0,ndims):
+            
             rhs += LMBD*(cDiff(dd[pp] - bb[pp],  dt_indx[pp]))  
 #                 LMBD*(cDiff(dd[1] - bb[1],  dt_indx[1]))  )          
         # Note K = F' uker F
@@ -194,7 +197,7 @@ def L1OLS(nufft, y, maxiter, rho ): # main function of solver
         x2 = nufft.adjoint(y)
         return x2
     
-    uker = mu*_create_kspace_sampling_density(nufft)   - LMBD* _create_laplacian_kernel(nufft)
+    uker = mu*_create_kspace_sampling_density(nufft)   - LMBD* create_laplacian_kernel(nufft)
     
     AHy = AH(y)
     

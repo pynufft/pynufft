@@ -1,34 +1,8 @@
 """
 Class NUFFT on heterogeneous platforms
-=================================
+==================================================================
 """
 
-# '''
-# @package docstring
-# 
-# Copyright (c) 2014-2017 Pynufft team.
-# All rights reserved.
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-# 
-# Redistributions of source code must retain the above copyright notice, this
-# list of conditions and the following disclaimer. Redistributions in binary
-# form must reproduce the above copyright notice, this list of conditions and
-# the following disclaimer in the documentation and/or other materials provided
-# with the distribution. Neither the name of Enthought nor the names of the
-# Pynufft Developers may be used to endorse or promote products derived from
-# this software without specific prior written permission.
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 'AS IS'
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-# '''
 
 from __future__ import division
 
@@ -56,75 +30,72 @@ from reikna.cluda import functions, dtypes
 
 
 dtype = numpy.complex64
-try:
-    api = cluda.ocl_api()
-except:
-    api = cluda.cuda_api()
-# api = cluda.cuda_api()
-try:
-    platform = api.get_platforms()[0]
-
-except:
-    platform = api.get_platforms()[0]
-
-device = platform.get_devices()[0]
-print('device = ', device)
+# try:
+#     api = cluda.ocl_api()
+# except:
+#     api = cluda.cuda_api()
+# # api = cluda.cuda_api()
+# try:
+#     platform = api.get_platforms()[0]
+# 
+# except:
+#     platform = api.get_platforms()[0]
+# 
+# device = platform.get_devices()[0]
+# print('device = ', device)
 # print('using cl device=',device,device[0].max_work_group_size, device[0].max_compute_units,pyopencl.characterize.get_simd_group_size(device[0], dtype.size))
 
 from src._helper.helper import *
 
 
 class NUFFT:
-#     """
-#     The class pynufft computes Non-Uniform Fast Fourier Transform (NUFFT).
-# 
-#     Methods
-#     ----------
-#     __init__() : constructor
-#         Input: 
-#             None
-#         Return: 
-#             pynufft instance
-#         Example: MyNufft = pynufft.pynufft()
-#     plan(om, Nd, Kd, Jd) : to plan the pynufft object
-#         Input:
-#             om: M * ndims array: The locations of M non-uniform points in the ndims dimension. Normalized between [-pi, pi]
-#             Nd: tuple with ndims elements. Image matrix size. Example: (256,256)
-#             Kd: tuple with ndims elements. Oversampling k-space matrix size. Example: (512,512)
-#             Jd: tuple with ndims elements. The number of adjacent points in the interpolator. Example: (6,6)
-#         Return:
-#             None
-#     forward(x) : perform NUFFT
-#         Input:
-#             x: numpy.array. The input image on the regular grid. The size must be Nd. 
-#         Output:
-#             y: M array.The output M points array.
-#              
-#     adjoint(y): adjoint NUFFT (Hermitian transpose (a.k.a. conjugate transpose) of NUFFT)
-#         Input:
-#             y: M array.The input M points array.
-#         Output:
-#             x: numpy.array. The output image on the regular grid.
-#             
-#     inverse_DC(y) deprecate: inverse NUFFT using Pipe's sampling density compensation (James Pipe, Magn. Res. Med., 1999)
-#         Input: 
-#             y: M array.The input M points array.
-#         Output:
-#             x: numpy.array. The output image on the regular grid.
-# 
-#     """
+    """
+    The class NUFFT belongs to pynufft_hsa, which offloads Non-Uniform Fast Fourier Transform (NUFFT) to heterogeneous devices.
+   """
+
     def __init__(self):
-        '''
-        Construct the pynufft instance
-        '''
+        """
+        Constructor.
+        
+        :param None:
+        :type None: Python NoneType
+        :return: NUFFT: the pynufft_hsa.NUFFT instance
+        :rtype: NUFFT: the pynufft_hsa.NUFFT class
+        :Example:
+
+        >>> import pynufft
+        >>> NufftObj = pynufft_hsa.NUFFT()
+
+
+        .. note:: can be useful to emphasize
+            important feature
+        .. seealso:: :class:`MainClass2`
+        .. warning:: arg2 must be non-zero.
+        .. todo:: check that arg2 is non zero.
+        """
         pass
 
     def plan(self, om, Nd, Kd, Jd):
-        '''
-        Plan pyNufft
-        Start from here
-        '''
+        """
+        Design the min-max interpolator.
+        
+        :param om: The M off-grid locations in the frequency domain. Normalized between [-pi, pi]
+        :param Nd: The matrix size of equispaced image. Example: Nd=(256,256) for a 2D image; Nd = (128,128,128) for a 3D image
+        :param Kd: The matrix size of the oversampled frequency grid. Example: Kd=(512,512) for 2D image; Kd = (256,256,256) for a 3D image
+        :param Jd: The interpolator size. Example: Jd=(6,6) for 2D image; Jd = (6,6,6) for a 3D image
+        :type om: numpy.float array, matrix size = M * ndims
+        :type Nd: tuple, ndims integer elements. 
+        :type Kd: tuple, ndims integer elements. 
+        :type Jd: tuple, ndims integer elements. 
+        :returns: 0
+        :rtype: int, float
+        :Example:
 
+        >>> import pynufft
+        >>> NufftObj = pynufft_hsa.NUFFT()
+        >>> NufftObj.plan(om, Nd, Kd, Jd) 
+        
+        """         
         self.debug = 0  # debug
 
         n_shift = tuple(0*x for x in Nd)
@@ -133,21 +104,27 @@ class NUFFT:
         self.Nd = self.st['Nd']  # backup
         self.sn = numpy.asarray(self.st['sn'].astype(dtype)  ,order='C')# backup
         self.ndims = len(self.st['Nd']) # dimension
-        self.linear_phase(n_shift)  # calculate the linear phase thing
+        self._linear_phase(n_shift)  # calculate the linear phase thing
         
         # Calculate the density compensation function
-        self.precompute_sp()
+        self._precompute_sp()
         del self.st['p'], self.st['sn']
         del self.st['p0'] 
-        self.reikna() 
+#         self.reikna() 
+        return 0
         # off-loading success, now delete matrices on the host side
 #         del self.st
 #         self.st['W_gpu'] = self.pipe_density()
 #         self.st['W'] = self.st['W_gpu'].get()
-    def precompute_sp(self):
+    def _precompute_sp(self):
         """
-        Precompute matrices, given that self.st['p'] is known
-        """ 
+
+        Private: Precompute adjoint (gridding) and Toepitz interpolation matrix.
+        
+        :param None: 
+        :type None: Python Nonetype
+        :return: self: instance
+        """
         try:
             self.sp = self.st['p']
             self.spH = (self.st['p'].getH().copy()).tocsr()
@@ -156,16 +133,32 @@ class NUFFT:
             print("errors occur in self.precompute_sp()")
             raise
 #         self.truncate_selfadjoint( 1e-2)
-        
 
-    
-    def reikna(self):
+    def offload(self, API):
         """
-        self.reikna():
+        self.offload():
         
         Off-load NUFFT to the opencl or cuda device(s)
-        """
         
+        :param API: define the device type, which can be 'CUDA' or 'OpenCL'
+        :type API: string
+        :return: self: instance
+
+        """
+        if 'CUDA' == API:
+            api = cluda.cuda_api()
+        elif 'OpenCL' == API:
+            api = cluda.ocl_api()
+
+        # api = cluda.cuda_api()
+        try:
+            platform = api.get_platforms()[0]
+        
+        except:
+            platform = api.get_platforms()[0]
+        
+        device = platform.get_devices()[0]
+        print('device = ', device)
 #         Create context from device
         self.thr = api.Thread(device) #pyopencl.create_some_context()
 #         self.queue = pyopencl.CommandQueue( self.ctx)
@@ -252,15 +245,27 @@ class NUFFT:
 #         self.ifft = FFT(self.ctx, self.queue, self.k_Kd2,  fast_math=True)
         self.zero_scalar=dtype(0.0+0.0j)
 #     def solver(self,  gy, maxiter):#, solver='cg', maxiter=200):
-    def solver(self,y, solver=None, *args, **kwargs):
+    def solver(self,gy, solver=None, *args, **kwargs):
+        """
+        The solver of NUFFT
+        :param gy: data, reikna array, (M,) size
+        :param solver: could be 'cg', 'L1OLS', 'L1LAD' 
+        :param maxiter: the number of iterations
+        :type gy: reikna array, dtype = numpy.complex64
+        :type solver: string
+        :type maxiter: int
+        :return: reikna array with size Nd
+            
+        
+        """
         import src._solver.solver_hsa
-        return src._solver.solver_hsa.solver(self,  y,  solver, *args, **kwargs)
+        return src._solver.solver_hsa.solver(self,  gy,  solver, *args, **kwargs)
 
-    def pipe_density(self):
-        '''
-        Create the density function by iterative solution
+    def _pipe_density(self):
+        """
+        Private: create the density function by iterative solution
         Generate pHp matrix
-        '''
+        """
 #         self.st['W'] = pipe_density(self.st['p'])
 #         W = numpy.ones((self.st['M'],),dtype=dtype)
         W_cpu = numpy.ones((self.st['M'],),dtype=dtype)
@@ -277,10 +282,10 @@ class NUFFT:
         # density of the k-space, reduced size
 #         return W_gpu #dirichlet
     
-    def linear_phase(self, n_shift):
-        '''
-        Select the center of FOV
-        '''
+    def _linear_phase(self, n_shift):
+        """
+        Private: Select the center of FOV
+        """
         om = self.st['om']
         M = self.st['M']
         final_shifts = tuple(
@@ -299,8 +304,10 @@ class NUFFT:
         self.st['p'] = scipy.sparse.diags(phase, 0).dot(self.st['p0'])
  
 
-    def truncate_selfadjoint(self, tol):
-        
+    def _truncate_selfadjoint(self, tol):
+        """
+        Yet to be tested.
+        """
 #         for pp in range(1, 8):
 #             self.st['pHp'].setdiag(0,k=pp)
 #             self.st['pHp'].setdiag(0,k=-pp)
@@ -314,7 +321,14 @@ class NUFFT:
         self.sp.eliminate_zeros()
         
     def forward(self, gx):
-
+            """
+            Forward NUFFT on the heterogeneous device
+            
+            :param gx: The input gpu array, with size=Nd
+            :type: reikna gpu array with dtype =numpy.complex64
+            :return: gy: The output gpu array, with size=(M,)
+            :rtype: reikna gpu array with dtype =numpy.complex64
+            """
             self.x_Nd =  self.thr.copy_array(gx)
             
             self._x2xx()
@@ -327,6 +341,14 @@ class NUFFT:
             return gy
     
     def adjoint(self, gy):
+            """
+            Adjoint NUFFT on the heterogeneous device
+            
+            :param gy: The output gpu array, with size=(M,)
+            :type: reikna gpu array with dtype =numpy.complex64
+            :return: gx: The input gpu array, with size=Nd
+            :rtype: reikna gpu array with dtype =numpy.complex64
+            """        
             self.y = self.thr.copy_array(gy) 
 
             self._y2k()
@@ -334,10 +356,15 @@ class NUFFT:
             self._xx2x()
             gx = self.thr.copy_array(self.x_Nd)
             return gx
-#             self.thr.synchronize()
-
-
     def selfadjoint(self, gx):
+        """
+        selfadjoint NUFFT (Teplitz) on the heterogeneous device
+        
+        :param gx: The input gpu array, with size=Nd
+        :type: reikna gpu array with dtype =numpy.complex64
+        :return: gx: The input gpu array, with size=Nd
+        :rtype: reikna gpu array with dtype =numpy.complex64
+        """                
         self.x_Nd = self.thr.copy_array(gx)
         self._x2xx()
         self._xx2k()
@@ -348,46 +375,31 @@ class NUFFT:
         return gx2
 
     def _x2xx(self):
-        '''
-        scaling of the image, generate Nd array
-        input: self.x_Nd
-        output: self.xx_Nd
-
-        '''
+        """
+        Private: Scaling on the heterogeneous device
+        Inplace multiplication of self.x_Nd by the scaling factor self.SnGPUArray.
+        """                
 #         self.cMultiplyVecInplace(self.queue, (self.Ndprod,), None,  self.SnGPUArray.data, self.x_Nd.data)
         self.cMultiplyVecInplace(self.SnGPUArray, self.x_Nd, local_size=None, global_size=int(self.Ndprod))
         self.thr.synchronize()
     def _xx2k(self ):
-        '''
-        fft of the Nd array
-        (1)Nd array is copied to Kd array(zeros) by cSelect
-        input: self.xx_Nd,   self.NdGPUorder.data,      self.KdGPUorder.data,
-        output: self.xx_Kd
-        (2) forward FFT:  
-        input: self.xx_Kd, 
-        output: self.k_Kd
-
-        '''
+        
+        """
+        Private: oversampled FFT on the heterogeneous device
+        
+        Firstly, zeroing the self.k_Kd array
+        Second, copy self.x_Nd array to self.k_Kd array by cSelect
+        Third: inplace FFT
+        """
+        
         self.cMultiplyScalar(self.zero_scalar, self.k_Kd, local_size=None, global_size=int(self.Kdprod))
         self.cSelect(self.NdGPUorder,      self.KdGPUorder,  self.x_Nd, self.k_Kd, local_size=None, global_size=int(self.Ndprod))
         self.fft( self.k_Kd,self.k_Kd,inverse=False)
         self.thr.synchronize()
     def _k2y(self ):
         """
-        interpolation achieved by Sparse Matrix-Vector Multiplication
-        input: self.k_Kd (C-order, row-major)
-        output: self.y 
+        Private: interpolation by the Sparse Matrix-Vector Multiplication
         """
-        
-#         self.cSparseMatVec(self.queue, 
-#                                     (self.sp_numrow*self.wavefront,         ), 
-#                                     (self.wavefront,          ),
-#                                    self.sp_numrow, 
-#                                    self.sp_indptr.data,
-#                                    self.sp_indices.data,
-#                                    self.sp_data.data, 
-#                                    self.k_Kd.data,
-#                                    self.y.data)
         self.cSparseMatVec(                                
                                    self.sp_numrow, 
                                    self.sp_indptr,
@@ -400,22 +412,9 @@ class NUFFT:
                                     )
         self.thr.synchronize()
     def _y2k(self):
-        '''
-        input:
-            y:    non-Cartesian data
-        output:
-            k:    k-space data on Kd grid
-        '''
-
-#         self.cSparseMatVec(self.queue, 
-#                                     (self.spH_numrow*self.wavefront,), 
-#                                     (self.wavefront,),
-#                                    self.spH_numrow, 
-#                                    self.spH_indptr.data,
-#                                    self.spH_indices.data,
-#                                    self.spH_data.data, 
-#                                    self.y.data,
-#                                    self.k_Kd2.data)#,g_times_l=int(csrnumrow))
+        """
+        Private: gridding by the Sparse Matrix-Vector Multiplication
+        """
         self.cSparseMatVec(
                                    self.spH_numrow, 
                                    self.spH_indptr,
@@ -429,13 +428,9 @@ class NUFFT:
 #         return k
         self.thr.synchronize()
     def _k2y2k(self):
-#         self.cSparseMatVec(self.queue, (self.spHsp_numrow*self.wavefront,), (self.wavefront,),
-#                                    self.spHsp_numrow, 
-#                                    self.spHsp_indptr.data,
-#                                    self.spHsp_indices.data,
-#                                    self.spHsp_data.data, 
-#                                    self.k_Kd.data,
-#                                    self.k_Kd2.data)#,g_times_l=int(csrnumrow))
+        """
+        Private: the integrated interpolation-gridding by the Sparse Matrix-Vector Multiplication
+        """
         self.cSparseMatVec( 
                                     
                                    self.spHsp_numrow, 
@@ -449,11 +444,9 @@ class NUFFT:
                                     )#,g_times_l=int(csrnumrow))
 
     def _k2xx(self):
-
-#         self.cMultiplyScalar(self.queue, (self.Kdprod,), None, 0.0, self.xx_Kd.data)
-        
-#         event,= self.ifft.enqueue( forward = False)
-#         event.wait()
+        """
+        Private: the inverse FFT and image cropping (which is the reverse of _xx2k() method)
+        """
         self.fft( self.k_Kd2, self.k_Kd2,inverse=True)
 #         self.x_Nd._zero_fill()
         self.cMultiplyScalar(self.zero_scalar, self.x_Nd,  local_size=None, global_size=int(self.Ndprod ))
@@ -462,8 +455,14 @@ class NUFFT:
         
         self.thr.synchronize()
     def _xx2x(self ):
+        """
+        Private: rescaling, which is identical to the  _x2xx() method
+        """
         self.cMultiplyVecInplace( self.SnGPUArray, self.x_Nd, local_size=None, global_size=int(self.Ndprod))
         self.thr.synchronize()
+
+        
+        
 def benchmark():
     import cProfile
     import numpy
@@ -711,7 +710,7 @@ def test_init():
     NufftObj = NUFFT()
 
     NufftObj.plan(om, Nd, Kd, Jd)
-
+    NufftObj.offload('OpenCL')
 #     print('sp close? = ', numpy.allclose( nfft.st['p'].data,  NufftObj.st['p'].data, atol=1e-1))
 #     NufftObj.initialize_gpu()
 
@@ -768,7 +767,7 @@ def test_init():
     print(t_cl)
     print('gy close? = ', numpy.allclose(y,gy.get(),  atol=1e-1))
     print("acceleration=", t_cpu/t_cl)
-    maxiter = 200
+    maxiter =100
     import time
     t0= time.time()
 #     x2 = nfft.solver(y2, 'cg',maxiter=maxiter)

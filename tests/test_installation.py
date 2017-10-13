@@ -1,14 +1,27 @@
 import os
 import sys
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../pynufft')))
-
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
+# from .. import *
+def test_pkg(pkgname):
+    """
+    Test Reikna package
+    """
+    try:
+        __import__(pkgname)
+        print(pkgname+'  is available')
+        return 0
+    except:
+        print(pkgname+' cannot be imported, check installation!')
+        print('       Install '+ pkgname +' by the command \'pip install '+ pkgname+' --user \'')
+        return 1
+    
 def test_installation():
     '''
     Test the installation
     '''
     import pkg_resources
     PYNUFFT_PATH = pkg_resources.resource_filename('pynufft', './')
-    DATA_PATH = pkg_resources.resource_filename('pynufft', 'data/')
+    DATA_PATH = pkg_resources.resource_filename('pynufft', 'src/data/')
     import os.path
     
     
@@ -20,6 +33,13 @@ def test_installation():
     print('Does phantom_256_256.npz exist?', os.path.isfile(DATA_PATH+'phantom_256_256.npz'))
     print('Does 1D_example.py exist?', os.path.isfile('../tests/1D_example.py'))
     print('Does 2D_example.py exist?', os.path.isfile('../tests/2D_example.py'))
+    
+    
+    for pkgname in ('reikna', 'pyopencl', 'pycuda'):
+        error_code = test_pkg(pkgname)
+        if 1 == error_code:
+            break
+        
     
 if __name__ == '__main__':
     test_installation()

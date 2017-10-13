@@ -1,13 +1,13 @@
     
 import os
 import sys
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../pynufft')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
 import scipy
 
 def test_2D():
     import pkg_resources
     
-    DATA_PATH = pkg_resources.resource_filename('pynufft', 'data/')
+    DATA_PATH = pkg_resources.resource_filename('pynufft', 'src/data/')
 #     PHANTOM_FILE = pkg_resources.resource_filename('pynufft', 'data/phantom_256_256.txt')
     import numpy
     import matplotlib.pyplot
