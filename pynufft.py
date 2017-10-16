@@ -1,5 +1,5 @@
-from pynufft.src._transform.transform_cpu import NUFFT as NUFFT_cpu
-from pynufft.src._transform.transform_hsa import NUFFT as NUFFT_hsa
+from .src._transform.transform_cpu import NUFFT as NUFFT_cpu
+from .src._transform.transform_hsa import NUFFT as NUFFT_hsa
 import numpy
 dtype = numpy.complex64
 # def test_init():
