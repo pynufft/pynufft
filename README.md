@@ -7,48 +7,17 @@ NUFFT can calculate the frequency components at non-equispaced locations.
 
 A minimal "getting start" tutorial is available at http://jyhmiinlin.github.io/pynufft/ .
 
-### New in version 0.3.2.9
+### New in version 0.3.3
 
-Experimental support of NVIDIA's graphic processing unit (GPU).
-The experimental class gpuNUFFT requires pycuda, scikit-cuda, and python-cuda-cffi.
+New in version 0.3.3
 
-scikit-cuda could be installed from standard pypi:
+Note: GPU support is superseded by the Heterogeneous System Architecture (HSA).
 
-$ pip install scikit-cuda
+A variety of nonlinear solvers are provided, including conjugate gradient method (cg), L1 total-variation ordinary least square (L1TVOLS), and L1 total-variation least absolute deviation (L1TVLAD).
 
-python-cuda-cffi requires source and CUDA 8.0:
+The CPU version support other nonlinear solvers, lsmr, lsqr, gmr, cg, bicgstab, bicg, cgs, gmres, lgmres , apart from cg, L1TVOLS and L1TVLAD.
 
-$ git clone https://github.com/grlee77/python-cuda-cffi.git
-$ cd python-cuda-cffi
-$ python3 setup.py install
-
-gpuNUFFT class has been tested on Linux but hasn't been tested on Windows.
-
-The results of 1D and 2D are identical to results of CPU pynufft. However, the 3D pynufft is yet to be tested.
-
-### Install pynufft:
-
-From pypi:
-
-$ pip install pynufft
-
-From github:
-
-$ git clone https://github.com/jyhmiinlin/pynufft
-
-$ python setup.py install
-
-### Example:
-
-Inside the Python environment, type:
-
-
->>> import pynufft.pynufft as pnft
-
->>> pnft.test_installation() # test required files
-
->>> pnft.test_2D() # test the 2D case
-
+Support multi-dimensional transform and reconstruction (experimentally).
 
 ### Summary
 
@@ -58,15 +27,13 @@ Pynufft implements Fessler's min-max NUFFT, with the following features:
 - Based on numerical libraries, such as Numpy, Scipy (matplotlib for displaying examples).
 - Provides the python interface including forward transform, adjoint transform and other routines.
 - Provides 1D/2D/3D examples for further developments.
-- (Experimental) Supporting NUFFT on NVIDIA's graphic processing units (GPUs).
+- (Experimental) Supporting NUFFT on NVIDIA's graphic processing units (GPUs) and multi-core CPU platforms.
 
 ### Limitations
 
-In Numpy, the default fft library is fftpack, so the speed of NUFFT transform may be suboptimal.
+In Numpy, the default fft library is fftpack, so the speed of NUFFT transform may optimized by FFTW.
 
-Python was limited by Global Interpret Lock (GIL). So you would need cython to release GIL and speed up for loops.
-
-However, Anaconda Python environment and Intel's Python seems to provide openmp support for many critical computations.
+Check out the tutorial (http://jyhmiinlin.github.io/pynufft/misc/fftw.html)
 
 ### Other nufft implementations in Python:
 
@@ -76,9 +43,11 @@ pynfft: Python bindings around the NFFT C-library, which uses the speed of FFTW,
 
 nufftpy: Pure Python NUFFT of Python-nufft (https://github.com/jakevdp/nufftpy). 
 
+mripy: A Python based MRI package (https://github.com/peng-cao/mripy). combines Numba and NUFFT.
+
 ### Acknowledgements
 
-pynufft was funded by the Ministry of Science and Technology, Cambridge Overseas Trust and Ministry of Education.  
+pynufft was funded by the Ministry of Science and Technology, Taiwan, Cambridge Commonwealth, European and International Trust, and Ministry of Education, Taiwan.  
 
 If you find pynufft useful, please cite:
 
