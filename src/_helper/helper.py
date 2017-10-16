@@ -10,6 +10,13 @@ dtype = numpy.complex64
 import scipy
 
 def create_laplacian_kernel(nufft):
+    """
+    Create the multi-dimensional laplacian kernel in k-space
+    
+    :param nufft: the NUFFT object
+    :returns: uker: the multi-dimensional laplacian kernel in k-space (no fft shift used)
+    :rtype: numpy ndarray
+    """
 #===============================================================================
 # #        # Laplacian oeprator, convolution kernel in spatial domain
 #         # related to constraint
@@ -17,242 +24,266 @@ def create_laplacian_kernel(nufft):
     uker = numpy.zeros(nufft.st['Kd'][:],dtype=numpy.complex64,order='C')
     n_dims= numpy.size(nufft.st['Nd'])
 
-    if n_dims == 1:
-        uker[0] = -2.0
-        uker[1] = 1.0
-        uker[-1] = 1.0
-    elif n_dims == 2:
-        uker[0,0] = -4.0
-        uker[1,0] = 1.0
-        uker[-1,0] = 1.0
-        uker[0,1] = 1.0
-        uker[0,-1] = 1.0
-    elif n_dims == 3:  
-        uker[0,0,0] = -6.0
-        uker[1,0,0] = 1.0
-        uker[-1,0,0] = 1.0
-        uker[0,1,0] = 1.0
-        uker[0,-1,0] = 1.0
-        uker[0,0,1] = 1.0
-        uker[0,0,-1] = 1.0                      
-
+#     if n_dims == 1:
+#         uker[0] = -2.0
+#         uker[1] = 1.0
+#         uker[-1] = 1.0
+#     elif n_dims == 2:
+#         uker[0,0] = -4.0
+#         uker[1,0] = 1.0
+#         uker[-1,0] = 1.0
+#         uker[0,1] = 1.0
+#         uker[0,-1] = 1.0
+#     elif n_dims == 3:  
+#         uker[0,0,0] = -6.0
+#         uker[1,0,0] = 1.0
+#         uker[-1,0,0] = 1.0
+#         uker[0,1,0] = 1.0
+#         uker[0,-1,0] = 1.0
+#         uker[0,0,1] = 1.0
+#         uker[0,0,-1] = 1.0      
+#     else: # n_dims > 3
+################################
+#    Multi-dimensional laplacian kernel (generalize the above 1D - 3D to multi-dimensional arrays)
+################################
+    indx = [slice(0, 1) for ss in range(0, n_dims)] # create the n_dims dimensional slice which are all zeros
+    uker[indx] = - 2.0*n_dims # Equivalent to  uker[0,0,0] = -6.0
+    for pp in range(0,n_dims):
+        indx1 = indx.copy() # indexing the 1
+        indx1[pp] = 1
+        uker[indx1] = 1
+        indx1 = indx.copy() # indexing the -1
+        indx1[pp] = -1
+        uker[indx1] = 1
+################################
+#    FFT of the multi-dimensional laplacian kernel
+################################        
     uker =numpy.fft.fftn(uker) #, self.nufftobj.st['Kd'], range(0,numpy.ndim(uker)))
     return uker  
 def indxmap_diff(Nd):
-        """
-        
-        Build indexes for image gradient
-        input: 
-                    Nd: tuple, the size of image
-        output: 
-                    d_indx: tuple
-                            Diff(x) = x.flat[d_indx[0]] - x.flat
-                    dt_indx: tuple,  index of the adjoint Diff
-                        Diff_t(x) =  x.flat[dt_indx[0]] - x.flat
-                        
-        """
-        ndims = len(Nd)
-        Ndprod = numpy.prod(Nd)
-        mylist = numpy.arange(0, Ndprod).astype(numpy.int32)
-        mylist = numpy.reshape(mylist, Nd)
-        d_indx = []
-        dt_indx = []
-        for pp in range(0, ndims):
-            d_indx = d_indx + [ numpy.reshape(   numpy.roll(  mylist, +1 , pp  ), (Ndprod,)  ,order='C').astype(numpy.int32) ,]
-            dt_indx = dt_indx + [ numpy.reshape(   numpy.roll(  mylist, -1 , pp  ) , (Ndprod,) ,order='C').astype(numpy.int32) ,]
+    """
+    Preindixing for rapid image gradient ()
     
-        return d_indx,  dt_indx  
+    Diff(x) = x.flat[d_indx[0]] - x.flat
+    
+    Diff_t(x) =  x.flat[dt_indx[0]] - x.flat
+                            
+    :param Nd: the dimension of the image
+    :type Nd: tuple with integers
+    :returns d_indx: iamge gradient
+    :returns  dt_indx:  the transpose of the image gradient 
+    :rtype: d_indx: lists with numpy ndarray
+    :rtype: dt_indx: lists with numpy ndarray
+    """    
+
+    ndims = len(Nd)
+    Ndprod = numpy.prod(Nd)
+    mylist = numpy.arange(0, Ndprod).astype(numpy.int32)
+    mylist = numpy.reshape(mylist, Nd)
+    d_indx = []
+    dt_indx = []
+    for pp in range(0, ndims):
+        d_indx = d_indx + [ numpy.reshape(   numpy.roll(  mylist, +1 , pp  ), (Ndprod,)  ,order='C').astype(numpy.int32) ,]
+        dt_indx = dt_indx + [ numpy.reshape(   numpy.roll(  mylist, -1 , pp  ) , (Ndprod,) ,order='C').astype(numpy.int32) ,]
+
+    return d_indx,  dt_indx  
 
 def plan(om, Nd, Kd, Jd):
 #         self.debug = 0  # debug
 
-        if type(Nd) != tuple:
-            raise TypeError('Nd must be tuple, e.g. (256, 256)')
+    if type(Nd) != tuple:
+        raise TypeError('Nd must be tuple, e.g. (256, 256)')
 
-        if type(Kd) != tuple:
-            raise TypeError('Kd must be tuple, e.g. (512, 512)')
+    if type(Kd) != tuple:
+        raise TypeError('Kd must be tuple, e.g. (512, 512)')
 
-        if type(Jd) != tuple:
-            raise TypeError('Jd must be tuple, e.g. (6, 6)')
+    if type(Jd) != tuple:
+        raise TypeError('Jd must be tuple, e.g. (6, 6)')
 
-        if (len(Nd) != len(Kd)) | (len(Nd) != len(Jd))  | len(Kd) != len(Jd):
-            raise KeyError('Nd, Kd, Jd must be in the same length, e.g. Nd=(256,256),Kd=(512,512),Jd=(6,6)')
+    if (len(Nd) != len(Kd)) | (len(Nd) != len(Jd))  | len(Kd) != len(Jd):
+        raise KeyError('Nd, Kd, Jd must be in the same length, e.g. Nd=(256,256),Kd=(512,512),Jd=(6,6)')
 
-        dd = numpy.size(Nd)
+    dd = numpy.size(Nd)
 
-    ###############################################################
-    # check input errors
-    ###############################################################
-        st = {}
-        ud = {}
-        kd = {}
+###############################################################
+# check input errors
+###############################################################
+    st = {}
+    ud = {}
+    kd = {}
 
-    ###############################################################
-    # First, get alpha and beta: the weighting and freq
-    # of formula (28) in Fessler's paper
-    # in order to create slow-varying image space scaling
-    ###############################################################
-        for dimid in range(0, dd):
-            (tmp_alpha, tmp_beta) = nufft_alpha_kb_fit(
-                Nd[dimid], Jd[dimid], Kd[dimid])
-            st.setdefault('alpha', []).append(tmp_alpha)
-            st.setdefault('beta', []).append(tmp_beta)
-        st['tol'] = 0
-        st['Jd'] = Jd
-        st['Nd'] = Nd
-        st['Kd'] = Kd
-        M = om.shape[0]
-        st['M'] = numpy.int32(M)
-        st['om'] = om
-        st['sn'] = numpy.array(1.0 + 0.0j)
-        dimid_cnt = 1
-    ###############################################################
-    # create scaling factors st['sn'] given alpha/beta
-    # higher dimension implementation
-    ###############################################################
-        for dimid in range(0, dd):
-            tmp = nufft_scale(
-                Nd[dimid],
-                Kd[dimid],
-                st['alpha'][dimid],
-                st['beta'][dimid])
-            dimid_cnt = Nd[dimid] * dimid_cnt
-    ###############################################################
-    # higher dimension implementation: multiply over all dimension
-    ###############################################################
-            st['sn'] = numpy.dot(st['sn'], tmp.T)
-            st['sn'] = numpy.reshape(st['sn'], (dimid_cnt, 1), order='C')
-            # JML do not apply scaling
+###############################################################
+# First, get alpha and beta: the weighting and freq
+# of formula (28) in Fessler's paper
+# in order to create slow-varying image space scaling
+###############################################################
+    for dimid in range(0, dd):
+        (tmp_alpha, tmp_beta) = nufft_alpha_kb_fit(
+            Nd[dimid], Jd[dimid], Kd[dimid])
+        st.setdefault('alpha', []).append(tmp_alpha)
+        st.setdefault('beta', []).append(tmp_beta)
+    st['tol'] = 0
+    st['Jd'] = Jd
+    st['Nd'] = Nd
+    st['Kd'] = Kd
+    M = om.shape[0]
+    st['M'] = numpy.int32(M)
+    st['om'] = om
+    st['sn'] = numpy.array(1.0 + 0.0j)
+    dimid_cnt = 1
+###############################################################
+# create scaling factors st['sn'] given alpha/beta
+# higher dimension implementation
+###############################################################
+    for dimid in range(0, dd):
+        tmp = nufft_scale(
+            Nd[dimid],
+            Kd[dimid],
+            st['alpha'][dimid],
+            st['beta'][dimid])
+        dimid_cnt = Nd[dimid] * dimid_cnt
+###############################################################
+# higher dimension implementation: multiply over all dimension
+###############################################################
+        st['sn'] = numpy.dot(st['sn'], tmp.T)
+        st['sn'] = numpy.reshape(st['sn'], (dimid_cnt, 1), order='C')
+        # JML do not apply scaling
 
-        # order = 'F' is for fortran order
-        st['sn'] = st['sn'].reshape(Nd, order='C')  # [(Nd)]
+    # order = 'F' is for fortran order
+    st['sn'] = st['sn'].reshape(Nd, order='C')  # [(Nd)]
+    ###############################################################
+    # else:
+    #     st['sn'] = numpy.array(st['sn'],order='F')
+    ###############################################################
+
+    st['sn'] = numpy.real(st['sn'])  # only real scaling is relevant
+
+    # [J? M] interpolation coefficient vectors.
+    # Iterate over all dimensions and
+    # multiply the coefficients of all dimensions
+    for dimid in range(0, dd):  # loop over dimensions
+        N = Nd[dimid]
+        J = Jd[dimid]
+        K = Kd[dimid]
+        alpha = st['alpha'][dimid]
+        beta = st['beta'][dimid]
         ###############################################################
-        # else:
-        #     st['sn'] = numpy.array(st['sn'],order='F')
+        # formula 29 , 26 of Fessler's paper
         ###############################################################
 
-        st['sn'] = numpy.real(st['sn'])  # only real scaling is relevant
+        # pseudo-inverse of CSSC using large N approx [J? J?]
+        T = nufft_T(N, J, K, alpha, beta)
+        ###############################################################
+        # formula 30  of Fessler's paper
+        ###############################################################
 
-        # [J? M] interpolation coefficient vectors.
-        # Iterate over all dimensions and
-        # multiply the coefficients of all dimensions
-        for dimid in range(0, dd):  # loop over dimensions
-            N = Nd[dimid]
-            J = Jd[dimid]
-            K = Kd[dimid]
-            alpha = st['alpha'][dimid]
-            beta = st['beta'][dimid]
-            ###############################################################
-            # formula 29 , 26 of Fessler's paper
-            ###############################################################
+        (r, arg) = nufft_r(om[:, dimid], N, J,
+                           K, alpha, beta)  # large N approx [J? M]
 
-            # pseudo-inverse of CSSC using large N approx [J? J?]
-            T = nufft_T(N, J, K, alpha, beta)
-            ###############################################################
-            # formula 30  of Fessler's paper
-            ###############################################################
+        ###############################################################
+        # formula 25  of Fessler's paper
+        ###############################################################
+        c = numpy.dot(T, r)
 
-            (r, arg) = nufft_r(om[:, dimid], N, J,
-                               K, alpha, beta)  # large N approx [J? M]
+        ###############################################################
+        # grid intervals in radius
+        ###############################################################
+        gam = 2.0 * numpy.pi / (K * 1.0)
 
-            ###############################################################
-            # formula 25  of Fessler's paper
-            ###############################################################
-            c = numpy.dot(T, r)
+        phase_scale = 1.0j * gam * (N - 1.0) / 2.0
+        phase = numpy.exp(phase_scale * arg)  # [J? M] linear phase
+        ud[dimid] = phase * c
+        # indices into oversampled FFT components
+        # FORMULA 7
+        koff = nufft_offset(om[:, dimid], J, K)
+        # FORMULA 9, find the indexes on Kd grids, of each M point
+        kd[dimid] = numpy.mod(
+            outer_sum(
+                numpy.arange(
+                    1,
+                    J + 1) * 1.0,
+                koff),
+            K)
 
-            ###############################################################
-            # grid intervals in radius
-            ###############################################################
-            gam = 2.0 * numpy.pi / (K * 1.0)
+        """
+            JML: For GPU computing, indexing must be C-order (row-major)
+            Multi-dimensional cuda or opencl arrays are row-major (order="C"), which  starts from the higher dimension.
+            Note: This is different from the MATLAB indexing(for fortran order, colum major, low-dimension first 
+        """
 
-            phase_scale = 1.0j * gam * (N - 1.0) / 2.0
-            phase = numpy.exp(phase_scale * arg)  # [J? M] linear phase
-            ud[dimid] = phase * c
-            # indices into oversampled FFT components
-            # FORMULA 7
-            koff = nufft_offset(om[:, dimid], J, K)
-            # FORMULA 9, find the indexes on Kd grids, of each M point
-            kd[dimid] = numpy.mod(
-                outer_sum(
-                    numpy.arange(
-                        1,
-                        J + 1) * 1.0,
-                    koff),
-                K)
-
-            """
-                JML: For GPU computing, indexing must be C-order (row-major)
-                Multi-dimensional cuda or opencl arrays are row-major (order="C"), which  starts from the higher dimension.
-                Note: This is different from the MATLAB indexing(for fortran order, colum major, low-dimension first 
-            """
-
-            if dimid < dd - 1:  # trick: pre-convert these indices into offsets!
-                #            ('trick: pre-convert these indices into offsets!')
-                kd[dimid] = kd[dimid] * numpy.prod(Kd[dimid+1:dd]) - 1 
-            """
-            Note: F-order matrices must be reshaped into an 1D array before sparse matrix-vector multiplication.
-            The original F-order (in Fessler and Sutton 2003) is not suitable for GPU array (C-order).
-            Currently, in-place reshaping in F-order only works in numpy.
-            
-            """
+        if dimid < dd - 1:  # trick: pre-convert these indices into offsets!
+            #            ('trick: pre-convert these indices into offsets!')
+            kd[dimid] = kd[dimid] * numpy.prod(Kd[dimid+1:dd]) - 1 
+        """
+        Note: F-order matrices must be reshaped into an 1D array before sparse matrix-vector multiplication.
+        The original F-order (in Fessler and Sutton 2003) is not suitable for GPU array (C-order).
+        Currently, in-place reshaping in F-order only works in numpy.
+        
+        """
 #             if dimid > 0:  # trick: pre-convert these indices into offsets!
 #                 #            ('trick: pre-convert these indices into offsets!')
 #                 kd[dimid] = kd[dimid] * numpy.prod(Kd[0:dimid]) - 1           
 
-        kk = kd[0]  # [J1 M] # pointers to indices
-        uu = ud[0]  # [J1 M]
-        Jprod = Jd[0]
-        Kprod = Kd[0]
-        for dimid in range(1, dd):
-            Jprod = numpy.prod(Jd[:dimid + 1])
-            Kprod = numpy.prod(Kd[:dimid + 1])
-            kk = block_outer_sum(kk, kd[dimid]) + 1  # outer sum of indices
-            kk = kk.reshape((Jprod, M), order='C')
-            # outer product of coefficients
-            uu = block_outer_prod(uu, ud[dimid])
-            uu = uu.reshape((Jprod, M), order='C')
-            # now kk and uu are [*Jd M]
-            # now kk and uu are [*Jd M]
-        # *numpy.tile(phase,[numpy.prod(Jd),1]) #    product(Jd)xM
-        uu = uu.conj()
-        mm = numpy.arange(0, M)  # indices from 0 to M-1
-        mm = numpy.tile(mm, [numpy.prod(Jd), 1])  # product(Jd)xM
-        # Now build sparse matrix from uu, mm, kk
+    kk = kd[0]  # [J1 M] # pointers to indices
+    uu = ud[0]  # [J1 M]
+    Jprod = Jd[0]
+    Kprod = Kd[0]
+    for dimid in range(1, dd):
+        Jprod = numpy.prod(Jd[:dimid + 1])
+        Kprod = numpy.prod(Kd[:dimid + 1])
+        kk = block_outer_sum(kk, kd[dimid]) + 1  # outer sum of indices
+        kk = kk.reshape((Jprod, M), order='C')
+        # outer product of coefficients
+        uu = block_outer_prod(uu, ud[dimid])
+        uu = uu.reshape((Jprod, M), order='C')
+        # now kk and uu are [*Jd M]
+        # now kk and uu are [*Jd M]
+    # *numpy.tile(phase,[numpy.prod(Jd),1]) #    product(Jd)xM
+    uu = uu.conj()
+    mm = numpy.arange(0, M)  # indices from 0 to M-1
+    mm = numpy.tile(mm, [numpy.prod(Jd), 1])  # product(Jd)xM
+    # Now build sparse matrix from uu, mm, kk
 
-        # convert array to list
-        csrdata = numpy.reshape(uu.T, (Jprod * M, ), order='C')
+    # convert array to list
+    csrdata = numpy.reshape(uu.T, (Jprod * M, ), order='C')
 
-        # row indices, from 1 to M convert array to list
-        rowindx = numpy.reshape(mm.T, (Jprod * M, ), order='C')
+    # row indices, from 1 to M convert array to list
+    rowindx = numpy.reshape(mm.T, (Jprod * M, ), order='C')
 
-        # colume indices, from 1 to prod(Kd), convert array to list
-        colindx = numpy.reshape(kk.T, (Jprod * M, ), order='C')
+    # colume indices, from 1 to prod(Kd), convert array to list
+    colindx = numpy.reshape(kk.T, (Jprod * M, ), order='C')
 
-        # The shape of sparse matrix
-        csrshape = (M, numpy.prod(Kd))
+    # The shape of sparse matrix
+    csrshape = (M, numpy.prod(Kd))
 
-        # Build sparse matrix (interpolator)
-        st['p0'] = scipy.sparse.csr_matrix((csrdata, (rowindx, colindx)),
-                                           shape=csrshape)
-        # Note: the sparse matrix requires the following linear phase,
-        #       which moves the image to the center of the image
-        st['p0'].prune() # Scipy sparse: removing empty space after all non-zero elements.
-        
-        return st
+    # Build sparse matrix (interpolator)
+    st['p0'] = scipy.sparse.csr_matrix((csrdata, (rowindx, colindx)),
+                                       shape=csrshape)
+    # Note: the sparse matrix requires the following linear phase,
+    #       which moves the image to the center of the image
+    st['p0'].prune() # Scipy sparse: removing empty space after all non-zero elements.
+    
+    return st
 def preindex_copy(Nd, Kd):
     """
     Building the array index for copying two arrays of sizes Nd and Kd
     
-    The output array2 is either truncated (if Nd > Kd) or zero-padded (if Nd < Kd)
+    Only the front part of the input/output arrays are copied. 
     
-    input: Nd: tuple, the dimensions of array1
-                Kd: tuple, the dimensions of array2
-    output: inlist: the index of the input array1
-                    outlist: the index of the output array2
-                    nelem: the product of all the smaller lengths along each dimension
-    example:
+    The oversize  parts of the input array are truncated (if Nd > Kd). 
     
+    And the smaller size are zero-padded (if Nd < Kd)
     
+    :param Nd: tuple, the dimensions of array1
+    :param Kd: tuple, the dimensions of array2
+    :type Nd: tuple with integer elements
+    :type Kd: tuple with integer elements
+    :returns: inlist: the index of the input array
+    :returns: outlist: the index of the output array
+    :returns: nelem: the length of the inlist and outlist (equal length)
+    :rtype: inlist: list with integer elements
+    :rtype: outlist: list with integer elements
+    :rtype: nelem: int
     """
     ndim = len(Nd)
     kdim = len(Kd)
@@ -289,6 +320,10 @@ def dirichlet(x):
     return numpy.sinc(x)
 
 def outer_sum(xx, yy):
+    """
+    Superseded by numpy.add.outer() function
+    """
+    
     return numpy.add.outer(xx,yy)
 #     nx = numpy.size(xx)
 #     ny = numpy.size(yy)
@@ -309,12 +344,17 @@ def nufft_offset(om, J, K):
 
 
 def nufft_alpha_kb_fit(N, J, K):
-    '''
-    find out parameters alpha and beta
-    of scaling factor st['sn']
-    Note, when J = 1 , alpha is hardwired as [1,0,0...]
-    (uniform scaling factor)
-    '''
+    """
+    Find parameters alpha and beta for scaling factor st['sn']
+    The alpha is hardwired as [1,0,0...] when J = 1 (uniform scaling factor)
+    
+    :param int N: the size of image
+    :param int J:the size of interpolator
+    :param int K: the size of oversampled k-space
+    
+    
+    
+    """
     beta = 1
     Nmid = (N - 1.0) / 2.0
     if N > 40:
@@ -390,7 +430,7 @@ def kaiser_bessel(x, J, alpha, kb_m, K_N):
 
 def kaiser_bessel_ft(u, J, alpha, kb_m, d):
     '''
-    interpolation weight for given J/alpha/kb-m
+    Interpolation weight for given J/alpha/kb-m
     '''
 
     u = u * (1.0 + 0.0j)
@@ -405,7 +445,7 @@ def kaiser_bessel_ft(u, J, alpha, kb_m, d):
 
 def nufft_scale1(N, K, alpha, beta, Nmid):
     '''
-    calculate image space scaling factor
+    Calculate image space scaling factor
     '''
 #     import types
 #     if alpha is types.ComplexType:
@@ -449,10 +489,9 @@ def mat_inv(A):
 
 def nufft_T(N, J, K, alpha, beta):
     '''
-     equation (29) and (26)Fessler's paper
-     create the overlapping matrix CSSC (diagonal dominent matrix)
-     of J points
-     and then find out the pseudo-inverse of CSSC '''
+     The Equation (29) and (26) in Fessler and Sutton 2003.
+     Create the overlapping matrix CSSC (diagonal dominent matrix)
+     of J points and find out the pseudo-inverse of CSSC '''
 
 #     import scipy.linalg
     L = numpy.size(alpha) - 1
@@ -474,33 +513,28 @@ def nufft_T(N, J, K, alpha, beta):
     return mat_inv(cssc)
 
 
-def iterate_sum(rr, alf, r1):
-    rr = rr + alf * r1
-    return rr
-
-
-def iterate_l1(L, alpha, arg, beta, K, N, rr):
-    oversample_ratio = (1.0 * K / N)
-    import time
-    t0=time.time()
-    for l1 in range(-L, L + 1):
-        alf = alpha[abs(l1)] * 1.0
-#         if l1 < 0:
-#             alf = numpy.conj(alf)
-    #             r1 = numpy.sinc(1.0*(arg+1.0*l1*beta)/(1.0*K/N))
-        input_array = (arg + 1.0 * l1 * beta) / oversample_ratio
-        r1 = dirichlet(input_array)
-        rr = iterate_sum(rr, alf, r1)
-
-    return rr
-
-
 def nufft_r(om, N, J, K, alpha, beta):
     '''
     equation (30) of Fessler's paper
 
     '''
-
+    def iterate_sum(rr, alf, r1):
+        rr = rr + alf * r1
+        return rr
+    def iterate_l1(L, alpha, arg, beta, K, N, rr):
+        oversample_ratio = (1.0 * K / N)
+        import time
+        t0=time.time()
+        for l1 in range(-L, L + 1):
+            alf = alpha[abs(l1)] * 1.0
+    #         if l1 < 0:
+    #             alf = numpy.conj(alf)
+        #             r1 = numpy.sinc(1.0*(arg+1.0*l1*beta)/(1.0*K/N))
+            input_array = (arg + 1.0 * l1 * beta) / oversample_ratio
+            r1 = dirichlet(input_array)
+            rr = iterate_sum(rr, alf, r1)
+        return rr
+    
     M = numpy.size(om)  # 1D size
     gam = 2.0 * numpy.pi / (K * 1.0)
     nufft_offset0 = nufft_offset(om, J, K)  # om/gam -  nufft_offset , [M,1]
@@ -515,7 +549,7 @@ def nufft_r(om, N, J, K, alpha, beta):
 
 def block_outer_prod(x1, x2):
     '''
-    multiply the amplitudes along different axes
+    Multiply x1 (J1 x M) and x2 (J2xM) and extend the dimension to 3D (J1xJ2xM)
     '''
     (J1, M) = x1.shape
     (J2, M) = x2.shape
@@ -532,7 +566,7 @@ def block_outer_prod(x1, x2):
 
 def block_outer_sum(x1, x2):
     '''
-    update the new index after adding a new axis
+    Update the new index after adding a new axis
     '''
     (J1, M) = x1.shape
     (J2, M) = x2.shape
@@ -546,8 +580,41 @@ def block_outer_sum(x1, x2):
 
 def crop_slice_ind(Nd):
     '''
-    Return the "slice" of Nd size.
-    In Python language, "slice" means the index of a matrix.
-    Slice can provide a smaller "view" of a larger matrix. 
+    (Deprecated in v.0.3.4) 
+    Return the "slice" of Nd size to index multi-dimensional array.  "Slice" functions as the index of the array.
+    Superseded by preindex_copy() which avoid run-time indexing.    
     '''
     return [slice(0, Nd[ss]) for ss in range(0, len(Nd))]
+def diagnose():
+    """
+    Diagnosis function
+    Find available device when NUFFT.offload() failed
+    """
+    from reikna import cluda
+    import reikna.transformations
+    from reikna.cluda import functions, dtypes    
+    try:
+        api = cluda.cuda_api()
+        print('cuda interface is available')
+        available_cuda_device = cluda.find_devices(api)
+        print(api, available_cuda_device)
+        cuda_flag = 1
+        print("try to load cuda interface:")
+        for api_n in available_cuda_device.keys():
+            print("API='cuda',  ", "platform_number=", api_n, ", device_number=", available_cuda_device[api_n][0])     
+    except:
+        cuda_flag = 0
+        print('cuda interface is not available') 
+    try:
+        api = cluda.ocl_api()
+        print('ocl interface is available')
+        available_ocl_device = cluda.find_devices(api)
+        print(api, available_ocl_device)
+        ocl_flag = 1
+        print("try to load ocl interface with:")
+        for api_n in available_ocl_device.keys():
+            print("API='ocl',  ", "platform_number=", api_n, ", device_number=", available_ocl_device[api_n][0])        
+    except:
+        print('ocl interface is not available')
+        ocl_flag = 0
+        

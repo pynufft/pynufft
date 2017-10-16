@@ -1,14 +1,11 @@
-import os
-import sys
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
-# from .. import *
+
 def test_pkg(pkgname):
     """
     Test Reikna package
     """
     try:
         __import__(pkgname)
-        print(pkgname+'  is available')
+        print(pkgname+'  has been installed.')
         return 0
     except:
         print(pkgname+' cannot be imported, check installation!')
@@ -31,8 +28,8 @@ def test_installation():
     print('Does om3D.npz exist?',os.path.isfile(DATA_PATH+'om3D.npz'))
     print('Does phantom_3D_128_128_128.npz exist?', os.path.isfile(DATA_PATH+'phantom_3D_128_128_128.npz'))
     print('Does phantom_256_256.npz exist?', os.path.isfile(DATA_PATH+'phantom_256_256.npz'))
-    print('Does 1D_example.py exist?', os.path.isfile('../tests/1D_example.py'))
-    print('Does 2D_example.py exist?', os.path.isfile('../tests/2D_example.py'))
+    print('Does example_1D.py exist?', os.path.isfile(PYNUFFT_PATH+'./tests/example_1D.py'))
+    print('Does example_2D.py exist?', os.path.isfile(PYNUFFT_PATH+'./tests/example_2D.py'))
     
     
     for pkgname in ('reikna', 'pyopencl', 'pycuda'):
@@ -42,4 +39,8 @@ def test_installation():
         
     
 if __name__ == '__main__':
+    import os
+    import sys
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
+# from .. import *    
     test_installation()

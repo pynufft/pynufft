@@ -1,2 +1,0 @@
-using OpenCL API
-device =  <pyopencl.Device 'Intel(R) Core(TM) i7-6700HQ CPU @ 2.60GHz' on 'Intel(R) OpenCL' at 0x1b748d8>

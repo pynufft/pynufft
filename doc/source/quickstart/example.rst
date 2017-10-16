@@ -4,13 +4,12 @@ An 1D example
 
 In python environment, import pynufft module::
    
-   import pynufft.pynufft as pnft
+   from pynufft.pynufft import NUFFT_cpu, NUFFT_hsa
    
 Create a pynufft object NufftObj::
 
-   NufftObj = pnft.NUFFT()
+   NufftObj = NUFFT_cpu()
   
-We provide the required information in the next sections.
 
 **Planning**
 
@@ -34,7 +33,7 @@ Now provide NufftObj with these parameters::
 
 **Forward transform**
 
-Now NufftObj has been prepared and is ready for computations. Let continue with an example.::
+Now NufftObj has been prepared and is ready for computations. Continue with an example.::
    
    import numpy
    import matplotlib.pyplot as pyplot
@@ -49,69 +48,55 @@ This generates a time series :numref:`box_function`.
 .. _box_function:
 
 .. figure:: ../figure/box_function.png
-   :width: 50 %
+   :width: 75 %
 
    A box function time series
    
 NufftObj transform the time_data to non-Cartesian locations::
 
-   y = NufftObj.forward(time_data) 
-   pyplot.plot(om,y.real,'.', label='real') 
-   pyplot.plot(om,y.imag,'r.', label='imag') 
+   nufft_freq_data =NufftObj.forward(time_data)
+   pyplot.plot(om,nufft_freq_data.real,'.', label='real')
+   pyplot.plot(om,nufft_freq_data.imag,'r.', label='imag')
    pyplot.legend()
-   pyplot.show()  
+   pyplot.show()
 
 This display the non-Cartesian spectrum :numref:`non_Cartesian_spectrum`.
 
 .. _non_Cartesian_spectrum:
 
 .. figure:: ../figure/non_Cartesian_spectrum.png
-   :width: 50 %
+   :width: 75 %
 
    Non-Cartesian spectrum of box function in :numref:`box_function`. Note the non-uniform density.
+  
    
-**Adjoint transform**
+**Signal restoration through "solve()"**
 
-The adjoint transform is the reverse of forward transform::
+The signal can be solved by the solve() method ::
 
-   x2 = NufftObj.adjoint(y) 
-   pyplot.plot(x2.real,'.-', label='real') 
-   pyplot.plot(x2.imag,'r.-', label='imag') 
-   pyplot.plot(time_data,'k',label='original signal')
-   pyplot.ylim(-1,2)
-   pyplot.legend()
-   pyplot.show() 
+   restore_time = NufftObj.solve(nufft_freq_data,'cg', maxiter=30)   
+   restore_time1 = NufftObj.solve(nufft_freq_data,'L1TVLAD', maxiter=30,rho=1)  
+   restore_time2 = NufftObj.solve(nufft_freq_data,'L1TVOLS', maxiter=30,rho=1)
 
-There are some distortions in the adjoint operation :numref:`adjoint`. It does NOT recover the rectangular function in :numref:`box_function`.
+Now display the restored signals::
 
-.. _adjoint:
-
-.. figure:: ../figure/adjoint.png
-   :width: 50 %
-
-   Adjoint transform of non-Cartesian spectrum.
-   
-   
-**Inverse transform through density compensation**
-
-The inverse can be approximately given by inverse_DC() method ::
-
-   x3 = NufftObj.inverse_DC(y) 
-   pyplot.plot(x3.real,'.-', label='real') 
-   pyplot.plot(x3.imag,'r.-', label='imag') 
-   pyplot.plot(time_data,'k',label='original signal')
-   pyplot.ylim(-1,2)
-   pyplot.legend()
+   im1,=pyplot.plot(numpy.abs(time_data),'r',label='original signal')
+   im2,=pyplot.plot(numpy.abs(restore_time1),'b:',label='L1TVLAD')
+   im3,=pyplot.plot(numpy.abs(restore_time2),'k--',label='L1TVOLS')
+   im4,=pyplot.plot(numpy.abs(restore_time),'r:',label='conjugate_gradient_method')
+   pyplot.legend([im1, im2, im3,im4])
    pyplot.show()
    
-.. _inverse_DC:
+.. _solve:
 
-.. figure:: ../figure/inverse_DC.png
-   :width: 50 %
+.. figure:: ../figure/script_1D_solve.png
+   :width: 75 %
 
-   Inverse transform through density compensated spectrum.
+   Signals restored by "solve()". L1TVOLS and L1TVOLS are more close to :numref:`box_function` as cg suffers from distortions.
    
-:numref:`inverse_DC` is more close to :numref:`box_function` as the uneven density of non-Cartesian samples has been corrected.
+
+
+The complete code is:
    
-.. literalinclude::  ../codes/pnft_1Dtest.py
+.. literalinclude::  ../../../example/scrip_1D.py
    

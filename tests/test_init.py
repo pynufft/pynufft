@@ -1,26 +1,23 @@
-import os
-import sys
-# sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../pynufft')))
-import sys
-# Add the ptdraft folder path to the sys.path list
-sys.path.append('../')
+from ..pynufft import NUFFT_cpu, NUFFT_hsa
 
+import numpy
+dtype = numpy.complex64
 
 def test_init():
     import cProfile
     import numpy
     import matplotlib.pyplot
     import copy
-    dtype = numpy.complex64
+
     cm = matplotlib.cm.gray
     # load example image
     import pkg_resources
     
-    DATA_PATH = pkg_resources.resource_filename('pynufft', './src/data/')
+    DATA_PATH = pkg_resources.resource_filename('pynufft', 'src/data/')
 #     PHANTOM_FILE = pkg_resources.resource_filename('pynufft', 'data/phantom_256_256.txt')
     import numpy
     import matplotlib.pyplot
-    import scipy.misc
+    import scipy
     # load example image
 #     image = numpy.loadtxt(DATA_PATH +'phantom_256_256.txt')
 #     image = scipy.misc.face(gray=True)
@@ -46,17 +43,17 @@ def test_init():
     
 #         else:
 #             n_shift=tuple(list(n_shift)+numpy.array(Nd)/2)
-    import pynufft
-    nfft = pynufft.NUFFT()  # CPU
+#     from transform_cpu import NUFFT as NUFFT_c
+    nfft = NUFFT_cpu()  # CPU
     nfft.plan(om, Nd, Kd, Jd)
 #     nfft.initialize_gpu()
     import scipy.sparse
 #     scipy.sparse.save_npz('tests/test.npz', nfft.st['p'])
-    from pynufft_hsa import NUFFT
-    NufftObj = NUFFT()
+
+    NufftObj = NUFFT_hsa()
 
     NufftObj.plan(om, Nd, Kd, Jd)
-
+    NufftObj.offload(API='ocl',   platform_number= 0 , device_number= 0)
 #     print('sp close? = ', numpy.allclose( nfft.st['p'].data,  NufftObj.st['p'].data, atol=1e-1))
 #     NufftObj.initialize_gpu()
 
@@ -113,17 +110,17 @@ def test_init():
     print(t_cl)
     print('gy close? = ', numpy.allclose(y,gy.get(),  atol=1e-1))
     print("acceleration=", t_cpu/t_cl)
-    maxiter = 100
+    maxiter =100
     import time
     t0= time.time()
-#     x2 = nfft.solver(y2, 'cg',maxiter=maxiter)
-    x2 =  nfft.solver(y2, 'L1LAD',maxiter=maxiter, rho = 1)
+#     x2 = nfft.solve(y2, 'cg',maxiter=maxiter)
+    x2 =  nfft.solve(y2, 'L1TVLAD',maxiter=maxiter, rho = 2)
     t1 = time.time()-t0
 #     gy=NufftObj.thr.copy_array(NufftObj.thr.to_device(y2))
     
     t0= time.time()
-#     x = NufftObj.solver(gy,'cg', maxiter=maxiter)
-    x = NufftObj.solver(gy,'L1LAD', maxiter=maxiter, rho=1)
+#     x = NufftObj.solve(gy,'dc', maxiter=maxiter)
+    x = NufftObj.solve(gy,'L1TVLAD', maxiter=maxiter, rho=2)
     
     t2 = time.time() - t0
     print(t1, t2)
@@ -133,13 +130,9 @@ def test_init():
 #     return
     
     matplotlib.pyplot.subplot(1, 3, 2)
-    matplotlib.pyplot.imshow( NufftObj.x_Nd.get().real, cmap= matplotlib.cm.gray)
+    matplotlib.pyplot.imshow( x.get().real, cmap= matplotlib.cm.gray)
     matplotlib.pyplot.subplot(1, 3,3)
     matplotlib.pyplot.imshow(x2.real, cmap= matplotlib.cm.gray)
     matplotlib.pyplot.show()
-if __name__ == '__main__':
-    import cProfile
-#     cProfile.run('benchmark()')
-    test_init()
-#     test_cAddScalar()
-#     cProfile.run('test_init()')
+# if __name__ == '__main__':
+#     test_init()    

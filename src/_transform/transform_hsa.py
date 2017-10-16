@@ -2,8 +2,6 @@
 Class NUFFT on heterogeneous platforms
 ==================================================================
 """
-
-
 from __future__ import division
 
 from numpy.testing import (run_module_suite, assert_raises, assert_equal,
@@ -15,40 +13,18 @@ import numpy
 import scipy.sparse  # TODO: refactor to remove this
 
 from scipy.sparse.csgraph import _validation  # for cx_freeze debug
-# import sys
-# import scipy.fftpack
+
 import numpy.fft
  
 import scipy.linalg
-# import pyopencl 
-# import pyopencl.array
-# import reikna
-
-from reikna import cluda
-import reikna.transformations
-from reikna.cluda import functions, dtypes
-
 
 dtype = numpy.complex64
-# try:
-#     api = cluda.ocl_api()
-# except:
-#     api = cluda.cuda_api()
-# # api = cluda.cuda_api()
-# try:
-#     platform = api.get_platforms()[0]
-# 
-# except:
-#     platform = api.get_platforms()[0]
-# 
-# device = platform.get_devices()[0]
-# print('device = ', device)
-# print('using cl device=',device,device[0].max_work_group_size, device[0].max_compute_units,pyopencl.characterize.get_simd_group_size(device[0], dtype.size))
 
-from src._helper.helper import *
+from .._helper.helper import *
+from .._transform.transform_cpu import NUFFT as NUFFT_c 
+# import transform_cpu.NUFFT as NUFFT_cpu
 
-
-class NUFFT:
+class NUFFT(NUFFT_c):
     """
     The class NUFFT belongs to pynufft_hsa, which offloads Non-Uniform Fast Fourier Transform (NUFFT) to heterogeneous devices.
    """
@@ -63,102 +39,110 @@ class NUFFT:
         :rtype: NUFFT: the pynufft_hsa.NUFFT class
         :Example:
 
-        >>> import pynufft
-        >>> NufftObj = pynufft_hsa.NUFFT()
+        >>> import pynufft.pynufft
+        >>> NufftObj = pynufft.pynufft.NUFFT_hsa()
 
 
-        .. note:: can be useful to emphasize
-            important feature
-        .. seealso:: :class:`MainClass2`
-        .. warning:: arg2 must be non-zero.
-        .. todo:: check that arg2 is non zero.
+        .. note:: requires plan() and offload()
+        .. seealso:: :method:`plan()' 'offload()'
+        .. todo:: test 3D case
         """
+        
         pass
+        NUFFT_c.__init__(self)
 
-    def plan(self, om, Nd, Kd, Jd):
-        """
-        Design the min-max interpolator.
-        
-        :param om: The M off-grid locations in the frequency domain. Normalized between [-pi, pi]
-        :param Nd: The matrix size of equispaced image. Example: Nd=(256,256) for a 2D image; Nd = (128,128,128) for a 3D image
-        :param Kd: The matrix size of the oversampled frequency grid. Example: Kd=(512,512) for 2D image; Kd = (256,256,256) for a 3D image
-        :param Jd: The interpolator size. Example: Jd=(6,6) for 2D image; Jd = (6,6,6) for a 3D image
-        :type om: numpy.float array, matrix size = M * ndims
-        :type Nd: tuple, ndims integer elements. 
-        :type Kd: tuple, ndims integer elements. 
-        :type Jd: tuple, ndims integer elements. 
-        :returns: 0
-        :rtype: int, float
-        :Example:
 
-        >>> import pynufft
-        >>> NufftObj = pynufft_hsa.NUFFT()
-        >>> NufftObj.plan(om, Nd, Kd, Jd) 
-        
-        """         
-        self.debug = 0  # debug
+#     def plan(self, om, Nd, Kd, Jd):
+#         """
+#         Design the min-max interpolator.
+#          
+#         :param om: The M off-grid locations in the frequency domain. Normalized between [-pi, pi]
+#         :param Nd: The matrix size of equispaced image. Example: Nd=(256,256) for a 2D image; Nd = (128,128,128) for a 3D image
+#         :param Kd: The matrix size of the oversampled frequency grid. Example: Kd=(512,512) for 2D image; Kd = (256,256,256) for a 3D image
+#         :param Jd: The interpolator size. Example: Jd=(6,6) for 2D image; Jd = (6,6,6) for a 3D image
+#         :type om: numpy.float array, matrix size = M * ndims
+#         :type Nd: tuple, ndims integer elements. 
+#         :type Kd: tuple, ndims integer elements. 
+#         :type Jd: tuple, ndims integer elements. 
+#         :returns: 0
+#         :rtype: int, float
+#         :Example:
+#  
+#         >>> import pynufft
+#         >>> NufftObj = pynufft_hsa.NUFFT()
+#         >>> NufftObj.plan(om, Nd, Kd, Jd) 
+#          
+#         """         
+#         self.debug = 0  # debug
+#  
+#         n_shift = tuple(0*x for x in Nd)
+#         self.st = plan(om, Nd, Kd, Jd)
+#          
+#         self.Nd = self.st['Nd']  # backup
+#         self.sn = numpy.asarray(self.st['sn'].astype(dtype)  ,order='C')# backup
+#         self.ndims = len(self.st['Nd']) # dimension
+#         self._linear_phase(n_shift)  # calculate the linear phase thing
+#          
+#         # Calculate the density compensation function
+#         self._precompute_sp()
+#         del self.st['p'], self.st['sn']
+#         del self.st['p0'] 
+#         self.NdCPUorder, self.KdCPUorder, self.nelem =     preindex_copy(self.st['Nd'], self.st['Kd'])
+#  
+#         return 0
 
-        n_shift = tuple(0*x for x in Nd)
-        self.st = plan(om, Nd, Kd, Jd)
-        
-        self.Nd = self.st['Nd']  # backup
-        self.sn = numpy.asarray(self.st['sn'].astype(dtype)  ,order='C')# backup
-        self.ndims = len(self.st['Nd']) # dimension
-        self._linear_phase(n_shift)  # calculate the linear phase thing
-        
-        # Calculate the density compensation function
-        self._precompute_sp()
-        del self.st['p'], self.st['sn']
-        del self.st['p0'] 
-#         self.reikna() 
-        return 0
-        # off-loading success, now delete matrices on the host side
-#         del self.st
-#         self.st['W_gpu'] = self.pipe_density()
-#         self.st['W'] = self.st['W_gpu'].get()
-    def _precompute_sp(self):
-        """
+#     def _precompute_sp(self):
+#         """
+# 
+#         Private: Precompute adjoint (gridding) and Toepitz interpolation matrix.
+#         
+#         :param None: 
+#         :type None: Python Nonetype
+#         :return: self: instance
+#         """
+#         try:
+#             self.sp = self.st['p']
+#             self.spH = (self.st['p'].getH().copy()).tocsr()
+#             self.spHsp =self.st['p'].getH().dot(self.st['p']).tocsr()
+#         except:
+#             print("errors occur in self.precompute_sp()")
+#             raise
+# #         self.truncate_selfadjoint( 1e-2)
 
-        Private: Precompute adjoint (gridding) and Toepitz interpolation matrix.
-        
-        :param None: 
-        :type None: Python Nonetype
-        :return: self: instance
-        """
-        try:
-            self.sp = self.st['p']
-            self.spH = (self.st['p'].getH().copy()).tocsr()
-            self.spHsp =self.st['p'].getH().dot(self.st['p']).tocsr()
-        except:
-            print("errors occur in self.precompute_sp()")
-            raise
-#         self.truncate_selfadjoint( 1e-2)
-
-    def offload(self, API):
+    def offload(self, API, platform_number=0, device_number=0):
         """
         self.offload():
         
         Off-load NUFFT to the opencl or cuda device(s)
         
-        :param API: define the device type, which can be 'CUDA' or 'OpenCL'
+        :param API: define the device type, which can be 'cuda' or 'ocl'
+        :param platform_number: define which platform to be used. The default platform_number = 0.
+        :param device_number: define which device to be used. The default device_number = 0.
         :type API: string
+        :type platform_number: int
+        :type device_number: int
         :return: self: instance
 
         """
-        if 'CUDA' == API:
-            api = cluda.cuda_api()
-        elif 'OpenCL' == API:
-            api = cluda.ocl_api()
+        from reikna import cluda
+        import reikna.transformations
+        from reikna.cluda import functions, dtypes
+        try: # try to create api/platform/device using the given parameters
+            if 'cuda' == API:
+                api = cluda.cuda_api()
+            elif 'ocl' == API:
+                api = cluda.ocl_api()
+     
+            platform = api.get_platforms()[platform_number]
+            
+            device = platform.get_devices()[device_number]
+        except: # if failed, find out what's going wrong?
+            diagnose()
+            
+            return 1
 
-        # api = cluda.cuda_api()
-        try:
-            platform = api.get_platforms()[0]
         
-        except:
-            platform = api.get_platforms()[0]
-        
-        device = platform.get_devices()[0]
-        print('device = ', device)
+#         print('device = ', device)
 #         Create context from device
         self.thr = api.Thread(device) #pyopencl.create_some_context()
 #         self.queue = pyopencl.CommandQueue( self.ctx)
@@ -173,7 +157,7 @@ class NUFFT:
 #         print(self.wavefront)
 #         print(type(self.wavefront))
 #          pyopencl.characterize.get_simd_group_size(device[0], dtype.size)
-        from src.re_subroutine import cMultiplyScalar, cCopy, cAddScalar,cAddVec, cSparseMatVec, cSelect, cMultiplyVec, cMultiplyVecInplace, cMultiplyConjVec, cDiff, cSqrt, cAnisoShrink
+        from ..re_subroutine import cMultiplyScalar, cCopy, cAddScalar,cAddVec, cSparseMatVec, cSelect, cMultiplyVec, cMultiplyVecInplace, cMultiplyConjVec, cDiff, cSqrt, cAnisoShrink
         # import complex float routines
 #         print(dtypes.ctype(dtype))
         prg = self.thr.compile( 
@@ -211,7 +195,7 @@ class NUFFT:
         self.x_Nd = self.thr.to_device(numpy.zeros(self.st['Nd'], dtype=dtype, order="C"))
 #         self.xx_Nd =     pyopencl.array.zeros(self.queue, self.st['Nd'], dtype=dtype, order="C")
 
-        self.NdCPUorder, self.KdCPUorder, self.nelem =     preindex_copy(self.st['Nd'], self.st['Kd'])
+#         self.NdCPUorder, self.KdCPUorder, self.nelem =     preindex_copy(self.st['Nd'], self.st['Kd'])
         self.NdGPUorder = self.thr.to_device( self.NdCPUorder)
         self.KdGPUorder =  self.thr.to_device( self.KdCPUorder)
         self.Ndprod = numpy.int32(numpy.prod(self.st['Nd']))
@@ -245,43 +229,67 @@ class NUFFT:
 #         self.ifft = FFT(self.ctx, self.queue, self.k_Kd2,  fast_math=True)
         self.zero_scalar=dtype(0.0+0.0j)
 #     def solver(self,  gy, maxiter):#, solver='cg', maxiter=200):
-    def solver(self,gy, solver=None, *args, **kwargs):
+    def solve(self,gy, solver=None, *args, **kwargs):
         """
-        The solver of NUFFT
+        The solver of NUFFT_hsa
+        
         :param gy: data, reikna array, (M,) size
-        :param solver: could be 'cg', 'L1OLS', 'L1LAD' 
+        :param solver: could be 'cg', 'L1TVOLS', 'L1TVLAD' 
         :param maxiter: the number of iterations
         :type gy: reikna array, dtype = numpy.complex64
         :type solver: string
         :type maxiter: int
         :return: reikna array with size Nd
-            
-        
         """
-        import src._solver.solver_hsa
-        return src._solver.solver_hsa.solver(self,  gy,  solver, *args, **kwargs)
+        from .._nonlin.solve_hsa import solve
+        
+            
+        try:
+            return solve(self,  gy,  solver, *args, **kwargs)
+        except:
+            if numpy.ndarray==type(gy):
+                print("input gy must be a reikna array with dtype = numpy.complex64")
+                raise TypeError
+            else:
+                print("wrong")
+                raise TypeError
 
-    def _pipe_density(self):
+    def _pipe_density(self,maxiter):
         """
         Private: create the density function by iterative solution
         Generate pHp matrix
         """
-#         self.st['W'] = pipe_density(self.st['p'])
-#         W = numpy.ones((self.st['M'],),dtype=dtype)
-        W_cpu = numpy.ones((self.st['M'],),dtype=dtype)
-        self.W_gpu = pyopencl.array.to_device(self.queue, W_cpu)
-#         transA=cuda_cffi.cusparse.CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE
-#         V1= self.CSR.getH().copy()
-    #     VVH = V.dot(V.getH()) 
+
+
+        try:
+            if maxiter < self.last_iter:
+            
+                W = self.st['W']
+            else: #maxiter > self.last_iter
+                W = self.st['W']
+                for pp in range(0,maxiter - self.last_iter):
+ 
+    #             E = self.st['p'].dot(V1.dot(W))
+                    E = self.forward(self.adjoint(W))
+                    W = (W/E)             
+                self.last_iter = maxiter   
+        except:
+            W = self.thr.copy_array(self.y)
+            self.cMultiplyScalar(self.zero_scalar, W, local_size=None, global_size=int(self.M))
+    #         V1= self.st['p'].getH()
+        #     VVH = V.dot(V.getH()) 
+            
+            for pp in range(0,1):
+    #             E = self.st['p'].dot(V1.dot(W))
+ 
+                E = self.forward(self.adjoint(W))
+                W /= E
+#                 self.cMultiplyVecInplace(self.SnGPUArray, self.x_Nd, local_size=None, global_size=int(self.Ndprod))
+
+
+            self.last_iter = maxiter
         
-        for pp in range(0,10):
-#             E =  self.CSR.mv(self.CSR.mv(W_gpu,transA=transA))
-            E = self.forward(self.adjoint(self.W_gpu))
-            self.W_gpu = self.W_gpu/E
-#         pHp = self.st['p'].getH().dot(self.st['p'])
-        # density of the k-space, reduced size
-#         return W_gpu #dirichlet
-    
+        return W    
     def _linear_phase(self, n_shift):
         """
         Private: Select the center of FOV
@@ -344,9 +352,9 @@ class NUFFT:
             """
             Adjoint NUFFT on the heterogeneous device
             
-            :param gy: The output gpu array, with size=(M,)
+            :param gy: The input gpu array, with size=(M,)
             :type: reikna gpu array with dtype =numpy.complex64
-            :return: gx: The input gpu array, with size=Nd
+            :return: gx: The output gpu array, with size=Nd
             :rtype: reikna gpu array with dtype =numpy.complex64
             """        
             self.y = self.thr.copy_array(gy) 
@@ -362,7 +370,7 @@ class NUFFT:
         
         :param gx: The input gpu array, with size=Nd
         :type: reikna gpu array with dtype =numpy.complex64
-        :return: gx: The input gpu array, with size=Nd
+        :return: gx: The output gpu array, with size=Nd
         :rtype: reikna gpu array with dtype =numpy.complex64
         """                
         self.x_Nd = self.thr.copy_array(gx)
@@ -504,7 +512,7 @@ def benchmark():
     
 #         else:
 #             n_shift=tuple(list(n_shift)+numpy.array(Nd)/2)
-    import pynufft
+    import transform_cpu as pynufft
     nfft = pynufft.NUFFT()  # CPU
     nfft.plan(om, Nd, Kd, Jd)
 #     nfft.initialize_gpu()
@@ -627,13 +635,13 @@ def benchmark():
     import time
     t0= time.time()
     x2 = nfft.solver(y2, 'cg',maxiter=maxiter)
-#    x2 =  nfft.solver(y2, 'L1LAD',maxiter=maxiter, rho = 1)
+#    x2 =  nfft.solver(y2, 'L1TVLAD',maxiter=maxiter, rho = 1)
     t1 = time.time()-t0
 #     gy=NufftObj.thr.copy_array(NufftObj.thr.to_device(y2))
     
     t0= time.time()
     x = NufftObj.solver(gy,'cg', maxiter=maxiter)
-#    x = NufftObj.solver(gy,'L1LAD', maxiter=maxiter, rho=1)
+#    x = NufftObj.solver(gy,'L1TVLAD', maxiter=maxiter, rho=1)
     
     t2 = time.time() - t0
     print(t1, t2)
@@ -641,7 +649,7 @@ def benchmark():
 
     t0= time.time()
 #     x = NufftObj.solver(gy,'cg', maxiter=maxiter)
-    x = NufftObj.solver(gy,'L1OLS', maxiter=maxiter, rho=2)
+    x = NufftObj.solver(gy,'L1TVOLS', maxiter=maxiter, rho=2)
 
     
     t3 = time.time() - t0
@@ -700,8 +708,8 @@ def test_init():
     
 #         else:
 #             n_shift=tuple(list(n_shift)+numpy.array(Nd)/2)
-    import pynufft
-    nfft = pynufft.NUFFT()  # CPU
+#     from transform_cpu import NUFFT as NUFFT_c
+    nfft = NUFFT_c()  # CPU
     nfft.plan(om, Nd, Kd, Jd)
 #     nfft.initialize_gpu()
     import scipy.sparse
@@ -710,7 +718,7 @@ def test_init():
     NufftObj = NUFFT()
 
     NufftObj.plan(om, Nd, Kd, Jd)
-    NufftObj.offload('OpenCL')
+    NufftObj.offload(API='ocl',   platform_number= 0 , device_number= 0)
 #     print('sp close? = ', numpy.allclose( nfft.st['p'].data,  NufftObj.st['p'].data, atol=1e-1))
 #     NufftObj.initialize_gpu()
 
@@ -771,13 +779,13 @@ def test_init():
     import time
     t0= time.time()
 #     x2 = nfft.solver(y2, 'cg',maxiter=maxiter)
-    x2 =  nfft.solver(y2, 'L1LAD',maxiter=maxiter, rho = 2)
+    x2 =  nfft.solver(y2, 'L1TVLAD',maxiter=maxiter, rho = 2)
     t1 = time.time()-t0
 #     gy=NufftObj.thr.copy_array(NufftObj.thr.to_device(y2))
     
     t0= time.time()
-#     x = NufftObj.solver(gy,'cg', maxiter=maxiter)
-    x = NufftObj.solver(gy,'L1LAD', maxiter=maxiter, rho=2)
+#     x = NufftObj.solver(gy,'dc', maxiter=maxiter)
+    x = NufftObj.solver(gy,'L1TVLAD', maxiter=maxiter, rho=2)
     
     t2 = time.time() - t0
     print(t1, t2)
@@ -787,7 +795,7 @@ def test_init():
 #     return
     
     matplotlib.pyplot.subplot(1, 3, 2)
-    matplotlib.pyplot.imshow( NufftObj.x_Nd.get().real, cmap= matplotlib.cm.gray)
+    matplotlib.pyplot.imshow( x.get().real, cmap= matplotlib.cm.gray)
     matplotlib.pyplot.subplot(1, 3,3)
     matplotlib.pyplot.imshow(x2.real, cmap= matplotlib.cm.gray)
     matplotlib.pyplot.show()
@@ -819,9 +827,9 @@ def test_cAddScalar():
     AddScalar(queue, (128,),None,scal, indata_g.data)
     print(-indata[0]+indata_g.get()[0])
     
-if __name__ == '__main__':
-    import cProfile
-#     cProfile.run('benchmark()')
-    test_init()
+# if __name__ == '__main__':
+#     import cProfile
+# #     cProfile.run('benchmark()')
+#     test_init()
 #     test_cAddScalar()
 #     cProfile.run('test_init()')

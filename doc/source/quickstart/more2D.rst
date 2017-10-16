@@ -2,14 +2,16 @@ A 2D example
 ============
 **Import pynufft module**
 
-In python environment, import pynufft module::
+In python environment, import pynufft module and other packages::
    
-   import numpy
-   import pynufft.pynufft as pnft
    
-Create a pynufft object NufftObj::
+   import numpy 
+   import scipy.misc
+   import matplotlib.pyplot 
+   
+   from pynufft.pynufft import NUFFT_cpu
+   
 
-   NufftObj = pnft.NUFFT()
   
 **Loading the X-Y locations("om")**
 
@@ -17,13 +19,9 @@ It requires the x-y coordinates of :math:`M` points to plan NufftObj.
 
 A 2D trajectory from my PROPELLER MRI research is provided in pynufft package.::
     
-    # load the data folder
-    import pkg_resources 
-    # find the relative path of data folder
-    DATA_PATH = pkg_resources.resource_filename('pynufft', 'data/')
-    
-    # now load the path om
-    om = numpy.load(DATA_PATH+'om2D.npz')['arr_0']
+   import pkg_resources
+   DATA_PATH = pkg_resources.resource_filename('pynufft', './src/data/')
+   om = numpy.load(DATA_PATH+'om2D.npz')['arr_0']
 
 The :math:`M` locations of non-uniform samples (:math:`om`) is an M x 2 numpy.ndarray ::
 
@@ -39,12 +37,11 @@ The :math:`M` locations of non-uniform samples (:math:`om`) is an M x 2 numpy.nd
     
 You can see the 2D :math:`M` locations by plotting :math:`x` versus :math:`y`::
 
-    import matplotlib.pyplot as pyplot
-    pyplot.plot(om[:,0], om[:,1])
-    pyplot.title('2D trajectory of M points')
-    pyplot.xlabel('X')
-    pyplot.ylabel('Y')
-    pyplot.show()    
+   matplotlib.pyplot.plot(om[::10,0],om[::10,1],'o')
+   matplotlib.pyplot.title('non-uniform coordinates')
+   matplotlib.pyplot.xlabel('axis 0')
+   matplotlib.pyplot.ylabel('axis 1')
+   matplotlib.pyplot.show()
     
 As can be seen in :numref:`propeller_trajectory`:
 
@@ -56,32 +53,38 @@ As can be seen in :numref:`propeller_trajectory`:
    The 2D PROPELLER trajectory of M points.
 
 **Planning**
+Create a pynufft object NufftObj::
 
+   NufftObj = NUFFT_cpu()
+   
 Provided :math:`om`, the size of time series (:math:`Nd`), oversampled grid (:math:`Kd`), and interpolatro size (:math:`Jd`) are:: 
     
-    Nd = (256,256)
-    Kd = (512,512)
-    Jd = (6,6)
+   Nd = (256, 256)  # image size
+   print('setting image dimension Nd...', Nd)
+   Kd = (512, 512)  # k-space size
+   print('setting spectrum dimension Kd...', Kd)
+   Jd = (6, 6)  # interpolation size
+   print('setting interpolation size Jd...', Jd)
+   
+
 
 Now we can plan NufftObj with these parameters::
     
-    NufftObj.plan(om, Nd, Kd, Jd) 
+   NufftObj.plan(om, Nd, Kd, Jd)
 
 
 **Forward transform**
 
-Now NufftObj has been prepared and is ready for computations. Let continue with an example.::
+Now NufftObj has been prepared and is ready for computations. Now continue with an example.::
    
-    import scipy.misc
-    import matplotlib.cm as cm
-    image = scipy.misc.face(gray=True)
-    
-    image = scipy.misc.imresize(image, (256,256))
-    
-    image=image.astype(numpy.float)/numpy.max(image[...])
-    
-    pyplot.imshow(image, cmap=cm.gray)
-    pyplot.show()
+   image = scipy.misc.ascent()
+   image = scipy.misc.imresize(image, (256,256))
+   image=image/numpy.max(image[...])
+   
+   print('loading image...')
+   
+   matplotlib.pyplot.imshow(image.real, cmap=matplotlib.cm.gray)
+   matplotlib.pyplot.show()
     
 
 This display the image :numref:`2d_example_image`.
@@ -89,9 +92,9 @@ This display the image :numref:`2d_example_image`.
 .. _2d_example_image:
 
 .. figure:: ../figure/2d_example_image.png
-   :width: 50 %
+   :width: 75 %
 
-   The 2D image from scipy.misc.face()
+   The 2D image from scipy.misc.ascent()
    
    
    
@@ -99,61 +102,53 @@ NufftObj transform the time_data to non-Cartesian locations::
 
    y = NufftObj.forward(image)
    
-The 2D non-Cartesian spectrum (:math:`y`) cannt be directly visualized. However, regular spectrum can be obtained by "regridding" of :math:`y`::
+**Image restoration with solve()**: 
 
-   k =   NufftObj.y2k(y)
-   import matplotlib.colors
-   k_show = numpy.fft.fftshift(k)
-   pyplot.imshow(numpy.abs(k_show), cmap=cm.gray, norm=matplotlib.colors.Normalize(0, 1e+3))
-   pyplot.show()
+The image can be restored from non-Cartesian samples y::
 
-This shows the pre-normalized spectrum. :numref:`pre_compensated_spectrum`.
-
-.. _pre_compensated_spectrum:
-
-.. figure:: ../figure/pre_compensated.png
-   :width: 50 %
-   
-   Pre-compensated spectrum of non-Cartesian spectrum of :numref:`2d_example_image`
-   
-Note: A pre-compensated spectrum leads to adjoint nufft", which cannot recover the image. See below. 
-   
-**Adjoint transform**: *adjoint()* method
-
-The adjoint transform is the reverse of forward transform::
-
-   x2 = NufftObj.adjoint(y) 
-   pyplot.imshow(x2.real,cmap=cm.gray) 
-   pyplot.show() 
-
-.. _adjoint:
-
-.. figure:: ../figure/adjoint_2D.png
-   :width: 50 %
-
-   Adjoint transform of non-Cartesian spectrum does NOT recover :numref:`2D_example_image`
-
-
-There are some distortions in the adjoint operation :numref:`adjoint`. It does NOT recover the original image in :numref:`2D_example_image`.
+   image0 = NufftObj.solve(y, solver='cg',maxiter=50)
+   image3 = NufftObj.solve(y, solver='L1TVOLS',maxiter=50,rho=0.1)
+   image4 = NufftObj.solve(y, solver='L1TVLAD',maxiter=50,rho=0.1)
+   image2 = NufftObj.adjoint(y ) # adjoint
    
    
-**Inverse transform through density compensation**: *inverse_DC()* method
-
-A more sensible computation is density compensated image. Using the inverse_DC() method::
-
-   x3 = NufftObj.inverse_DC(y)
-   x3_display = x3*1.0/numpy.max(x3[...].real) 
-   pyplot.imshow(x3_display.real,cmap=cm.gray) 
-   pyplot.show()
+   matplotlib.pyplot.subplot(2,2,1)
+   matplotlib.pyplot.title('Restored image (cg)')
+   matplotlib.pyplot.imshow(image0.real, cmap=matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1))
    
-.. _2D_inverse_DC:
-
-.. figure:: ../figure/2D_ inverse_DC.png
-   :width: 50 %
-
-   Inverse transform through density compensated spectrum.
    
-:numref:`2D_inverse_DC` is more close to :numref:`2D_example_image` as the uneven density of non-Cartesian samples has been corrected.
+   matplotlib.pyplot.subplot(2,2,2)
+   matplotlib.pyplot.imshow(image2.real, cmap=matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=5))
+   matplotlib.pyplot.title('Adjoint transform')
    
-.. literalinclude::  ../codes/pnft_2Dtest.py
+   
+   matplotlib.pyplot.subplot(2,2,3)
+   matplotlib.pyplot.title('L1TV OLS')
+   matplotlib.pyplot.imshow(image3.real, cmap=matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1))
+   
+   matplotlib.pyplot.subplot(2,2,4)
+   matplotlib.pyplot.title('L1TV LAD')
+   matplotlib.pyplot.imshow(image4.real, cmap=matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1))
+   matplotlib.pyplot.show()
+   
+.. _2D_restore:
+
+.. figure:: ../figure/2D_ restoration.png
+   :width: 100 %
+
+   Image restoration through solve() 'cg', 'L1TVOLS', 'L1TVLAD' and adjoint().
+   
+The spectrum of the restored image:
+
+.. _2D_spectrum:
+
+.. figure:: ../figure/2D_spectrum.png
+   :width: 75 %
+
+   The spectrum of the restored image solved by cg.
+   
+
+   
+   
+.. literalinclude::  ../../../example/scrip_2D.py
    

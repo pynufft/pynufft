@@ -1,19 +1,19 @@
 What's new
 ==========
 
-**New in version 0.3.4**
+**New in version 0.3.3**
 
-- Note: previous GPU support is replaced by the Heterogeneous System Architecture (HSA). 
+- Note: GPU support is superseded by the Heterogeneous System Architecture (HSA). 
 
-- A variety of nonlinear solvers are provided, including conjugate gradient method (cg), L1 total-variation ordinary least square (L1OLS), and L1 total-variation least absolute deviation (L1LAD).
+- A variety of nonlinear solvers are provided, including conjugate gradient method (cg), L1 total-variation ordinary least square (L1TVOLS), and L1 total-variation least absolute deviation (L1TVLAD).
 
-- The CPU version support other nonlinear solvers: 
+- The CPU version support other nonlinear solvers,  lsmr, lsqr, gmr, cg, bicgstab, bicg, cgs, gmres, lgmres , apart from cg, L1TVOLS and L1TVLAD.
 
-- Support multi-dimensional transform and reconstruction
+- Support multi-dimensional transform and reconstruction (experimentally).
 
-**Install the latest pynufft-0.3.4**
+**Install the latest pynufft-0.3.3**
 
-Uninstall previous versions and install the latest v0.3.4::
+Uninstall previous versions and install the latest v0.3.3::
 
     pip uninstall pynufft
     pip install pynufft

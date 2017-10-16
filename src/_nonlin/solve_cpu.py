@@ -80,9 +80,9 @@ def _create_kspace_sampling_density(nufft):
 #         uker =numpy.fft.fftn(uker) #, self.nufftobj.st['Kd'], range(0,numpy.ndim(uker)))
 #         return uker  
 #  
-def L1LAD(nufft, y, maxiter, rho  ): # main function of solver
+def L1TVLAD(nufft, y, maxiter, rho  ): # main function of solver
     """
-    L1-total variation least absolute deviation 
+    L1-total variation regularized least absolute deviation 
     """
     mu = 1.0
     LMBD = rho*mu
@@ -138,7 +138,7 @@ def L1LAD(nufft, y, maxiter, rho  ): # main function of solver
 #                 LMBD*(cDiff(dd[1] - bb[1],  dt_indx[1]))  )          
         # Note K = F' uker F
         # so K-1 ~ F
-        xkp1 = nufft.k2xx(nufft.xx2k(rhs) / uker) 
+        xkp1 = nufft.k2xx( (nufft.xx2k(rhs)+1e-7) / (uker+1e-7)) 
 #                 self._update_d(xkp1)
         for pp in range(0,ndims):
             zz[pp] = cDiff(xkp1, d_indx[pp])
@@ -183,9 +183,9 @@ def L1LAD(nufft, y, maxiter, rho  ): # main function of solver
 
     return xkp1 #(u,u_stack)
 
-def L1OLS(nufft, y, maxiter, rho ): # main function of solver
+def L1TVOLS(nufft, y, maxiter, rho ): # main function of solver
     """
-    L1-total variation ordinary least square 
+    L1-total variation regularized ordinary least square 
     """
     mu = 1.0
     LMBD = rho*mu
@@ -239,7 +239,7 @@ def L1OLS(nufft, y, maxiter, rho ): # main function of solver
 #                 LMBD*(cDiff(dd[1] - bb[1],  dt_indx[1]))  )          
         # Note K = F' uker F
         # so K-1 ~ F
-        xkp1 = nufft.k2xx(nufft.xx2k(rhs) / uker) 
+        xkp1 = nufft.k2xx( (nufft.xx2k(rhs)+1e-7) / (uker+1e-7)) 
 #                 self._update_d(xkp1)
         for pp in range(0,ndims):
             zz[pp] = cDiff(xkp1, d_indx[pp])
@@ -285,16 +285,15 @@ def L1OLS(nufft, y, maxiter, rho ): # main function of solver
     return xkp1 #(u,u_stack)
 
  
-def solver(nufft,   y,  solver=None, *args, **kwargs):
+def solve(nufft,   y,  solver=None, *args, **kwargs):
         """
-        solver used for solving NUFFT.
+        Solve NUFFT.
+        The current version supports solvers = 'cg' or 'L1TVOLS' or 'L1TVLAD'.
         
-        Input: 
-        
-            nufft: NUFFT object
-            y: non-Cartesian data
-        output:
-           x: image
+        :param nufft: NUFFT_cpu object
+        :param y: (M,) array, non-uniform data
+        :return: x: image
+            
         """
         if ('cgs' == solver) or ('qmr' ==solver) or ('minres'==solver):
             raise TypeError(solver +' requires real symmetric matrix')
@@ -322,7 +321,7 @@ def solver(nufft,   y,  solver=None, *args, **kwargs):
     # 
     #             except: 
     
-            nufft.st['W'] = nufft.pipe_density( *args, **kwargs)
+            nufft.st['W'] = nufft._pipe_density( *args, **kwargs)
     
             x = nufft.adjoint(nufft.st['W']*y)
     
@@ -333,19 +332,19 @@ def solver(nufft,   y,  solver=None, *args, **kwargs):
                 Minimize L2 norm of |y-Ax|_2 or |y-Ax|_2+|x|_2
                 Very stable 
                 """
-                A = nufft.st['p']
+                A = nufft.sp
                 methods={'lsqr':scipy.sparse.linalg.lsqr,
                                     'lsmr':scipy.sparse.linalg.lsmr,}
                 k2 = methods[solver](A,  y, *args, **kwargs)#,show=True)
     
      
                 xx = nufft.k2xx(nufft.vec2k(k2[0]))
-                x= xx/nufft.st['sn']
+                x= xx/nufft.sn
                 return x#, k2[1:]        
-        elif 'L1OLS' == solver:
-            return  L1OLS(nufft, y, *args, **kwargs)
-        elif 'L1LAD' == solver:
-            return  L1LAD(nufft, y, *args, **kwargs)
+        elif 'L1TVOLS' == solver:
+            return  L1TVOLS(nufft, y, *args, **kwargs)
+        elif 'L1TVLAD' == solver:
+            return  L1TVLAD(nufft, y, *args, **kwargs)
         else:
             """
             Hermitian matrix A
@@ -355,7 +354,7 @@ def solver(nufft,   y,  solver=None, *args, **kwargs):
             gmres: 
             lgmres:
             """
-            A =nufft.st['p'].getH().dot(nufft.st['p'])
+            A = nufft.spHsp#nufft.st['p'].getH().dot(nufft.st['p'])
             
             methods={'cg':scipy.sparse.linalg.cg,   
                                  'bicgstab':scipy.sparse.linalg.bicgstab, 
@@ -366,9 +365,9 @@ def solver(nufft,   y,  solver=None, *args, **kwargs):
     #                                  'minres':scipy.sparse.linalg.minres, 
     #                                  'qmr':scipy.sparse.linalg.qmr, 
                                  }
-            k2 = methods[solver](A,  nufft.st['p'].getH().dot(y), *args, **kwargs)#,show=True)
+            k2 = methods[solver](A,  nufft.spH.dot(y), *args, **kwargs)#,show=True)
     
     
             xx = nufft.k2xx(nufft.vec2k(k2[0]))
-            x= xx/nufft.st['sn']
+            x= xx/nufft.sn
             return x#     , k2[1:]       

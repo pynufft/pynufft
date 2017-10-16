@@ -4,16 +4,23 @@ HSA solvers
 """
 import numpy, scipy
 dtype = numpy.complex64
-# def  L1LAD():
+# def  L1TVLAD():
 import scipy
 import numpy
 from .._helper.helper import *
 
 def cDiff(x, d_indx):
+        """
+        Compute image gradient
+        Work with indxmap_diff(Nd)
+        """    
         a2=numpy.asarray(x.copy(),order='C')
         a2.flat =   a2 .flat[d_indx] - a2 .flat
         return a2
 def _create_kspace_sampling_density(nufft):
+        """
+        Compute kspace sampling density from the nufft object
+        """    
         y = numpy.ones((nufft.st['M'],),dtype = numpy.complex64)
         nufft.y = nufft.thr.to_device(y)
         nufft._y2k()
@@ -52,8 +59,10 @@ def _create_kspace_sampling_density(nufft):
 #     uker =numpy.fft.fftn(uker) #, self.nufftobj.st['Kd'], range(0,numpy.ndim(uker)))
 #     return uker  
  
-def L1LAD(nufft, gy, maxiter, rho  ): # main function of solver
-    print("L1LAD")
+def L1TVLAD(nufft, gy, maxiter, rho  ): # main function of solver
+    """
+    L1-total variation regularized least absolute deviation 
+    """
     mu = 1.0
     LMBD = rho*mu
 
@@ -249,8 +258,10 @@ def L1LAD(nufft, gy, maxiter, rho  ): # main function of solver
 #     print('here')
     nufft.x_Nd = nufft.thr.copy_array(xkp1)
     return 0
-def L1OLS(nufft, gy, maxiter, rho  ): # main function of solver
-    print("L1OLS")
+def L1TVOLS(nufft, gy, maxiter, rho  ): # main function of solver
+    """
+    L1-total variation regularized ordinary least square 
+    """
     mu = 1.0
     LMBD = rho*mu
 
@@ -447,25 +458,44 @@ def L1OLS(nufft, gy, maxiter, rho  ): # main function of solver
     nufft.x_Nd = nufft.thr.copy_array(xkp1)
     return 0
 
-def solver(nufft,gy, solver=None,  maxiter=30, *args, **kwargs):
+def solve(nufft,gy, solver=None,  maxiter=30, *args, **kwargs):
     """
+    Solve NUFFT.
+    The current version supports solvers = 'cg' or 'L1TVOLS' or 'L1TVLAD'.
     
-    solve   x = nufft.solver(gy)
-    Current version only support conjugate gradient method
-    Based on the matlab script on Wikipedia
-    Note: inner product (dot) requires reduction on the opencl/cuda device
-    Reikna provides reduction kernel to execut summation
-    
+    :param nufft: NUFFT_hsa object
+    :param y: (M,) array, non-uniform data
+    :return: x: image
+        
     """
     # define the reduction kernel on the device
 #     if None ==  solver:
 #         solver  =   'cg'
-    if 'L1LAD' == solver:
-        L1LAD(nufft, gy, maxiter=maxiter, *args, **kwargs  )
+    if 'L1TVLAD' == solver:
+        L1TVLAD(nufft, gy, maxiter=maxiter, *args, **kwargs  )
         x2 = nufft.thr.copy_array(nufft.x_Nd)
-    if 'L1OLS' == solver:
-        L1OLS(nufft, gy, maxiter=maxiter, *args, **kwargs  )
+        return x2
+    elif 'L1TVOLS' == solver:
+        L1TVOLS(nufft, gy, maxiter=maxiter, *args, **kwargs  )
         x2 = nufft.thr.copy_array(nufft.x_Nd)
+        return x2
+    elif 'dc'   ==  solver:
+         """
+         Density compensation method
+         nufft.st['W'] will be computed if doesn't exist
+         If nufft.st['W'] exist then x2 = nufft.adjoint(nufft.st['W']*y)
+         input: 
+             y: (M,) array
+         output:
+             x2: Nd array
+         """
+         print(solver)
+
+         nufft.st['W'] = nufft._pipe_density(maxiter=maxiter,*args, **kwargs)
+ 
+         x2 = nufft.adjoint(nufft.st['W']*gy)
+         return x2
+#             return gx        
     elif 'cg' == solver:
 
         from reikna.algorithms import Reduce, Predicate, predicate_sum

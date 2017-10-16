@@ -5,11 +5,11 @@ Installation
 
 
 
-- Tested using Python 2.7, 3.4, and 3.5 on Windows-7 and Linux-64.  
+- Tested using Python 3.4 on Linux-64.  
 
-- Numpy-1.10 and Scipy-0.18.1.
+- Numpy-1.13.3 and Scipy-0.19.1.
 
-- Matplotlib is required for image display.
+- Matplotlib is required for displaying images.
 
 - Continuum's Anaconda_ environment should provide all the above packages. 
 
@@ -30,7 +30,7 @@ git_ is a version control program, which allows you to clone the latest code bas
    
    $ git clone https://github.com/jyhmiinlin/pynufft
    $ cd pynufft
-   $ python setup.py install
+   $ python setup.py install --user 
 
 .. _git: https://en.wikipedia.org/wiki/Git
 .. _pynufft: https://github.com/jyhmiinlin/pynufft
@@ -39,8 +39,8 @@ git_ is a version control program, which allows you to clone the latest code bas
 
 In Python environment, import pynufft::
 
-    >>> import pynufft.pynufft as pnft
-    >>> pnft.test_installation()
+    >>> import pynufft.tests as tests
+    >>> tests.test_installation()
     
 If the required data and functions are available, you will see all the required files exist::
 
@@ -50,8 +50,11 @@ If the required data and functions are available, you will see all the required 
    Does om3D.npz exist? True
    Does phantom_3D_128_128_128.npz exist? True
    Does phantom_256_256.npz exist? True
-   Does 1D_example.py exist? True
-   Does 2D_example.py exist? True
+   Does example_1D.py exist? True
+   Does example_2D.py exist? True
+   reikna  has been installed.
+   pyopencl  has been installed.
+   pycuda  has been installed.
     
 **Uninstall pynufft**
 
