@@ -31,7 +31,7 @@ Pynufft implements Fessler's min-max NUFFT, with the following features:
 
 ### Limitations
 
-In Numpy, the default fft library is fftpack, so the speed of NUFFT transform may optimized by FFTW.
+In Numpy, the default fft library is fftpack, so the speed of NUFFT transform may be optimized by FFTW.
 
 Check out the tutorial (http://jyhmiinlin.github.io/pynufft/misc/fftw.html)
 
