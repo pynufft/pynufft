@@ -41,6 +41,8 @@ Python-nufft: Python bindings to Fortran nufft. (https://github.com/dfm/Python-n
 
 pynfft: Python bindings around the NFFT C-library, which uses the speed of FFTW, (https://github.com/ghisvail/pyNFFT), GPL v3
 
+nfft: Pure Python implementation of nfft (https://github.com/jakevdp/nfft).
+
 nufftpy: Pure Python NUFFT of Python-nufft (https://github.com/jakevdp/nufftpy). 
 
 mripy: A Python based MRI package (https://github.com/peng-cao/mripy). combines Numba and NUFFT.
