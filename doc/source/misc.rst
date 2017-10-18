@@ -8,4 +8,5 @@ Miscellaneousness
    misc/dft
    misc/fft
    misc/fftw
+   misc/julia
    
