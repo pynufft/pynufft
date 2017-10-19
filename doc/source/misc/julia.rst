@@ -41,5 +41,37 @@ Now the NUFFT classes can be easily imported as follows::
    julia> N_h = pynufft.NUFFT_hsa
    PyObject <class 'pynufft.src._transform.transform_hsa.NUFFT'>
 
+
+- Plan NUFFT
  
+Please refer to the examples in :doc:`../getstart`.
+
+- Load Julia images and tests
+
+Install Julia TestImages::
+
+   julia> Pkg.add("TestImages")
+   ...
+   INFO: Download Completed.
+   INFO: Package database updated
+   INFO: METADATA is out-of-date — you may not have the latest version of TestImages
+   INFO: Use `Pkg.update()` to get the latest versions of your packages
+   
+   julia> using TestImages
+   INFO: Precompiling module TestImages.
+   
+   julia> Pkg.add("ImageView")
+   julia> using ImageView
+   
+   julia> img = testimage("cameraman")
+   julia> imshow(img)
+   
+   
+   
+   
+   
+   
+   
+   
+
     
