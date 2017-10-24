@@ -1,14 +1,14 @@
 FFTW support (Compile Numpy with FFTW in Linux)
 ===============================================
 
-FFTW is one of the fastest FFT library, which is licensed under GPL, which is imcompatible with the license used in Numpy. 
+The original Numpy source includes fftpack as its FFT implementation.
 
-However, FFTW is unofficially supported. The trick is to compile Numpy from pip, with a configuration file telling Numpy to use FFTW. 
+However, FFTW is unofficially supported in Numpy. The trick is to compile Numpy with a configuration file ~/.numpy-site.cfg. 
 
 Create a Numpy configuration file in user's home directory::
 
     $ echo "[fftw]" >  ~/.numpy-site.cfg
-    $ echo ""libraries = fftw3 >>  ~/.numpy-site.cfg
+    $ echo "libraries = fftw3" >>  ~/.numpy-site.cfg
 
 Then  install Numpy from pip::
 
