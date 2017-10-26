@@ -19,9 +19,9 @@ Welcome to pynufft's Documentation
 Indices and tables
 ==================
 
-   * :ref:`genindex`
-   * :ref:`modindex`
-   * :ref:`search`   
+..  * :ref:`genindex`
+..  * :ref:`modindex`
+..  * :ref:`search`
    
 Contact information
 ===================
@@ -34,6 +34,3 @@ jyhmiinlin@gmail.com
    advance
    QandA
    
-   
-
-

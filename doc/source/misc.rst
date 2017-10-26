@@ -1,4 +1,4 @@
-Miscellaneousness
+Miscellaneous
 =================
 
 .. toctree::

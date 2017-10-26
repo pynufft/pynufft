@@ -122,9 +122,9 @@ html_theme_options = {
     # Set the name of the project to appear in the sidebar
     #"project_nav_name": "pynufft",
 }
-#html_theme = u'guzzle_sphinx_theme'
-html_theme = u'sphinx_rtd_theme'
-
+html_theme = u'guzzle_sphinx_theme'
+#html_theme = u'sphinx_rtd_theme'
+#html_theme = u'hugo'
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.

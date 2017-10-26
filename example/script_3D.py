@@ -47,7 +47,7 @@ Nd = (64,64,64) # time grid, tuple
 Kd = (64,64,64) # frequency grid, tuple
 Jd = (1,1,1) # interpolator 
 #     om=       numpy.load(DATA_PATH+'om3D.npz')['arr_0']
-om = numpy.random.randn(15120,3)
+om = numpy.random.randn(151200,3)*2
 print(om.shape)
 from pynufft.pynufft import NUFFT_cpu, NUFFT_hsa
 NufftObj = NUFFT_cpu()
