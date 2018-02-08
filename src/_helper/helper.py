@@ -2,6 +2,8 @@
 Helper functions
 =======================================
 
+bugfix: mm = numpy.tile(mm, [numpy.prod(Jd).astype(int), 1])  to fix wrong type when numpy.prod(Jd) is not casted as int
+
 """
 
 
@@ -241,7 +243,7 @@ def plan(om, Nd, Kd, Jd):
     # *numpy.tile(phase,[numpy.prod(Jd),1]) #    product(Jd)xM
     uu = uu.conj()
     mm = numpy.arange(0, M)  # indices from 0 to M-1
-    mm = numpy.tile(mm, [numpy.prod(Jd), 1])  # product(Jd)xM
+    mm = numpy.tile(mm, [numpy.prod(Jd).astype(int), 1])  # product(Jd)xM 
     # Now build sparse matrix from uu, mm, kk
 
     # convert array to list
