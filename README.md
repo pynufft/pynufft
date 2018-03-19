@@ -7,7 +7,7 @@ NUFFT can calculate the frequency components at non-equispaced locations.
 
 A minimal "getting start" tutorial is available at http://jyhmiinlin.github.io/pynufft/ .
 
-Please use Python3.
+Please use Python3. PyNUFFT has been tested with Python3.4. However, it should work with Python3.5-3.6.
 
 ### New in version 0.3.3.3
 
