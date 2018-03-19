@@ -19,7 +19,7 @@ import sys
 if not sys.version_info[0] == 3:
     sys.exit("Sorry, Python 2 is not supported yet")
 setup(name='pynufft',
-      version='0.3.3.1',
+      version='0.3.3.3',
       description='Python non-uniform fast Fourier transform (pynufft)',
       author='Jyh-Miin Lin',
       author_email='jyhmiinlin@gmail.com',

@@ -7,9 +7,11 @@ NUFFT can calculate the frequency components at non-equispaced locations.
 
 A minimal "getting start" tutorial is available at http://jyhmiinlin.github.io/pynufft/ .
 
-### New in version 0.3.3
+Please use Python3.
 
-New in version 0.3.3
+### New in version 0.3.3.3
+
+New in version 0.3.3.3
 
 Note: The Heterogeneous System Architecture (HSA) version has superseded pure GPU version (pynufft_gpu.py), which will be removed from the source.
 
