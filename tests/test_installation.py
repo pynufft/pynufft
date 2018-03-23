@@ -22,7 +22,7 @@ def test_installation():
     import os.path
     
     
-    print('Does pynufft.py exist? ',os.path.isfile(PYNUFFT_PATH+'pynufft.py'))
+    print('Does nufft.py exist? ',os.path.isfile(PYNUFFT_PATH+'nufft.py'))
     print('Does om1D.npz exist?',os.path.isfile(DATA_PATH+'om1D.npz'))
     print('Does om2D.npz exist?',os.path.isfile(DATA_PATH+'om2D.npz'))
     print('Does om3D.npz exist?',os.path.isfile(DATA_PATH+'om3D.npz'))

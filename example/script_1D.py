@@ -1,7 +1,7 @@
 import numpy 
 import matplotlib.pyplot as pyplot
     
-from pynufft.pynufft import NUFFT_cpu, NUFFT_hsa
+from pynufft import NUFFT_cpu, NUFFT_hsa
 
 
 om = numpy.random.randn(1512,1)

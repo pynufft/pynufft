@@ -1,4 +1,4 @@
-from ..pynufft import NUFFT_cpu, NUFFT_hsa
+from .. import NUFFT_cpu, NUFFT_hsa
 
 import numpy
 dtype = numpy.complex64

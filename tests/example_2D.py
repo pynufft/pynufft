@@ -1,7 +1,7 @@
 import numpy 
 import scipy
 import matplotlib.pyplot as pyplot
-from ..pynufft import NUFFT_cpu, NUFFT_hsa
+from .. import NUFFT_cpu, NUFFT_hsa
 # try:
 '''
 pip install pynufft

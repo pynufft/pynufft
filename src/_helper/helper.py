@@ -379,7 +379,7 @@ def nufft_alpha_kb_fit(N, J, K):
     sn_kaiser = sn_kaiser.reshape((N, 1), order='F').conj()
     X = numpy.array(X, dtype=dtype)
     sn_kaiser = numpy.array(sn_kaiser, dtype=dtype)
-    coef = numpy.linalg.lstsq(numpy.nan_to_num(X), numpy.nan_to_num(sn_kaiser))[0]
+    coef = numpy.linalg.lstsq(numpy.nan_to_num(X), numpy.nan_to_num(sn_kaiser), rcond = None)[0]
     alphas = coef
     if J > 1:
         alphas[0] = alphas[0]

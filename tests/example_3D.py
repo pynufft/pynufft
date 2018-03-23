@@ -24,7 +24,7 @@ def example_3D():
 #     om=       numpy.load(DATA_PATH+'om3D.npz')['arr_0']
     om = numpy.random.randn(15120,3)
     print(om.shape)
-    from ..pynufft import NUFFT_cpu, NUFFT_hsa
+    from .. import NUFFT_cpu, NUFFT_hsa
     NufftObj = NUFFT_cpu()
     
     

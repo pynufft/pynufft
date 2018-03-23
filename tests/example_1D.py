@@ -25,7 +25,7 @@ def example_1D():
     Nd = (256,) # time grid, tuple
     Kd = (512,) # frequency grid, tuple
     Jd = (7,) # interpolator 
-    from ..pynufft import NUFFT_cpu, NUFFT_hsa
+    from .. import NUFFT_cpu, NUFFT_hsa
     NufftObj = NUFFT_cpu()
     
     

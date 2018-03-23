@@ -11,7 +11,7 @@ def test_2D():
 #     PHANTOM_FILE = pkg_resources.resource_filename('pynufft', 'data/phantom_256_256.txt')
     import numpy
     import matplotlib.pyplot
-    from ..pynufft import NUFFT_cpu
+    from .. import NUFFT_cpu
     # load example image
 #     image = numpy.loadtxt(DATA_PATH +'phantom_256_256.txt')
     image = scipy.misc.ascent()

@@ -2,7 +2,7 @@ import numpy
 import scipy.misc
 import matplotlib.pyplot 
 
-from pynufft.pynufft import NUFFT_cpu
+from pynufft import NUFFT_cpu
 
 
 
