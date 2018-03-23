@@ -1,7 +1,7 @@
 import numpy
-import pynufft.pynufft as pnft
+import pynufft.NUFFT_cpu as NUFFT_cpu
 
-NufftObj = pnft.NUFFT()
+NufftObj = NUFFT_cpu()
 
 om = numpy.random.randn(1512,1) 
 om = numpy.random.randn(1512,1) 

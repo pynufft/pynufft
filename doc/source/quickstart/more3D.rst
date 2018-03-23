@@ -11,7 +11,7 @@ In python environment, import pynufft module and other packages::
    import scipy.misc
    import matplotlib.pyplot 
    
-   from pynufft.pynufft import NUFFT_cpu
+   from pynufft import NUFFT_cpu
    
 
   
@@ -21,7 +21,7 @@ In python environment, import pynufft module and other packages::
 **Planning**
 Create a pynufft object NufftObj::
 
-   from pynufft.pynufft import NUFFT_cpu, NUFFT_hsa
+   from pynufft import NUFFT_cpu, NUFFT_hsa
    NufftObj = NUFFT_cpu()
    
 

@@ -35,11 +35,11 @@ Then import pynufft::
 
 Now the NUFFT classes can be easily imported as follows::
 
-   julia> @pyimport pynufft.pynufft as pynufft
+   julia> @pyimport pynufft
    julia> N_c = pynufft.NUFFT_cpu
-   PyObject <class 'pynufft.src._transform.transform_cpu.NUFFT'>
+   PyObject <class 'pynufft.NUFFT'>
    julia> N_h = pynufft.NUFFT_hsa
-   PyObject <class 'pynufft.src._transform.transform_hsa.NUFFT'>
+   PyObject <class 'pynufft.NUFFT'>
 
 
 - Plan NUFFT

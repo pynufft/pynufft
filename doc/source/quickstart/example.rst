@@ -4,7 +4,7 @@ An 1D example
 
 In python environment, import pynufft module::
    
-   from pynufft.pynufft import NUFFT_cpu, NUFFT_hsa
+   from pynufft import NUFFT_cpu, NUFFT_hsa
    
 Create a pynufft object NufftObj::
 

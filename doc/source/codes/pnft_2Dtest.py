@@ -1,6 +1,6 @@
 import numpy
-import pynufft.pynufft as pnft
-NufftObj = pnft.NUFFT()
+import pynufft.NUFFT_cpu as NUFFT_cpu
+NufftObj = NUFFT_cpu()
 # load the data folder
 import pkg_resources
 # find the relative path of data folder

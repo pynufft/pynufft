@@ -1,5 +1,5 @@
 """
-Class NUFFT on Numpy/Scipy
+Main classes (NUFFT_cpu, NUFFT_hsa)
 =================================
 """
 from __future__ import absolute_import
@@ -13,15 +13,19 @@ import scipy.special
 # from .... import src
 import sys
 if sys.version_info[0] == 3:
-    from .src._helper import helper
+    try:
+        from .src._helper import helper
+    except:
+        from pynufft.src._helper import helper
+        
 if sys.version_info[0] == 2:
     
 #     import os, sys
 #     sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-    from .src._helper import helper
+    from src._helper import helper
 class NUFFT_cpu:
     """
-    The class NUFFT belongs to pynufft, which computes Non-Uniform Fast Fourier Transform (NUFFT) in Numpy/Scipy.
+    Class NUFFT_cpu
    """    
     def __init__(self):
         """
@@ -33,8 +37,8 @@ class NUFFT_cpu:
         :rtype: NUFFT: the pynufft_hsa.NUFFT class
         :Example:
 
-        >>> import pynufft.pynufft
-        >>> NufftObj = pynufft.pynufft.NUFFT_cpu()
+        >>> import pynufft
+        >>> NufftObj = pynufft.NUFFT_cpu()
 
 
         .. note:: requires plan() 
@@ -61,7 +65,7 @@ class NUFFT_cpu:
         :Example:
 
         >>> import pynufft
-        >>> NufftObj = pynufft_hsa.NUFFT()
+        >>> NufftObj = pynufft.NUFFT_cpu()
         >>> NufftObj.plan(om, Nd, Kd, Jd) 
         
         """         
@@ -348,7 +352,7 @@ class NUFFT_cpu:
 
 class NUFFT_hsa(NUFFT_cpu):
     """
-    The class NUFFT belongs to pynufft_hsa, which offloads Non-Uniform Fast Fourier Transform (NUFFT) to heterogeneous devices.
+    Class NUFFT_hsa for heterogeneous systems.
    """
 
     def __init__(self):
@@ -361,8 +365,8 @@ class NUFFT_hsa(NUFFT_cpu):
         :rtype: NUFFT: the pynufft_hsa.NUFFT class
         :Example:
 
-        >>> import pynufft.pynufft
-        >>> NufftObj = pynufft.pynufft.NUFFT_hsa()
+        >>> import pynufft
+        >>> NufftObj = pynufft.NUFFT_hsa()
 
 
         .. note:: requires plan() and offload()
