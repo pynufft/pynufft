@@ -7,7 +7,7 @@ dtype = numpy.complex64
 # def  L1TVLAD():
 import scipy
 import numpy
-from .._helper.helper import *
+from ..src._helper import helper
 
 def cDiff(x, d_indx):
         """
@@ -73,7 +73,7 @@ def L1TVLAD(nufft, gy, maxiter, rho  ): # main function of solver
         x2 = nufft.adjoint(gy)
         return x2
     
-    uker_cpu = mu*_create_kspace_sampling_density(nufft)   - LMBD* create_laplacian_kernel(nufft) # on cpu
+    uker_cpu = mu*_create_kspace_sampling_density(nufft)   - LMBD* helper.create_laplacian_kernel(nufft) # on cpu
     uker = nufft.thr.to_device(uker_cpu.astype(numpy.complex64))
     AHy = AH(gy) # on  device?
     z = numpy.zeros(nufft.st['Nd'],dtype = numpy.complex64,order='C')
@@ -85,7 +85,7 @@ def L1TVLAD(nufft, gy, maxiter, rho  ): # main function of solver
     zz= []
     bb = []
     dd = []
-    d_indx, dt_indx = indxmap_diff(nufft.st['Nd'])
+    d_indx, dt_indx = helper.indxmap_diff(nufft.st['Nd'])
     ndims = len(nufft.st['Nd'])
     s_tmp = []
     for pp in range(0, ndims):
@@ -272,7 +272,7 @@ def L1TVOLS(nufft, gy, maxiter, rho  ): # main function of solver
         x2 = nufft.adjoint(gy)
         return x2
     
-    uker_cpu = mu*_create_kspace_sampling_density(nufft)   - LMBD* create_laplacian_kernel(nufft) # on cpu
+    uker_cpu = mu*_create_kspace_sampling_density(nufft)   - LMBD* helper.create_laplacian_kernel(nufft) # on cpu
     uker = nufft.thr.to_device(uker_cpu.astype(numpy.complex64))
     AHy = AH(gy) # on  device?
     z = numpy.zeros(nufft.st['Nd'],dtype = numpy.complex64,order='C')
@@ -284,7 +284,7 @@ def L1TVOLS(nufft, gy, maxiter, rho  ): # main function of solver
     zz= []
     bb = []
     dd = []
-    d_indx, dt_indx = indxmap_diff(nufft.st['Nd'])
+    d_indx, dt_indx = helper.indxmap_diff(nufft.st['Nd'])
     ndims = len(nufft.st['Nd'])
     s_tmp = []
     for pp in range(0, ndims):
@@ -458,6 +458,43 @@ def L1TVOLS(nufft, gy, maxiter, rho  ): # main function of solver
     nufft.x_Nd = nufft.thr.copy_array(xkp1)
     return 0
 
+def _pipe_density(nufft,maxiter):
+    """
+    Private: create the density function by iterative solution
+    Generate pHp matrix
+    """
+
+
+    try:
+        if maxiter < nufft.last_iter:
+         
+            W = nufft.st['W']
+        else: #maxiter > nufft.last_iter
+            W = nufft.st['W']
+            for pp in range(0,maxiter - nufft.last_iter):
+
+#             E = nufft.st['p'].dot(V1.dot(W))
+                E = nufft.forward(nufft.adjoint(W))
+                W = (W/E)             
+            nufft.last_iter = maxiter   
+    except:
+        W = nufft.thr.copy_array(nufft.y)
+        nufft.cMultiplyScalar(nufft.zero_scalar, W, local_size=None, global_size=int(nufft.M))
+#         V1= nufft.st['p'].getH()
+    #     VVH = V.dot(V.getH()) 
+         
+        for pp in range(0,1):
+#             E = nufft.st['p'].dot(V1.dot(W))
+
+            E = nufft.forward(nufft.adjoint(W))
+            W /= E
+#                 nufft.cMultiplyVecInplace(self.SnGPUArray, self.x_Nd, local_size=None, global_size=int(self.Ndprod))
+
+
+
+     
+    return W  
+
 def solve(nufft,gy, solver=None,  maxiter=30, *args, **kwargs):
     """
     Solve NUFFT.
@@ -489,11 +526,11 @@ def solve(nufft,gy, solver=None,  maxiter=30, *args, **kwargs):
          output:
              x2: Nd array
          """
-         print(solver)
+         print(solver, ":density compensation method. I won't recommend it as the GPU version is not needed! Try the CPU version")
 
-         nufft.st['W'] = nufft._pipe_density(maxiter=maxiter,*args, **kwargs)
- 
-         x2 = nufft.adjoint(nufft.st['W']*gy)
+#          nufft.st['W'] = nufft._pipe_density(maxiter=maxiter,*args, **kwargs)
+#  
+#          x2 = nufft.adjoint(nufft.st['W']*gy)
          return x2
 #             return gx        
     elif 'cg' == solver:

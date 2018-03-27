@@ -90,6 +90,31 @@ def indxmap_diff(Nd):
 
     return d_indx,  dt_indx  
 
+#     def _linear_phase(self, n_shift):
+#         """
+#         Private: Select the center of FOV
+#         """
+#         om = self.st['om']
+#         M = self.st['M']
+#         final_shifts = tuple(
+#             numpy.array(n_shift) +
+#             numpy.array(
+#                 self.Nd) /
+#             2)
+#         phase = numpy.exp(
+#             1.0j *
+#             numpy.sum(
+#                 om *
+#                 numpy.tile(
+#                     final_shifts,
+#                     (M,
+#                      1)),
+#                 1))
+#         # add-up all the linear phasees in all axes,
+# 
+#         self.st['p'] = scipy.sparse.diags(phase, 0).dot(self.st['p0'])
+#         return 0  # shifted sparse matrix
+
 def plan(om, Nd, Kd, Jd):
 #         self.debug = 0  # debug
 
@@ -259,11 +284,37 @@ def plan(om, Nd, Kd, Jd):
     csrshape = (M, numpy.prod(Kd))
 
     # Build sparse matrix (interpolator)
-    st['p0'] = scipy.sparse.csr_matrix((csrdata, (rowindx, colindx)),
+    st['p'] = scipy.sparse.csr_matrix((csrdata, (rowindx, colindx)),
                                        shape=csrshape)
     # Note: the sparse matrix requires the following linear phase,
     #       which moves the image to the center of the image
-    st['p0'].prune() # Scipy sparse: removing empty space after all non-zero elements.
+    
+    om = st['om']
+    M = st['M']
+    
+    n_shift = tuple(0*x for x in st['Nd'])
+    
+    final_shifts = tuple(
+        numpy.array(n_shift) +
+        numpy.array(
+            st['Nd']) /
+        2)
+    
+    phase = numpy.exp(
+        1.0j *
+        numpy.sum(
+            om *
+            numpy.tile(
+                final_shifts,
+                (M,
+                 1)),
+            1))
+    # add-up all the linear phasees in all axes,
+
+    st['p'] = scipy.sparse.diags(phase, 0).dot(st['p'])
+
+    
+#     st['p0'].prune() # Scipy sparse: removing empty space after all non-zero elements.
     
     return st
 def preindex_copy(Nd, Kd):

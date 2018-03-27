@@ -5,7 +5,7 @@ CPU solvers
 
 import scipy
 import numpy
-from .._helper.helper import *
+from ..src._helper import helper
 # def indxmap_diff(Nd):
 #         """
 #         Build indexes for image gradient
@@ -94,7 +94,7 @@ def L1TVLAD(nufft, y, maxiter, rho  ): # main function of solver
         x2 = nufft.adjoint(y)
         return x2
     
-    uker = mu*_create_kspace_sampling_density(nufft)   - LMBD* create_laplacian_kernel(nufft)
+    uker = mu*_create_kspace_sampling_density(nufft)   - LMBD* helper.create_laplacian_kernel(nufft)
     
     AHy = AH(y)
     
@@ -105,7 +105,7 @@ def L1TVLAD(nufft, y, maxiter, rho  ): # main function of solver
     zz= []
     bb = []
     dd = []
-    d_indx, dt_indx = indxmap_diff(nufft.st['Nd'])
+    d_indx, dt_indx = helper.indxmap_diff(nufft.st['Nd'])
     z=numpy.zeros(nufft.st['Nd'], dtype = nufft.dtype, order='C')
     
     ndims = len(nufft.st['Nd'])
@@ -197,7 +197,7 @@ def L1TVOLS(nufft, y, maxiter, rho ): # main function of solver
         x2 = nufft.adjoint(y)
         return x2
     
-    uker = mu*_create_kspace_sampling_density(nufft)   - LMBD* create_laplacian_kernel(nufft)
+    uker = mu*_create_kspace_sampling_density(nufft)   - LMBD* helper.create_laplacian_kernel(nufft)
     
     AHy = AH(y)
     
@@ -208,7 +208,7 @@ def L1TVOLS(nufft, y, maxiter, rho ): # main function of solver
     zz= []
     bb = []
     dd = []
-    d_indx, dt_indx = indxmap_diff(nufft.st['Nd'])
+    d_indx, dt_indx = helper.indxmap_diff(nufft.st['Nd'])
     z=numpy.zeros(nufft.st['Nd'], dtype = nufft.dtype, order='C')
     
     ndims = len(nufft.st['Nd'])
@@ -284,6 +284,25 @@ def L1TVOLS(nufft, y, maxiter, rho ): # main function of solver
 
     return xkp1 #(u,u_stack)
 
+def _pipe_density(nufft, maxiter):
+    '''
+    Create the density function by iterative solution
+    Generate pHp matrix
+    '''
+#         W = pipe_density(self.st['p'])
+    # sampling density function
+              
+    W = numpy.ones((nufft.st['M'],),dtype=nufft.dtype)
+#         V1= self.st['p'].getH()
+    #     VVH = V.dot(V.getH()) 
+         
+    for pp in range(0,maxiter):
+#             E = self.st['p'].dot(V1.dot(W))
+
+        E = nufft.forward(nufft.adjoint(W))
+        W = (W/E)
+   
+    return W
  
 def solve(nufft,   y,  solver=None, *args, **kwargs):
         """
@@ -321,9 +340,9 @@ def solve(nufft,   y,  solver=None, *args, **kwargs):
     # 
     #             except: 
     
-            nufft.st['W'] = nufft._pipe_density( *args, **kwargs)
+            W = _pipe_density( nufft, *args, **kwargs)
     
-            x = nufft.adjoint(nufft.st['W']*y)
+            x = nufft.adjoint(W*y)
     
             return x
         elif ('lsmr'==solver) or ('lsqr'==solver):
@@ -354,7 +373,11 @@ def solve(nufft,   y,  solver=None, *args, **kwargs):
             gmres: 
             lgmres:
             """
-            A = nufft.spHsp#nufft.st['p'].getH().dot(nufft.st['p'])
+#             A = nufft.spHsp#nufft.st['p'].getH().dot(nufft.st['p'])
+            def spHsp(x):
+                return nufft.spH.dot(nufft.sp.dot(x))
+            A = scipy.sparse.linalg.LinearOperator((nufft.Kdprod, nufft.Kdprod), matvec = spHsp, rmatvec = spHsp, )
+
             
             methods={'cg':scipy.sparse.linalg.cg,   
                                  'bicgstab':scipy.sparse.linalg.bicgstab, 

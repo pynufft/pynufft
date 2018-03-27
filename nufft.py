@@ -71,19 +71,22 @@ class NUFFT_cpu:
         """         
         self.debug = 0  # debug
 
-        n_shift = tuple(0*x for x in Nd)
+#         n_shift = tuple(0*x for x in Nd)
         self.st = helper.plan(om, Nd, Kd, Jd)
         
         self.Nd = self.st['Nd']  # backup
         self.Kd = self.st['Kd']
         self.sn = numpy.asarray(self.st['sn'].astype(self.dtype)  ,order='C')# backup
         self.ndims = len(self.Nd) # dimension
-        self._linear_phase(n_shift)  # calculate the linear phase thing
+#         self._linear_phase(n_shift)  # calculate the linear phase thing
         
         # Calculate the density compensation function
-        self._precompute_sp()
+        self.sp = self.st['p'].copy().tocsr()
+        self.spH = (self.st['p'].getH().copy()).tocsr()        
+        self.Kdprod = numpy.int32(numpy.prod(self.st['Kd']))
         del self.st['p'], self.st['sn']
-        del self.st['p0'] 
+#         self._precompute_sp()        
+#         del self.st['p0'] 
         self.NdCPUorder, self.KdCPUorder, self.nelem =     helper.preindex_copy(self.st['Nd'], self.st['Kd'])
         return 0
         
@@ -101,9 +104,9 @@ class NUFFT_cpu:
         :return: self: instance
         """
         try:
-            self.sp = self.st['p']
-            self.spH = (self.st['p'].getH().copy()).tocsr()
-            self.spHsp =self.st['p'].getH().dot(self.st['p']).tocsr()
+#             self.sp = self.st['p']
+#             self.spH = (self.st['p'].getH().copy()).tocsr()
+            self.spHsp =self.spH.dot(self.sp).tocsr()
         except:
             print("errors occur in self.precompute_sp()")
             raise
@@ -131,80 +134,34 @@ class NUFFT_cpu:
         :type maxiter: int
         :return: numpy array with size Nd
         """        
-        from .src._nonlin.solve_cpu import solve
+        from .linalg.solve_cpu import solve
         return solve(self,  y,  solver, *args, **kwargs)
 
-    
-    def _pipe_density(self,maxiter):
-        '''
-        Create the density function by iterative solution
-        Generate pHp matrix
-        '''
-#         W = pipe_density(self.st['p'])
-        # sampling density function
 
-        try:
-            if maxiter < self.last_iter:
-            
-                W = self.st['W']
-            else: #maxiter > self.last_iter
-                W = self.st['W']
-                for pp in range(0,maxiter - self.last_iter):
- 
-    #             E = self.st['p'].dot(V1.dot(W))
-                    E = self.forward(self.adjoint(W))
-                    W = (W/E)             
-                self.last_iter = maxiter   
-        except:
-       
-                   
-            W = numpy.ones((self.st['M'],),dtype=self.dtype)
-    #         V1= self.st['p'].getH()
-        #     VVH = V.dot(V.getH()) 
-            
-            for pp in range(0,maxiter):
-    #             E = self.st['p'].dot(V1.dot(W))
- 
-                E = self.forward(self.adjoint(W))
-                W = (W/E)
-
-            self.last_iter = maxiter
-        
-        return W
-        # density of the k-space, reduced size
-
-    def _linear_phase(self, n_shift):
-        """
-        Private: Select the center of FOV
-        """
-        om = self.st['om']
-        M = self.st['M']
-        final_shifts = tuple(
-            numpy.array(n_shift) +
-            numpy.array(
-                self.Nd) /
-            2)
-        phase = numpy.exp(
-            1.0j *
-            numpy.sum(
-                om *
-                numpy.tile(
-                    final_shifts,
-                    (M,
-                     1)),
-                1))
-        # add-up all the linear phasees in all axes,
-
-        self.st['p'] = scipy.sparse.diags(phase, 0).dot(self.st['p0'])
-        return 0  # shifted sparse matrix
-    def truncate_selfadjoint(self, tol):
-        """
-        Yet to be tested.
-        """   
-        indix=numpy.abs(self.st['pHp'].data)< tol
-        self.st['pHp'].data[indix]=0
-
-        self.st['pHp'].eliminate_zeros()
+#     def _linear_phase(self, n_shift):
+#         """
+#         Private: Select the center of FOV
+#         """
+#         om = self.st['om']
+#         M = self.st['M']
+#         final_shifts = tuple(
+#             numpy.array(n_shift) +
+#             numpy.array(
+#                 self.Nd) /
+#             2)
+#         phase = numpy.exp(
+#             1.0j *
+#             numpy.sum(
+#                 om *
+#                 numpy.tile(
+#                     final_shifts,
+#                     (M,
+#                      1)),
+#                 1))
+#         # add-up all the linear phasees in all axes,
+# 
+#         self.st['p'] = scipy.sparse.diags(phase, 0).dot(self.st['p0'])
+#         return 0  # shifted sparse matrix
 
     def forward(self, x):
         """
@@ -345,7 +302,8 @@ class NUFFT_cpu:
 
         Xk = self.k2vec(k)
          
-        k = self.spHsp.dot(Xk)
+#         k = self.spHsp.dot(Xk)
+        k = self.spH.dot(self.sp.dot(Xk))
         k = self.vec2k(k)
         return k
 
@@ -463,7 +421,7 @@ class NUFFT_hsa(NUFFT_cpu):
             
             device = platform.get_devices()[device_number]
         except: # if failed, find out what's going wrong?
-            diagnose()
+            helper.diagnose()
             
             return 1
 
@@ -544,11 +502,11 @@ class NUFFT_hsa(NUFFT_cpu):
         self.spH_indptr = self.thr.to_device(  self.spH.indptr)
         self.spH_numrow = self.Kdprod
         del self.spH
-        self.spHsp_data = self.thr.to_device(  self.spHsp.data.astype(self.dtype))
-        self.spHsp_indices = self.thr.to_device( self.spHsp.indices)
-        self.spHsp_indptr =self.thr.to_device(  self.spHsp.indptr)
-        self.spHsp_numrow = self.Kdprod
-        del self.spHsp
+#         self.spHsp_data = self.thr.to_device(  self.spHsp.data.astype(self.dtype))
+#         self.spHsp_indices = self.thr.to_device( self.spHsp.indices)
+#         self.spHsp_indptr =self.thr.to_device(  self.spHsp.indptr)
+#         self.spHsp_numrow = self.Kdprod
+#         del self.spHsp
 #         import reikna.cluda
         import reikna.fft
 #         api = 
@@ -571,7 +529,7 @@ class NUFFT_hsa(NUFFT_cpu):
         :type maxiter: int
         :return: reikna array with size Nd
         """
-        from .src._nonlin.solve_hsa import solve
+        from .linalg.solve_hsa import solve
         
             
         try:
@@ -583,80 +541,44 @@ class NUFFT_hsa(NUFFT_cpu):
             else:
                 print("wrong")
                 raise TypeError
-
-    def _pipe_density(self,maxiter):
-        """
-        Private: create the density function by iterative solution
-        Generate pHp matrix
-        """
-
-
-        try:
-            if maxiter < self.last_iter:
-            
-                W = self.st['W']
-            else: #maxiter > self.last_iter
-                W = self.st['W']
-                for pp in range(0,maxiter - self.last_iter):
- 
-    #             E = self.st['p'].dot(V1.dot(W))
-                    E = self.forward(self.adjoint(W))
-                    W = (W/E)             
-                self.last_iter = maxiter   
-        except:
-            W = self.thr.copy_array(self.y)
-            self.cMultiplyScalar(self.zero_scalar, W, local_size=None, global_size=int(self.M))
-    #         V1= self.st['p'].getH()
-        #     VVH = V.dot(V.getH()) 
-            
-            for pp in range(0,1):
-    #             E = self.st['p'].dot(V1.dot(W))
- 
-                E = self.forward(self.adjoint(W))
-                W /= E
-#                 self.cMultiplyVecInplace(self.SnGPUArray, self.x_Nd, local_size=None, global_size=int(self.Ndprod))
-
-
-            self.last_iter = maxiter
-        
-        return W    
-    def _linear_phase(self, n_shift):
-        """
-        Private: Select the center of FOV
-        """
-        om = self.st['om']
-        M = self.st['M']
-        final_shifts = tuple(
-            numpy.array(n_shift) +
-            numpy.array(self.st['Nd']) / 2)
-
-        phase = numpy.exp(
-            1.0j *
-            numpy.sum(
-                om * numpy.tile(
-                    final_shifts,
-                    (M,1)),
-                1))
-        # add-up all the linear phasees in all axes,
-
-        self.st['p'] = scipy.sparse.diags(phase, 0).dot(self.st['p0'])
+  
+#     def _linear_phase(self, n_shift):
+#         """
+#         Private: Select the center of FOV
+#         """
+#         om = self.st['om']
+#         M = self.st['M']
+#         final_shifts = tuple(
+#             numpy.array(n_shift) +
+#             numpy.array(self.st['Nd']) / 2)
+# 
+#         phase = numpy.exp(
+#             1.0j *
+#             numpy.sum(
+#                 om * numpy.tile(
+#                     final_shifts,
+#                     (M,1)),
+#                 1))
+#         # add-up all the linear phasees in all axes,
+# 
+#         self.st['p'] = scipy.sparse.diags(phase, 0).dot(self.st['p0'])
  
 
-    def _truncate_selfadjoint(self, tol):
-        """
-        Yet to be tested.
-        """
-#         for pp in range(1, 8):
-#             self.st['pHp'].setdiag(0,k=pp)
-#             self.st['pHp'].setdiag(0,k=-pp)
-        indix=numpy.abs(self.spHsp.data)< tol
-        self.spHsp.data[indix]=0
- 
-        self.spHsp.eliminate_zeros()
-        indix=numpy.abs(self.sp.data)< tol
-        self.sp.data[indix]=0
- 
-        self.sp.eliminate_zeros()
+#     def _truncate_selfadjoint(self, tol):
+#         """
+#         Yet to be tested.
+#         """
+# #         for pp in range(1, 8):
+# #             self.st['pHp'].setdiag(0,k=pp)
+# #             self.st['pHp'].setdiag(0,k=-pp)
+#         indix=numpy.abs(self.spHsp.data)< tol
+#         self.spHsp.data[indix]=0
+#  
+#         self.spHsp.eliminate_zeros()
+#         indix=numpy.abs(self.sp.data)< tol
+#         self.sp.data[indix]=0
+#  
+#         self.sp.eliminate_zeros()
         
     def forward(self, gx):
             """
@@ -706,7 +628,9 @@ class NUFFT_hsa(NUFFT_cpu):
         self.x_Nd = self.thr.copy_array(gx)
         self._x2xx()
         self._xx2k()
-        self._k2y2k()
+        self._k2y()
+        self._y2k()
+#         self._k2y2k()
         self._k2xx()
         self._xx2x()
         gx2 = self.thr.copy_array(self.x_Nd)

@@ -9,17 +9,11 @@ A minimal "getting start" tutorial is available at http://jyhmiinlin.github.io/p
 
 Please use Python3. PyNUFFT has been tested with Python3.4. However, it should work with Python3.5-3.6.
 
-### New in version 0.3.3.3
+### New in version 0.3.3.7
 
-New in version 0.3.3.3
+Version 0.3.3.7 is a bug-fixed version. 
 
-Note: The Heterogeneous System Architecture (HSA) version has superseded pure GPU version (pynufft_gpu.py), which will be removed from the source.
-
-A variety of nonlinear solvers are provided, including conjugate gradient method (cg), L1 total-variation ordinary least square (L1TVOLS), and L1 total-variation least absolute deviation (L1TVLAD).
-
-The CPU version also supports other nonlinear solvers (which belong to Scipy), e.g. lsmr, lsqr, gmr, cg, bicgstab, bicg, cgs, gmres, and lgmres.
-
-(Experimentally) Supports multi-dimensional transform and reconstruction.
+Toeplitz is removed from the NUFFT_cpu and NUFFT_gpu to avoid the MemoryError.
 
 ### Summary
 

@@ -1,6 +1,11 @@
 Version history
 ===============
 
+**v0.3.3.6**
+
+- Bugfix: correct the error of import. Now import NUFFT_cpu, NUFFT_hsa at the top level.
+
+
 **v0.3.3**
 
 - Note: GPU support is superseded by the Heterogeneous System Architecture (HSA). 
