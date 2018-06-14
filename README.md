@@ -9,11 +9,12 @@ A minimal "getting start" tutorial is available at http://jyhmiinlin.github.io/p
 
 Please use Python3. PyNUFFT has been tested with Python3.4. However, it should work with Python3.5-3.6.
 
-### New in version 0.3.3.7
+### New in version 0.3.3.8
 
-Version 0.3.3.7 is a bug-fixed version. 
+Version 0.3.3.8 is a bug-fixed version. 
 
-Toeplitz is removed from the NUFFT_cpu and NUFFT_gpu to avoid the MemoryError.
+Bugfix in 0.3.3.7 Toeplitz is removed from the NUFFT_cpu and NUFFT_gpu to avoid the MemoryError. 
+Bugfix in 0.3.3.8 rcond = -1 in numpy.linalg.lstsq to be backward compatible with numpy-1.13.1 in Anaconda 3.6.5
 
 ### Summary
 
