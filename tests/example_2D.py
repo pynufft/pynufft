@@ -28,7 +28,7 @@ def example_2D():
     # load example image
     # image = numpy.load(DATA_PATH +'phantom_256_256.npz')['arr_0']
     image = scipy.misc.face(gray=True)
-    image = scipy.misc.imresize(image, (256,256))
+    image = scipy.misc.imresize(image, (256,256)).astype(numpy.float32)
     image=image/numpy.max(image[...])
     #numpy.save('phantom_256_256',image)
     
