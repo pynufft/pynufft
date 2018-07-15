@@ -16,19 +16,19 @@
 from setuptools import setup
 
 import sys
-if sys.version_info[0] == 2:
-    sys.exit("Sorry, Python 2 is not supported yet")
+#if sys.version_info[0] == 2:
+#    sys.exit("Sorry, Python 2 is not supported yet")
 setup(name='pynufft',
-      version='0.3.3.8',
+      version='0.3.3.9',
       description='Python non-uniform fast Fourier transform (pynufft)',
       author='Jyh-Miin Lin',
       author_email='jyhmiinlin@gmail.com',
       url = 'https://github.com/jyhmiinlin/pynufft', # use the URL to the github repo
-      install_requires = ['numpy', 'scipy', 'matplotlib'],
-      license='MIT',
+      install_requires = ['numpy', 'scipy'],
+      license='MIT, GPLv3',
       packages=['pynufft'],
       package_dir={'pynufft':'.'},
-      package_data={'pynufft':['src/*/*','tests/*','example/*', 'linalg/*']},
+      package_data={'pynufft':['src/*','src/*/*','tests/*','example/*', 'linalg/*']},
       include_package_data=True,
       zip_safe=False)
 	

@@ -35,7 +35,7 @@ NufftObj.plan(om, Nd, Kd, Jd)
 
 image = scipy.misc.ascent()
 image = scipy.misc.imresize(image, (256,256))
-image=image/numpy.max(image[...])
+image=image*1.0/numpy.max(image[...])
 
 print('loading image...')
 

@@ -4,6 +4,7 @@ Helper functions
 
 bugfix: mm = numpy.tile(mm, [numpy.prod(Jd).astype(int), 1])  to fix wrong type when numpy.prod(Jd) is not casted as int
 bugfix: fix rcond=None error in Anaconda 3.6.5 and Numpy 1.13.1 (the recommended None in Numpy 1.14 is backward incompatible with 1.13)
+bugfix:  indx1 = indx.copy() was replaced by indx1 = list(indx) for Python2 compatibility
 """
 
 
@@ -51,10 +52,12 @@ def create_laplacian_kernel(nufft):
     indx = [slice(0, 1) for ss in range(0, n_dims)] # create the n_dims dimensional slice which are all zeros
     uker[indx] = - 2.0*n_dims # Equivalent to  uker[0,0,0] = -6.0
     for pp in range(0,n_dims):
-        indx1 = indx.copy() # indexing the 1
+#         indx1 = indx.copy() # indexing the 1 Only for Python3
+        indx1 = list(indx)# indexing the 1 Python2/3 compatible
         indx1[pp] = 1
         uker[indx1] = 1
-        indx1 = indx.copy() # indexing the -1
+#         indx1 = indx.copy() # indexing the -1  Only for Python3
+        indx1 = list(indx)# indexing the 1 Python2/3 compatible
         indx1[pp] = -1
         uker[indx1] = 1
 ################################

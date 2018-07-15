@@ -1,7 +1,7 @@
 """
 cSparseMatVec
 ==============================================
-KERNEL void cSparseMatVec(    
+KERNEL void cCSR_spmv(    
       const    uint    dim,
       GLOBAL_MEM const uint *rowDelimiters, 
       GLOBAL_MEM const uint *cols,
@@ -13,7 +13,7 @@ Offload Sparse Matrix Vector Multiplication to heterogeneous devices.
 """
 
 R="""
-KERNEL void cSparseMatVec(    
+KERNEL void cCSR_spmv(    
       const    uint    dim,
       GLOBAL_MEM const uint *rowDelimiters, 
       GLOBAL_MEM const uint *cols,
@@ -21,83 +21,77 @@ KERNEL void cSparseMatVec(
       GLOBAL_MEM const float2 *vec, 
       GLOBAL_MEM float2 *out)
 {   
-const uint t = get_local_id(0);
-const uint vecWidth=${LL};
-// Thread ID within wavefront
-const uint id = t & (vecWidth-1);
-// One row per wavefront
-uint vecsPerBlock=get_local_size(0)/vecWidth;
-uint myRow=(get_group_id(0)*vecsPerBlock)
-           +(t/ vecWidth);
-LOCAL_MEM float2 partialSums[${LL}];
-float2 zero;
-zero.x=0.0;
-zero.y=0.0;
-partialSums[t] = zero;
-float2 mySum= zero;
-float2 sumk_err=zero;
-float2  y=zero;
-float2 sumk_s;
-float2 bp;
-if (myRow < dim)
-{
- const uint vecStart=
-          rowDelimiters[myRow];
- const uint vecEnd=
-          rowDelimiters[myRow+1];            
- for (uint j=vecStart+id;
-      j<vecEnd;j+=vecWidth)
- {
-  const uint col = cols[j];
-  const float2 spdata=val[j];
-  const float2 vecdata=vec[col];                        
-  y.x=spdata.x*vecdata.x-
-       spdata.y*vecdata.y;
-  y.y=spdata.y*vecdata.x+
-       spdata.x*vecdata.y;
-  sumk_s = mySum+y;
-  bp = sumk_s - mySum;
-  sumk_err = sumk_err+ 
-      ((mySum-(sumk_s-bp))+(y-bp));
-  mySum=sumk_s;
-  }
-  float2 new_error=zero;                                                
-  y=sumk_err;
-  sumk_s=mySum+y;
-  bp=sumk_s-mySum;
-  new_error=new_error+ 
-      ((mySum-(sumk_s-bp))+(y-bp));
-  mySum = sumk_s;                                                    
-  partialSums[t] = mySum;
-  LOCAL_BARRIER; 
-  //__syncthreads();
-  //barrier(CLK_LOCAL_MEM_FENCE);
-  // Reduce partial sums
-  uint bar = vecWidth / 2;
-  while(bar > 0)
-  {
-   if (id < bar)
-  //partialSums[t]+=partialSums[t+bar];
-   {
-    y=partialSums[t+bar];
-    sumk_s = partialSums[t]+y;
-    bp = sumk_s - mySum;
-    new_error = new_error + 
-    ((partialSums[t]-(sumk_s-bp))+(y-bp));
-    partialSums[t] = sumk_s;
-   }
-   //barrier(CLK_LOCAL_MEM_FENCE);
-   //__syncthreads();
-   LOCAL_BARRIER;
-   bar = bar / 2;
-  }            
-  // Write result 
-  if (id == 0)
-  {
-   out[myRow]=partialSums[t]+new_error; 
-  }
- }
-};
+    const uint t = get_local_id(0);
+    const uint vecWidth=${LL};
+    // Thread ID within wavefront
+    const uint id = t & (vecWidth-1);
+    // One row per wavefront
+    uint vecsPerBlock=get_local_size(0)/vecWidth;
+    uint myRow=(get_group_id(0)*vecsPerBlock)
+               +(t/ vecWidth);
+    LOCAL_MEM float2 partialSums[${LL}];
+    float2 zero;
+    zero.x=0.0;
+    zero.y=0.0;
+    partialSums[t] = zero;
+    float2 mySum= zero;
+    float2 sumk_err=zero;
+    float2  y=zero;
+    float2 sumk_s;
+    float2 bp;
+    if (myRow < dim)
+    {
+     const uint vecStart = rowDelimiters[myRow];
+     const uint vecEnd = rowDelimiters[myRow+1];            
+     for (uint j = vecStart+id;  j<vecEnd; j += vecWidth)
+     {
+          const uint col = cols[j];
+          const float2 spdata=val[j];
+          const float2 vecdata=vec[col];                        
+          y.x=spdata.x*vecdata.x - spdata.y*vecdata.y;
+          y.y=spdata.y*vecdata.x + spdata.x*vecdata.y;
+          sumk_s = mySum+y;
+          bp = sumk_s - mySum;
+          sumk_err = sumk_err + ((mySum-(sumk_s-bp))+(y-bp));
+          mySum=sumk_s;
+      }
+      float2 new_error=zero;                                                
+      y=sumk_err;
+      sumk_s=mySum+y;
+      bp=sumk_s-mySum;
+      new_error=new_error+ 
+          ((mySum-(sumk_s-bp))+(y-bp));
+      mySum = sumk_s;                                                    
+      partialSums[t] = mySum;
+      LOCAL_BARRIER; 
+      //__syncthreads();
+      //barrier(CLK_LOCAL_MEM_FENCE);
+      // Reduce partial sums
+      uint bar = vecWidth / 2;
+      while(bar > 0)
+      {
+       if (id < bar)
+      //partialSums[t]+=partialSums[t+bar];
+       {
+        y=partialSums[t+bar];
+        sumk_s = partialSums[t]+y;
+        bp = sumk_s - mySum;
+        new_error = new_error + 
+        ((partialSums[t]-(sumk_s-bp))+(y-bp));
+        partialSums[t] = sumk_s;
+       }
+       //barrier(CLK_LOCAL_MEM_FENCE);
+       //__syncthreads();
+       LOCAL_BARRIER;
+       bar = bar / 2;
+      }            
+      // Write result 
+      if (id == 0)
+      {
+       out[myRow]=partialSums[t]+new_error; 
+      }
+     }
+    };
 """
 from numpy import uint32
 scalar_arg_dtypes=[uint32, None, None, None, None, None]        

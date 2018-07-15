@@ -22,9 +22,9 @@ def _create_kspace_sampling_density(nufft):
         Compute kspace sampling density from the nufft object
         """    
         y = numpy.ones((nufft.st['M'],),dtype = numpy.complex64)
-        nufft.y = nufft.thr.to_device(y)
-        nufft._y2k()
-        w =  numpy.abs( nufft.k_Kd2.get())#**2) ))
+        gy = nufft.thr.to_device(y)
+        gk = nufft.y2k(gy)
+        w =  numpy.abs(gk.get())#**2) ))
     
         nufft.st['w'] = w#self.nufftobj.vec2k(w)
         RTR=nufft.st['w'] # see __init__() in class "nufft"
@@ -159,15 +159,15 @@ def L1TVLAD(nufft, gy, maxiter, rho  ): # main function of solver
         # Note K = F' uker F
         # so K-1 ~ F
 #         xkp1 = nufft.k2xx(nufft.xx2k(rhs) / uker) 
-        nufft.x_Nd = nufft.thr.copy_array(rhs)
+        xx = nufft.thr.copy_array(rhs)
         
-        nufft._xx2k()
+        k=nufft.xx2k(xx)
         
-        nufft.k_Kd2 = nufft.k_Kd/uker
+        k /= uker
         
 #         nufft.k_Kd2 = nufft.thr.copy_array(nufft.k_Kd)
-        nufft._k2xx()
-        xkp1 = nufft.thr.copy_array(nufft.x_Nd)
+        xkp1 = nufft.k2xx(k)
+#         xkp1 = nufft.thr.copy_array(nufft.x_Nd)
 #         print(xkp1.get())
 #                 self._update_d(xkp1)
 
@@ -197,11 +197,13 @@ def L1TVLAD(nufft, gy, maxiter, rho  ): # main function of solver
         
 #         s = s1**2 + s2**2
 #         s1 *= s1
-            nufft.cMultiplyConjVec(s_tmp[pp], s_tmp[pp], tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
+        for pp in range(0, ndims):
             if pp > 0:
-                s += tmp_gpu
+#                 s += tmp_gpu
+                nufft.cHypot(s, s_tmp[pp], local_size=None, global_size=int(nufft.Ndprod))
+#                 nufft.thr.synchronize()
             else: # pp == 0
-                s = nufft.thr.copy_array(tmp_gpu)
+                s = nufft.thr.copy_array(s_tmp[pp])
 #         nufft.cMultiplyConjVec(s1, s1, tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
 #         s = nufft.thr.copy_array(tmp_gpu)
 # #         s2 *= s2
@@ -211,7 +213,7 @@ def L1TVLAD(nufft, gy, maxiter, rho  ): # main function of solver
 #         s = s1 + s2
         
         
-        nufft.cSqrt(s, local_size=None, global_size=int(nufft.Ndprod))
+#         nufft.cSqrt(s, local_size=None, global_size=int(nufft.Ndprod))
         
         s += 1e-6
         
@@ -256,8 +258,8 @@ def L1TVLAD(nufft, gy, maxiter, rho  ): # main function of solver
 #     print(xkp1.get())
 #             print(outer)
 #     print('here')
-    nufft.x_Nd = nufft.thr.copy_array(xkp1)
-    return 0
+#     nufft.x_Nd = nufft.thr.copy_array(xkp1)
+    return xkp1
 def L1TVOLS(nufft, gy, maxiter, rho  ): # main function of solver
     """
     L1-total variation regularized ordinary least square 
@@ -358,15 +360,15 @@ def L1TVOLS(nufft, gy, maxiter, rho  ): # main function of solver
         # Note K = F' uker F
         # so K-1 ~ F
 #         xkp1 = nufft.k2xx(nufft.xx2k(rhs) / uker) 
-        nufft.x_Nd = nufft.thr.copy_array(rhs)
+        xx = nufft.thr.copy_array(rhs)
         
-        nufft._xx2k()
+        k = nufft.xx2k(xx)
         
-        nufft.k_Kd2 = nufft.k_Kd/uker
+        k /= uker
         
 #         nufft.k_Kd2 = nufft.thr.copy_array(nufft.k_Kd)
-        nufft._k2xx()
-        xkp1 = nufft.thr.copy_array(nufft.x_Nd)
+        xkp1 = nufft.k2xx(k)
+#         xkp1 = nufft.thr.copy_array(nufft.x_Nd)
 #         print(xkp1.get())
 #                 self._update_d(xkp1)
 
@@ -396,11 +398,14 @@ def L1TVOLS(nufft, gy, maxiter, rho  ): # main function of solver
         
 #         s = s1**2 + s2**2
 #         s1 *= s1
-            nufft.cMultiplyConjVec(s_tmp[pp], s_tmp[pp], tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
+#             nufft.cMultiplyConjVec(s_tmp[pp], s_tmp[pp], tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
+        for pp in range(0, ndims):
             if pp > 0:
-                s += tmp_gpu
+#                 s += tmp_gpu
+                nufft.cHypot(s, s_tmp[pp], local_size=None, global_size=int(nufft.Ndprod))
+#                 nufft.thr.synchronize()
             else: # pp == 0
-                s = nufft.thr.copy_array(tmp_gpu)
+                s = nufft.thr.copy_array(s_tmp[pp])
 #         nufft.cMultiplyConjVec(s1, s1, tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
 #         s = nufft.thr.copy_array(tmp_gpu)
 # #         s2 *= s2
@@ -410,7 +415,7 @@ def L1TVOLS(nufft, gy, maxiter, rho  ): # main function of solver
 #         s = s1 + s2
         
         
-        nufft.cSqrt(s, local_size=None, global_size=int(nufft.Ndprod))
+#         nufft.cSqrt(s, local_size=None, global_size=int(nufft.Ndprod))
         
         s += 1e-6
         
@@ -455,8 +460,8 @@ def L1TVOLS(nufft, gy, maxiter, rho  ): # main function of solver
 #     print(xkp1.get())
 #             print(outer)
 #     print('here')
-    nufft.x_Nd = nufft.thr.copy_array(xkp1)
-    return 0
+#     nufft.x_Nd = nufft.thr.copy_array(xkp1)
+    return xkp1
 
 def _pipe_density(nufft,maxiter):
     """
@@ -509,12 +514,12 @@ def solve(nufft,gy, solver=None,  maxiter=30, *args, **kwargs):
 #     if None ==  solver:
 #         solver  =   'cg'
     if 'L1TVLAD' == solver:
-        L1TVLAD(nufft, gy, maxiter=maxiter, *args, **kwargs  )
-        x2 = nufft.thr.copy_array(nufft.x_Nd)
+        x2=L1TVLAD(nufft, gy, maxiter=maxiter, *args, **kwargs  )
+#         x2 = nufft.thr.copy_array(nufft.x_Nd)
         return x2
     elif 'L1TVOLS' == solver:
-        L1TVOLS(nufft, gy, maxiter=maxiter, *args, **kwargs  )
-        x2 = nufft.thr.copy_array(nufft.x_Nd)
+        x2=L1TVOLS(nufft, gy, maxiter=maxiter, *args, **kwargs  )
+#         x2 = nufft.thr.copy_array(nufft.x_Nd)
         return x2
     elif 'dc'   ==  solver:
          """
@@ -537,22 +542,23 @@ def solve(nufft,gy, solver=None,  maxiter=30, *args, **kwargs):
 
         from reikna.algorithms import Reduce, Predicate, predicate_sum
         
-        nufft.reduce_sum = Reduce(nufft.k_Kd, predicate_sum(dtype))
+        nufft.reduce_sum = Reduce(numpy.empty(nufft.st['Kd'], dtype = nufft.dtype), predicate_sum(dtype))
         nufft.reduce_sum  = nufft.reduce_sum.compile(nufft.thr)        
         
  
-        # update: b = spH * gy              
-        b= nufft.thr.empty_like( nufft.k_Kd)
-        nufft.cSparseMatVec(
-                                   nufft.spH_numrow, 
-                                   nufft.spH_indptr,
-                                   nufft.spH_indices,
-                                   nufft.spH_data, 
-                                   gy,
-                                   b,
-                                   local_size=int(nufft.wavefront),
-                                   global_size=int(nufft.spH_numrow*nufft.wavefront) 
-                                    )#,g_times_l=int(csrnumrow))
+        # update: b = spH * gy         
+        b = nufft.y2k(gy)
+#         b= nufft.thr.array(nufft.st['Kd'], dtype = nufft.dtype)
+#         nufft.cSparseMatVec(
+#                                    nufft.spH_numrow, 
+#                                    nufft.spH_indptr,
+#                                    nufft.spH_indices,
+#                                    nufft.spH_data, 
+#                                    gy,
+#                                    b,
+#                                    local_size=int(nufft.wavefront),
+#                                    global_size=int(nufft.spH_numrow*nufft.wavefront) 
+#                                     )#,g_times_l=int(csrnumrow))
 #         print('b',numpy.sum(b.get()))     
  
         # Initialize x = b
@@ -563,18 +569,21 @@ def solve(nufft,gy, solver=None,  maxiter=30, *args, **kwargs):
         
         # initialize r = b - A * x
         r   =   nufft.thr.empty_like( b)
-        Ax   =   nufft.thr.empty_like( b)
-        nufft.cSparseMatVec( 
-                                   nufft.spHsp_numrow, 
-                                   nufft.spHsp_indptr,
-                                   nufft.spHsp_indices,
-                                   nufft.spHsp_data, 
-                                   x,
-                                   Ax,
-                                   local_size=int(nufft.wavefront),
-                                   global_size=int(nufft.spHsp_numrow*nufft.wavefront) 
-                                    )#,g_times_l=int(csrnumrow))     
+#         Ax   =   nufft.thr.empty_like( b)
+#         nufft.cSparseMatVec( 
+#                                    nufft.spHsp_numrow, 
+#                                    nufft.spHsp_indptr,
+#                                    nufft.spHsp_indices,
+#                                    nufft.spHsp_data, 
+#                                    x,
+#                                    Ax,
+#                                    local_size=int(nufft.wavefront),
+#                                    global_size=int(nufft.spHsp_numrow*nufft.wavefront) 
+#                                     )#,g_times_l=int(csrnumrow))     
          
+        y_tmp = nufft.k2y(x)
+        Ax = nufft.y2k(y_tmp)
+        del y_tmp
         rsold = nufft.thr.empty_like(nufft.reduce_sum.parameter.output)
         nufft.reduce_sum(rsold, Ax)
 #         print('Ax',rsold) 
@@ -590,7 +599,7 @@ def solve(nufft,gy, solver=None,  maxiter=30, *args, **kwargs):
         nufft.reduce_sum(rsold, tmp_array)
 
         # allocate Ap
-        Ap  =   nufft.thr.empty_like( b)     
+#         Ap  =   nufft.thr.empty_like( b)     
 
         rsnew = nufft.thr.empty_like(nufft.reduce_sum.parameter.output)
         tmp_sum = nufft.thr.empty_like(nufft.reduce_sum.parameter.output)
@@ -598,17 +607,19 @@ def solve(nufft,gy, solver=None,  maxiter=30, *args, **kwargs):
         for pp in range(0, maxiter):
             
             # Ap = A*p
-            nufft.cSparseMatVec( 
-                                   nufft.spHsp_numrow, 
-                                   nufft.spHsp_indptr,
-                                   nufft.spHsp_indices,
-                                   nufft.spHsp_data, 
-                                   p,
-                                   Ap,
-                                   local_size=int(nufft.wavefront),
-                                   global_size=int(nufft.spHsp_numrow*nufft.wavefront) 
-                                    )#,g_times_l=int(csrnumrow))     
-            
+#             nufft.cSparseMatVec( 
+#                                    nufft.spHsp_numrow, 
+#                                    nufft.spHsp_indptr,
+#                                    nufft.spHsp_indices,
+#                                    nufft.spHsp_data, 
+#                                    p,
+#                                    Ap,
+#                                    local_size=int(nufft.wavefront),
+#                                    global_size=int(nufft.spHsp_numrow*nufft.wavefront) 
+#                                     )#,g_times_l=int(csrnumrow))     
+            tmp_p = nufft.k2y(p)
+            Ap = nufft.y2k(tmp_p)
+            del tmp_p
 #             alpha = rs_old/(p'*Ap)
             nufft.cMultiplyConjVec(p, Ap, tmp_array, local_size=None, global_size=int(nufft.Kdprod))
             nufft.reduce_sum(tmp_sum, tmp_array)
@@ -643,13 +654,13 @@ def solve(nufft,gy, solver=None,  maxiter=30, *args, **kwargs):
         # end of iteration    
         
         # copy result to k_Kd2
-        nufft.k_Kd2 = nufft.thr.copy_array(x)
+#         nufft.k_Kd2 = nufft.thr.copy_array(x)
         
         # inverse FFT: k_Kd2 -> x_Nd
-        nufft._k2xx()
+        x2 = nufft.k2xx(x) # x is the solved k space
         
         # rescale the SnGPUArray
-        x2 = nufft.thr.copy_array(nufft.x_Nd)/nufft.SnGPUArray
+        x2 /= nufft.SnGPUArray
         
         
         return x2

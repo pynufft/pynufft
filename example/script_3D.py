@@ -57,17 +57,17 @@ NufftObj.plan(om, Nd, Kd, Jd)
 
 kspace =NufftObj.forward(image)
 
-restore_image = NufftObj.solve(kspace,'cg', maxiter=500)
+restore_image = NufftObj.solve(kspace,'cg', maxiter=100)
 
-restore_image1 = NufftObj.solve(kspace,'L1TVLAD', maxiter=500,rho=0.1)
+#restore_image1 = NufftObj.solve(kspace,'L1TVLAD', maxiter=300,rho=0.1)
 # 
-restore_image2 = NufftObj.solve(kspace,'L1TVOLS', maxiter=500,rho=0.1)
+restore_image2 = NufftObj.solve(kspace,'L1TVOLS', maxiter=100,rho=0.01)
 pyplot.subplot(2,2,1)
 pyplot.imshow(numpy.real(image[:,:,32]), label='original signal',cmap=gray)
 pyplot.title('original')    
-pyplot.subplot(2,2,2)
-pyplot.imshow(numpy.real(restore_image1[:,:,32]), label='L1TVLAD',cmap=gray)
-pyplot.title('L1TVLAD')
+#pyplot.subplot(2,2,2)
+#pyplot.imshow(numpy.real(restore_image1[:,:,32]), label='L1TVLAD',cmap=gray)
+#pyplot.title('L1TVLAD')
 
 pyplot.subplot(2,2,3)
 pyplot.imshow(numpy.real(restore_image2[:,:,32]), label='L1TVOLS',cmap=gray)

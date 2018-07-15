@@ -11,18 +11,18 @@ import scipy.linalg
 import scipy.special
 
 # from .... import src
-import sys
-if sys.version_info[0] == 3:
-    try:
-        from .src._helper import helper
-    except:
-        from pynufft.src._helper import helper
+# import sys
+# if sys.version_info[0] == 3:
+#     try:
+from .src._helper import helper
+#     except:
+#         from pynufft.src._helper import helper
         
-if sys.version_info[0] == 2:
-    
+# if sys.version_info[0] == 2:
+#     from .src._helper import helper
 #     import os, sys
 #     sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-    from src._helper import helper
+#     from src._helper import helper
 class NUFFT_cpu:
     """
     Class NUFFT_cpu
@@ -137,32 +137,6 @@ class NUFFT_cpu:
         from .linalg.solve_cpu import solve
         return solve(self,  y,  solver, *args, **kwargs)
 
-
-#     def _linear_phase(self, n_shift):
-#         """
-#         Private: Select the center of FOV
-#         """
-#         om = self.st['om']
-#         M = self.st['M']
-#         final_shifts = tuple(
-#             numpy.array(n_shift) +
-#             numpy.array(
-#                 self.Nd) /
-#             2)
-#         phase = numpy.exp(
-#             1.0j *
-#             numpy.sum(
-#                 om *
-#                 numpy.tile(
-#                     final_shifts,
-#                     (M,
-#                      1)),
-#                 1))
-#         # add-up all the linear phasees in all axes,
-# 
-#         self.st['p'] = scipy.sparse.diags(phase, 0).dot(self.st['p0'])
-#         return 0  # shifted sparse matrix
-
     def forward(self, x):
         """
         Forward NUFFT on CPU
@@ -224,20 +198,18 @@ class NUFFT_cpu:
 #         dd = numpy.size(self.Kd)      
         output_x = numpy.zeros(self.Kd, dtype=self.dtype,order='C')
 #         output_x[crop_slice_ind(xx.shape)] = xx
-        output_x.flat[self.KdCPUorder]=xx.flat[self.NdCPUorder]
+        output_x.ravel()[self.KdCPUorder]=xx.ravel()[self.NdCPUorder]
         k = numpy.fft.fftn(output_x, self.Kd, range(0, self.ndims))
 
         return k
+    
     def k2vec(self,k):
-        
         k_vec = numpy.reshape(k, (numpy.prod(self.Kd), ), order='C')
-   
         return k_vec
     
     def vec2y(self,k_vec):
         '''
         gridding: 
-        
         '''
         y = self.sp.dot(k_vec)
         
@@ -246,7 +218,6 @@ class NUFFT_cpu:
         """
         Private: interpolation by the Sparse Matrix-Vector Multiplication
         """
-        
         y = self.vec2y(self.k2vec(k)) #numpy.reshape(self.st['p'].dot(Xk), (self.st['M'], ), order='F')
         
         return y
@@ -270,11 +241,8 @@ class NUFFT_cpu:
         """
         Private: gridding by the Sparse Matrix-Vector Multiplication
         """
-        
         k_vec = self.y2vec(y)
-        
         k = self.vec2k(k_vec)
-        
         return k
 
     def k2xx(self, k):
@@ -285,7 +253,7 @@ class NUFFT_cpu:
         
         k = numpy.fft.ifftn(k, self.Kd, range(0, self.ndims))
         xx= numpy.zeros(self.Nd,dtype=self.dtype, order='C')
-        xx.flat[self.NdCPUorder]=k.flat[self.KdCPUorder]
+        xx.ravel()[self.NdCPUorder]=k.ravel()[self.KdCPUorder]
 #         xx = xx[crop_slice_ind(self.Nd)]
         return xx
 
@@ -335,64 +303,6 @@ class NUFFT_hsa(NUFFT_cpu):
         pass
         NUFFT_cpu.__init__(self)
 
-
-#     def plan(self, om, Nd, Kd, Jd):
-#         """
-#         Design the min-max interpolator.
-#          
-#         :param om: The M off-grid locations in the frequency domain. Normalized between [-pi, pi]
-#         :param Nd: The matrix size of equispaced image. Example: Nd=(256,256) for a 2D image; Nd = (128,128,128) for a 3D image
-#         :param Kd: The matrix size of the oversampled frequency grid. Example: Kd=(512,512) for 2D image; Kd = (256,256,256) for a 3D image
-#         :param Jd: The interpolator size. Example: Jd=(6,6) for 2D image; Jd = (6,6,6) for a 3D image
-#         :type om: numpy.float array, matrix size = M * ndims
-#         :type Nd: tuple, ndims integer elements. 
-#         :type Kd: tuple, ndims integer elements. 
-#         :type Jd: tuple, ndims integer elements. 
-#         :returns: 0
-#         :rtype: int, float
-#         :Example:
-#  
-#         >>> import pynufft
-#         >>> NufftObj = pynufft_hsa.NUFFT()
-#         >>> NufftObj.plan(om, Nd, Kd, Jd) 
-#          
-#         """         
-#         self.debug = 0  # debug
-#  
-#         n_shift = tuple(0*x for x in Nd)
-#         self.st = plan(om, Nd, Kd, Jd)
-#          
-#         self.Nd = self.st['Nd']  # backup    
-#         self.sn = numpy.asarray(self.st['sn'].astype(dtype)  ,order='C')# backup
-#         self.ndims = len(self.st['Nd']) # dimension
-#         self._linear_phase(n_shift)  # calculate the linear phase thing
-#          
-#         # Calculate the density compensation function
-#         self._precompute_sp()
-#         del self.st['p'], self.st['sn']
-#         del self.st['p0'] 
-#         self.NdCPUorder, self.KdCPUorder, self.nelem =     preindex_copy(self.st['Nd'], self.st['Kd'])
-#  
-#         return 0
-
-#     def _precompute_sp(self):
-#         """
-# 
-#         Private: Precompute adjoint (gridding) and Toepitz interpolation matrix.
-#         
-#         :param None: 
-#         :type None: Python Nonetype
-#         :return: self: instance
-#         """
-#         try:
-#             self.sp = self.st['p']
-#             self.spH = (self.st['p'].getH().copy()).tocsr()
-#             self.spHsp =self.st['p'].getH().dot(self.st['p']).tocsr()
-#         except:
-#             print("errors occur in self.precompute_sp()")
-#             raise
-# #         self.truncate_selfadjoint( 1e-2)
-
     def offload(self, API, platform_number=0, device_number=0):
         """
         self.offload():
@@ -428,62 +338,58 @@ class NUFFT_hsa(NUFFT_cpu):
         
 #         print('device = ', device)
 #         Create context from device
-        self.thr = api.Thread(device) #pyopencl.create_some_context()
+        self.thr = api.Thread(device, async = False) #pyopencl.create_some_context()
 #         self.queue = pyopencl.CommandQueue( self.ctx)
 
 #         """
 #         Wavefront: as warp in cuda. Can control the width in a workgroup
 #         Wavefront is required in spmv_vector as it improves data coalescence.
-#         see cSparseMatVec and zSparseMatVec
+#         see cCSR_spmv and zSparseMatVec
 #         """
         self.wavefront = api.DeviceParameters(device).warp_size
         print(api.DeviceParameters(device).max_work_group_size)
 #         print(self.wavefront)
 #         print(type(self.wavefront))
 #          pyopencl.characterize.get_simd_group_size(device[0], dtype.size)
-        if sys.version_info[0] == 3:
-            from .src.re_subroutine import cMultiplyScalar, cCopy, cAddScalar,cAddVec, cSparseMatVec, cSelect, cMultiplyVec, cMultiplyVecInplace, cMultiplyConjVec, cDiff, cSqrt, cAnisoShrink
-        if sys.version_info[0] == 2:
-            from src.re_subroutine import cMultiplyScalar, cCopy, cAddScalar,cAddVec, cSparseMatVec, cSelect, cMultiplyVec, cMultiplyVecInplace, cMultiplyConjVec, cDiff, cSqrt, cAnisoShrink
+#         if sys.version_info[0] == 3:
+        from .src.re_subroutine import cMultiplyScalar, cCopy, cAddScalar,cAddVec, cCSR_spmv, cSelect, cMultiplyVec, cMultiplyVecInplace, cMultiplyConjVec, cDiff, cSqrt, cAnisoShrink, cHypot, cCSR_spmvh
+#         if sys.version_info[0] == 2:
+#             from .src.re_subroutine import cMultiplyScalar, cCopy, cAddScalar,cAddVec, cCSR_spmv, cSelect, cMultiplyVec, cMultiplyVecInplace, cMultiplyConjVec, cDiff, cSqrt, cAnisoShrink, cHypot, cCSR_spmvh
         
         # import complex float routines
 #         print(dtypes.ctype(dtype))
         prg = self.thr.compile( 
                                 cMultiplyScalar.R + #cCopy.R, 
-                                cCopy.R + 
+                                cCopy.R + cHypot.R +
                                 cAddScalar.R + 
                                 cSelect.R +cMultiplyConjVec.R + cAddVec.R+
-                                cMultiplyVecInplace.R +cSparseMatVec.R+cDiff.R+ cSqrt.R+ cAnisoShrink.R+ cMultiplyVec.R,
+                                cMultiplyVecInplace.R +cCSR_spmv.R+cDiff.R+ cSqrt.R+ cAnisoShrink.R+ cMultiplyVec.R + cCSR_spmvh.R,
                                 render_kwds=dict(
                                     LL =  str(self.wavefront)), fast_math=False)
 #                                fast_math = False)
-#                                 "#define LL  "+ str(self.wavefront) + "   "+cSparseMatVec.R)
+#                                 "#define LL  "+ str(self.wavefront) + "   "+cCSR_spmv.R)
 #                                ),
 #                                 fast_math=False)
-#         prg2 = pyopencl.Program(self.ctx, "#define LL "+ str(self.wavefront) + " "+cSparseMatVec.R).build()
+#         prg2 = pyopencl.Program(self.ctx, "#define LL "+ str(self.wavefront) + " "+cCSR_spmv.R).build()
         
         self.cMultiplyScalar = prg.cMultiplyScalar
+        self.cCSR_spmvh = prg.cCSR_spmvh
+        self.zeroing = prg.zeroing
+        self.add = prg.AddVec
 #         self.cMultiplyScalar.set_scalar_arg_dtypes( cMultiplyScalar.scalar_arg_dtypes)
         self.cCopy = prg.cCopy
         self.cAddScalar = prg.cAddScalar
         self.cAddVec = prg.cAddVec
-        self.cSparseMatVec = prg.cSparseMatVec     
+        self.cCSR_spmv = prg.cCSR_spmv     
         self.cSelect = prg.cSelect
         self.cMultiplyVecInplace = prg.cMultiplyVecInplace
         self.cMultiplyVec = prg.cMultiplyVec
         self.cMultiplyConjVec = prg.cMultiplyConjVec
         self.cDiff = prg.cDiff
         self.cSqrt= prg.cSqrt
-        self.cAnisoShrink = prg.cAnisoShrink                                 
+        self.cAnisoShrink = prg.cAnisoShrink        
+        self.cHypot = prg.cHypot                         
 
-#         self.xx_Kd = pyopencl.array.zeros(self.queue, self.st['Kd'], dtype=self.dtype, order="C")
-        self.k_Kd = self.thr.to_device(numpy.zeros(self.st['Kd'], dtype=self.dtype, order="C"))
-        self.k_Kd2 = self.thr.to_device(numpy.zeros(self.st['Kd'], dtype=self.dtype, order="C"))
-        self.y =self.thr.to_device( numpy.zeros((self.st['M'],), dtype=self.dtype, order="C"))
-        self.x_Nd = self.thr.to_device(numpy.zeros(self.st['Nd'], dtype=self.dtype, order="C"))
-#         self.xx_Nd =     pyopencl.array.zeros(self.queue, self.st['Nd'], dtype=self.dtype, order="C")
-
-#         self.NdCPUorder, self.KdCPUorder, self.nelem =     preindex_copy(self.st['Nd'], self.st['Kd'])
         self.NdGPUorder = self.thr.to_device( self.NdCPUorder)
         self.KdGPUorder =  self.thr.to_device( self.KdCPUorder)
         self.Ndprod = numpy.int32(numpy.prod(self.st['Nd']))
@@ -496,6 +402,7 @@ class NUFFT_hsa(NUFFT_cpu):
         self.sp_indices =self.thr.to_device( self.sp.indices.astype(numpy.int32))
         self.sp_indptr = self.thr.to_device( self.sp.indptr.astype(numpy.int32))
         self.sp_numrow =  self.M
+        self.sp_numcol = self.Kdprod
         del self.sp
         self.spH_data = self.thr.to_device(  self.spH.data.astype(self.dtype))
         self.spH_indices = self.thr.to_device(  self.spH.indices)
@@ -511,7 +418,7 @@ class NUFFT_hsa(NUFFT_cpu):
         import reikna.fft
 #         api = 
 #         self.thr = reikna.cluda.ocl_api().Thread(self.queue)        
-        self.fft = reikna.fft.FFT(self.k_Kd, numpy.arange(0, self.ndims)).compile(self.thr, fast_math=False)
+        self.fft = reikna.fft.FFT(numpy.empty(self.st['Kd'], dtype=self.dtype), numpy.arange(0, self.ndims)).compile(self.thr, fast_math=True)
 #         self.fft = reikna.fft.FFT(self.k_Kd).compile(thr, fast_math=True)
 #         self.fft = FFT(self.ctx, self.queue,  self.k_Kd, fast_math=True)
 #         self.ifft = FFT(self.ctx, self.queue, self.k_Kd2,  fast_math=True)
@@ -541,45 +448,7 @@ class NUFFT_hsa(NUFFT_cpu):
             else:
                 print("wrong")
                 raise TypeError
-  
-#     def _linear_phase(self, n_shift):
-#         """
-#         Private: Select the center of FOV
-#         """
-#         om = self.st['om']
-#         M = self.st['M']
-#         final_shifts = tuple(
-#             numpy.array(n_shift) +
-#             numpy.array(self.st['Nd']) / 2)
-# 
-#         phase = numpy.exp(
-#             1.0j *
-#             numpy.sum(
-#                 om * numpy.tile(
-#                     final_shifts,
-#                     (M,1)),
-#                 1))
-#         # add-up all the linear phasees in all axes,
-# 
-#         self.st['p'] = scipy.sparse.diags(phase, 0).dot(self.st['p0'])
- 
-
-#     def _truncate_selfadjoint(self, tol):
-#         """
-#         Yet to be tested.
-#         """
-# #         for pp in range(1, 8):
-# #             self.st['pHp'].setdiag(0,k=pp)
-# #             self.st['pHp'].setdiag(0,k=-pp)
-#         indix=numpy.abs(self.spHsp.data)< tol
-#         self.spHsp.data[indix]=0
-#  
-#         self.spHsp.eliminate_zeros()
-#         indix=numpy.abs(self.sp.data)< tol
-#         self.sp.data[indix]=0
-#  
-#         self.sp.eliminate_zeros()
-        
+          
     def forward(self, gx):
             """
             Forward NUFFT on the heterogeneous device
@@ -589,15 +458,11 @@ class NUFFT_hsa(NUFFT_cpu):
             :return: gy: The output gpu array, with size=(M,)
             :rtype: reikna gpu array with dtype =numpy.complex64
             """
-            self.x_Nd =  self.thr.copy_array(gx)
-            
-            self._x2xx()
-
-            self._xx2k()
-
-            self._k2y()
-
-            gy =  self.thr.copy_array(self.y)
+            xx = self.x2xx(gx)
+            k = self.xx2k(xx)
+            del xx
+            gy = self.k2y(k)
+            del k
             return gy
     
     def adjoint(self, gy):
@@ -609,12 +474,17 @@ class NUFFT_hsa(NUFFT_cpu):
             :return: gx: The output gpu array, with size=Nd
             :rtype: reikna gpu array with dtype =numpy.complex64
             """        
-            self.y = self.thr.copy_array(gy) 
-
-            self._y2k()
-            self._k2xx()
-            self._xx2x()
-            gx = self.thr.copy_array(self.x_Nd)
+            k = self.y2k(gy)
+            xx = self.k2xx(k)
+            del k
+            gx = self.xx2x(xx)
+            del xx
+#             self.y = self.thr.copy_array(gy) 
+# 
+#             self._y2k()
+#             self._k2xx()
+#             self._xx2x()
+#             gx = self.thr.copy_array(self.x_Nd)
             return gx
     def selfadjoint(self, gx):
         """
@@ -625,27 +495,21 @@ class NUFFT_hsa(NUFFT_cpu):
         :return: gx: The output gpu array, with size=Nd
         :rtype: reikna gpu array with dtype =numpy.complex64
         """                
-        self.x_Nd = self.thr.copy_array(gx)
-        self._x2xx()
-        self._xx2k()
-        self._k2y()
-        self._y2k()
-#         self._k2y2k()
-        self._k2xx()
-        self._xx2x()
-        gx2 = self.thr.copy_array(self.x_Nd)
+        gy = self.forward(gx)
+        gx2 = self.adjoint(gy)
+        del gy
         return gx2
-
-    def _x2xx(self):
+    def x2xx(self, x):
         """
         Private: Scaling on the heterogeneous device
         Inplace multiplication of self.x_Nd by the scaling factor self.SnGPUArray.
-        """                
-#         self.cMultiplyVecInplace(self.queue, (self.Ndprod,), None,  self.SnGPUArray.data, self.x_Nd.data)
-        self.cMultiplyVecInplace(self.SnGPUArray, self.x_Nd, local_size=None, global_size=int(self.Ndprod))
+        """           
+        xx = self.thr.array(self.st['Nd'], dtype=self.dtype)
+        self.thr.copy_array(x, xx, )#src_offset, dest_offset, size)
+        self.cMultiplyVecInplace(self.SnGPUArray, xx, local_size=None, global_size=int(self.Ndprod))
         self.thr.synchronize()
-    def _xx2k(self ):
-        
+        return xx
+    def xx2k(self, xx):
         """
         Private: oversampled FFT on the heterogeneous device
         
@@ -653,73 +517,107 @@ class NUFFT_hsa(NUFFT_cpu):
         Second, copy self.x_Nd array to self.k_Kd array by cSelect
         Third: inplace FFT
         """
-        
-        self.cMultiplyScalar(self.zero_scalar, self.k_Kd, local_size=None, global_size=int(self.Kdprod))
-        self.cSelect(self.NdGPUorder,      self.KdGPUorder,  self.x_Nd, self.k_Kd, local_size=None, global_size=int(self.Ndprod))
-        self.fft( self.k_Kd,self.k_Kd,inverse=False)
+        k = self.thr.array(self.st['Kd'], dtype = self.dtype)
+        self.cMultiplyScalar(self.zero_scalar, k, local_size=None, global_size=int(self.Kdprod))
+        self.cSelect(self.NdGPUorder,      self.KdGPUorder,  xx, k, local_size=None, global_size=int(self.Ndprod))
+        self.fft( k, k,inverse=False)
         self.thr.synchronize()
-    def _k2y(self ):
+        return k
+    def k2y(self, k):
         """
         Private: interpolation by the Sparse Matrix-Vector Multiplication
         """
-        self.cSparseMatVec(                                
-                                   self.sp_numrow, 
-                                   self.sp_indptr,
-                                   self.sp_indices,
-                                   self.sp_data, 
-                                   self.k_Kd,
-                                   self.y,
-                                   local_size=int(self.wavefront),
-                                   global_size=int(self.sp_numrow*self.wavefront) 
-                                    )
+        y =self.thr.array( (self.st['M'],), dtype=self.dtype)
+        self.cCSR_spmv(                                
+                           self.sp_numrow, 
+                           self.sp_indptr,
+                           self.sp_indices,
+                           self.sp_data, 
+                           k,
+                           y,
+                           local_size=int(self.wavefront),
+                           global_size=int(self.sp_numrow*self.wavefront) 
+                            )
         self.thr.synchronize()
-    def _y2k(self):
+        return y
+    
+    def y2k_new(self, y):
+        """
+        Private: gridding by the Sparse Matrix-Vector Multiplication
+        However, serial atomic add is far too slow and inaccurate.
+        """
+        k = self.thr.array(self.st['Kd'], dtype = self.dtype)
+        g_err = self.thr.array(self.st['Kd'],dtype = self.dtype)
+#         self.zeroing(k, local_size=None,
+#                            global_size=int(self.sp_numcol) )
+#         self.zeroing(g_err, local_size=None,
+#                            global_size=int(self.sp_numcol) )
+#         self.thr.synchronize()
+        self.cCSR_spmvh(
+        self.sp_numrow,
+        self.sp_indptr,
+        self.sp_indices,
+        self.sp_data,
+        k,
+        y,
+        g_err,
+        local_size=None,
+        global_size=int(self.sp_numrow) )        
+
+        self.add(k, g_err, local_size=None, global_size=(self.sp_numcol) )
+        self.thr.synchronize()
+        return k
+    def y2k(self, y):
         """
         Private: gridding by the Sparse Matrix-Vector Multiplication
         """
-        self.cSparseMatVec(
-                                   self.spH_numrow, 
-                                   self.spH_indptr,
-                                   self.spH_indices,
-                                   self.spH_data, 
-                                   self.y,
-                                   self.k_Kd2,
-                                   local_size=int(self.wavefront),
-                                   global_size=int(self.spH_numrow*self.wavefront) 
-                                    )#,g_times_l=int(csrnumrow))
-#         return k
+        k = self.thr.array(self.st['Kd'], dtype = self.dtype)
+#         g_err = self.thr.array(self.st['Kd'],dtype = self.dtype)
+        self.zeroing(k, local_size=None,
+                           global_size=int(self.sp_numcol) )
+#         self.zeroing(g_err, local_size=None,
+#                            global_size=int(self.sp_numcol) )
+#         self.thr.synchronize()
+#         self.cCSR_spmvh(
+#         self.sp_numrow,
+#         self.sp_indptr,
+#         self.sp_indices,
+#         self.sp_data,
+#         k,
+#         y,
+#         g_err,
+#         local_size=None,
+#         global_size=int(self.sp_numrow) )        
+        self.cCSR_spmv(
+                           self.spH_numrow, 
+                           self.spH_indptr,
+                           self.spH_indices,
+                           self.spH_data, 
+                           y,
+                           k,
+                           local_size=int(self.wavefront),
+                           global_size=int(self.spH_numrow*self.wavefront) 
+                            )#,g_times_l=int(csrnumrow))
+#         self.thr.synchronize()
+#         self.add(k, g_err, local_size=None, global_size=(self.sp_numcol) )
         self.thr.synchronize()
-    def _k2y2k(self):
-        """
-        Private: the integrated interpolation-gridding by the Sparse Matrix-Vector Multiplication
-        """
-        self.cSparseMatVec( 
-                                    
-                                   self.spHsp_numrow, 
-                                   self.spHsp_indptr,
-                                   self.spHsp_indices,
-                                   self.spHsp_data, 
-                                   self.k_Kd,
-                                   self.k_Kd2,
-                                   local_size=int(self.wavefront),
-                                   global_size=int(self.spHsp_numrow*self.wavefront) 
-                                    )#,g_times_l=int(csrnumrow))
-
-    def _k2xx(self):
+        return k    
+    def k2xx(self, k):
         """
         Private: the inverse FFT and image cropping (which is the reverse of _xx2k() method)
-        """
-        self.fft( self.k_Kd2, self.k_Kd2,inverse=True)
-#         self.x_Nd._zero_fill()
-        self.cMultiplyScalar(self.zero_scalar, self.x_Nd,  local_size=None, global_size=int(self.Ndprod ))
-#         self.cSelect(self.queue, (self.Ndprod,), None,   self.KdGPUorder.data,  self.NdGPUorder.data,     self.k_Kd2.data, self.x_Nd.data )
-        self.cSelect(  self.KdGPUorder,  self.NdGPUorder,     self.k_Kd2, self.x_Nd, local_size=None, global_size=int(self.Ndprod ))
-        
+        """        
+        xx = self.thr.array(self.st['Nd'], dtype = self.dtype)
+        self.fft( k, k, inverse=True)
         self.thr.synchronize()
-    def _xx2x(self ):
+#         self.x_Nd._zero_fill()
+        self.cMultiplyScalar(self.zero_scalar, xx,  local_size=None, global_size=int(self.Ndprod ))
+#         self.cSelect(self.queue, (self.Ndprod,), None,   self.KdGPUorder.data,  self.NdGPUorder.data,     self.k_Kd2.data, self.x_Nd.data )
+        self.cSelect(  self.KdGPUorder,  self.NdGPUorder,     k, xx, local_size=None, global_size=int(self.Ndprod ))
+        
+        return xx
+    def xx2x(self, xx):
         """
         Private: rescaling, which is identical to the  _x2xx() method
         """
-        self.cMultiplyVecInplace( self.SnGPUArray, self.x_Nd, local_size=None, global_size=int(self.Ndprod))
-        self.thr.synchronize()
-    
+        x = self.x2xx(xx)
+        return x

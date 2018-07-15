@@ -1,3 +1,4 @@
+from __future__ import absolute_import # Python2 compatibility
 """
 
 Metaprogramming subroutines (using reikna, pyopencl, pycuda)
@@ -89,7 +90,7 @@ Metaprogramming subroutines (using reikna, pyopencl, pycuda)
     :input float2 *indata:
     :return float2 *outdata:
       
-- KERNEL void cSparseMatVec(    
+- KERNEL void cCSR_spmv(    
       const    uint    dim,
       GLOBAL_MEM const uint *rowDelimiters, 
       GLOBAL_MEM const uint *cols,

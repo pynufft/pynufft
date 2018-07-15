@@ -149,13 +149,13 @@ def L1TVLAD(nufft, y, maxiter, rho  ): # main function of solver
         '''
         soft-thresholding the edges
         '''
+        s = numpy.zeros_like(zz[pp])
         for pp in range(0,ndims):
             s_tmp[pp] = zz[pp] + bb[pp]
-#         s1 = zz[0] + bb[0]
-#         s2 = zz[1] + bb[1]
-        s = sum((s_tmp[pp])**2 for pp in range(0,n_dims))
-#         s = s1**2 + s2**2
-        s = s**0.5 +1e-3
+            s_r = numpy.hypot(s_tmp[pp].real, s_tmp[pp].imag)
+            s = numpy.hypot(s_r, s.real)
+#             s = numpy.hypot(numpy.abs(s), numpy.abs(s_tmp[pp]))
+        s += 1e-5
 
         threshold_value = 1/LMBD
         r =(s > threshold_value)*(s-threshold_value)/s#numpy.maximum(s - threshold_value ,  0.0)/s
@@ -250,13 +250,20 @@ def L1TVOLS(nufft, y, maxiter, rho ): # main function of solver
         '''
         soft-thresholding the edges
         '''
+        s = numpy.zeros_like(zz[pp]) # complex
         for pp in range(0,ndims):
             s_tmp[pp] = zz[pp] + bb[pp]
+
+            s_r = numpy.hypot(s_tmp[pp].real, s_tmp[pp].imag)
+            s = numpy.hypot(s_r, s.real)
+#             s = numpy.sqrt(s**2 + s_tmp[pp]**2)
+#             else:
+#                 s =  s_tmp[pp]
 #         s1 = zz[0] + bb[0]
 #         s2 = zz[1] + bb[1]
-        s = sum((s_tmp[pp])**2 for pp in range(0,n_dims))
+#         s = sum((s_tmp[pp])**2 for pp in range(0,n_dims))
 #         s = s1**2 + s2**2
-        s = s**0.5 +1e-3
+        s += 1e-5
 
         threshold_value = 1/LMBD
         r =(s > threshold_value)*(s-threshold_value)/s#numpy.maximum(s - threshold_value ,  0.0)/s
