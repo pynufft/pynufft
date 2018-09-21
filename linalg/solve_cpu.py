@@ -382,7 +382,9 @@ def solve(nufft,   y,  solver=None, *args, **kwargs):
             """
 #             A = nufft.spHsp#nufft.st['p'].getH().dot(nufft.st['p'])
             def spHsp(x):
-                return nufft.spH.dot(nufft.sp.dot(x))
+                return nufft.k2y2k(x)
+#                 return nufft.spH.dot(nufft.sp.dot(x))
+            
             A = scipy.sparse.linalg.LinearOperator((nufft.Kdprod, nufft.Kdprod), matvec = spHsp, rmatvec = spHsp, )
 
             

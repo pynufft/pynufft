@@ -14,148 +14,67 @@ Offload Sparse Matrix Vector Multiplication to heterogeneous devices.
 
 R="""
                 
-                KERNEL void AtomicAdd(volatile GLOBAL_MEM float2 *source, const float2 operand) {
-                // The work-around of AtomicAdd for float2
-                // lockless add *source += operand 
-                // Caution!!!!!!! Use with care! You have been warned!
-                // Author:  Igor Suhorukov 
-                // Source: http://suhorukov.blogspot.co.uk/2011/12/opencl-11-atomic-operations-on-floating.html
-                    union {
-                        unsigned int intVal;
-                        float2 floatVal;
-                    } newVal;
-                    union {
-                        unsigned int intVal;
-                        float2 floatVal;
-                    } prevVal;
-                    do {
-                        prevVal.floatVal = *source;
-                        newVal.floatVal = prevVal.floatVal + operand;
-                    } while (atomic_cmpxchg((volatile GLOBAL_MEM unsigned int *)source, prevVal.intVal, newVal.intVal) != prevVal.intVal);
-                };
-                
-                inline void atomic_add_float2( 
-                GLOBAL_MEM float2 *ptr, 
-                const float2 temp) 
+                inline void atomic_add_float( 
+                GLOBAL_MEM float *ptr, 
+                const float temp) 
                 {
-                // The work-around of AtomicAdd for float2
+                // The work-around of AtomicAdd for float
                 // lockless add *source += operand 
                 // Caution!!!!!!! Use with care! You have been warned!
                 // Source: https://github.com/clMathLibraries/clSPARSE/blob/master/src/library/kernels/csrmv_adaptive.cl
                     union {
                         unsigned int intVal;
-                        float2 floatVal;
+                        float floatVal;
                     } newVal;
                     union {
                         unsigned int intVal;
-                        float2 floatVal;
+                        float floatVal;
                     } prevVal;
                     do {
                         prevVal.floatVal = *ptr;
                         newVal.floatVal = prevVal.floatVal + temp;
                     } while (atomic_cmpxchg((volatile GLOBAL_MEM unsigned int *)ptr, prevVal.intVal, newVal.intVal) != prevVal.intVal);
-                };                
+                };         
                 
-                inline void atomic_add_float_extended( 
-                GLOBAL_MEM float2 *ptr, 
-                const float2 temp,
-                float2 *old_sum,
-                float2 *sumk_s) 
-                {
-                // The work-around of AtomicAdd for float2
-                // lockless add *source += operand 
-                // Caution!!!!!!! Use with care! You have been warned!
-                // Source: https://github.com/clMathLibraries/clSPARSE/blob/master/src/library/kernels/csrmv_adaptive.cl
-                    union {
-                        unsigned int intVal;
-                        float2 floatVal;
-                    } newVal;
-                    union {
-                        unsigned int intVal;
-                        float2 floatVal;
-                    } prevVal;
-                    do {
-                        prevVal.floatVal = *ptr;
-                        newVal.floatVal = prevVal.floatVal + temp;
-                    } while (atomic_cmpxchg((volatile GLOBAL_MEM unsigned int *)ptr, prevVal.intVal, newVal.intVal) != prevVal.intVal);
-                    
-                    *old_sum = prevVal.floatVal;
-                    *sumk_s = newVal.floatVal;
-                };
-                
-                inline void atomic_two_sum_float(GLOBAL_MEM float2 *x_ptr, 
-                                                                                float2 b, 
-                                                                               float2 *r)
-                {
-                float2 sumk_s = 0.;
-                float2 a;
-                
-                atomic_add_float_extended(x_ptr, b, &a, &sumk_s);
-                float2 a_prime = sumk_s - b;
-                float2 b_prime = sumk_s - a_prime;
-                float2 delta_a = a - a_prime;
-                float2 delta_b = b-b_prime;
-                
-                *r = delta_a + delta_b;
-                };
+              
+
         
-                      KERNEL void cCSR_spmvh(    const    uint    n_row,
+            KERNEL void cCSR_spmvh(    const    uint    n_row,
                                     GLOBAL_MEM const uint *indptr, 
                                     GLOBAL_MEM  const uint *indices,
                                     GLOBAL_MEM  const float2 *data,
-                                    GLOBAL_MEM  float2 *Xx, 
-                                    GLOBAL_MEM   const float2 *Yx,
-                                    GLOBAL_MEM  float2 *Xx2)
+                                    // GLOBAL_MEM  float2 *Xx,
+                                    GLOBAL_MEM float *kx, 
+                                     GLOBAL_MEM float *ky,
+                                    GLOBAL_MEM   const float2 *Yx)
                 {   
-                        // const uint t = get_local_id(0);
-                        // const uint vecWidth=${LL};
-                        // Thread ID within wavefront
-                        // const uint id = t & (vecWidth-1);
-                        // One row per wavefront
-                        // uint vecsPerBlock = get_local_size(0) / vecWidth;
-                        // uint myRow = (get_group_id(0) * vecsPerBlock) + (t / vecWidth);
+
                         uint myRow = get_global_id(0);
-                        float2 tmp_err;
-                       // LOCAL_MEM  float2 partialSums[${LL}];
-                        
+                       
                             float2 zero;
                             zero.x=0.0;
                             zero.y=0.0;
                             
-                            float2  y=zero;
+                            float2  u = zero;
                             
-                    if (myRow < n_row)
-                        {
+                     if (myRow < n_row)
+                       {   
                             uint vecStart = indptr[myRow];
                             uint vecEnd = indptr[myRow+1];
-                            
-                           float2 vecdata =  Yx[myRow];
-
-                            
+                           float2 y =  Yx[myRow];
                             for (uint j= vecStart + 0; j < vecEnd;  j+= 1) //vecWidth)
                             {
-                                        uint col = indices[j];
+                                       const uint col = indices[j];
                                         
-                                         //float2 tmp_X;
-                                        // tmp_X = Xx[col];
-                                        float2 spdata =  data[j]; // row
+                                       const float2 spdata =  data[j]; // row
 
-                                        y.x =  spdata.x*vecdata.x +  spdata.y*vecdata.y;
-                                       y.y =  - spdata.y*vecdata.x + spdata.x*vecdata.y;
+                                        u.x =  spdata.x*y.x - (-spdata.y)*y.y;
+                                       u.y =  (- spdata.y)*y.x + spdata.x*y.y;
                                        
-                                       // Xx[col] += y;
-                                        // replaced by atomic add (reimplemented with two-sum)
-                                        // ATOMIC ADD: lockless parallel atomic_add using CAP (comapre and swap)
-                                                                               
-                                        //AtomicAdd(Xx+col, y);
-                                        atomic_two_sum_float(Xx+col, y, &tmp_err);
-                                        atomic_add_float2(Xx2+col, tmp_err);
-                                        
+                                       atomic_add_float(kx+col, u.x);
+                                       atomic_add_float(ky+col, u.y);
                             };
-                          // __syncthreads();
-                         //LOCAL_BARRIER;           
                     };
-                     //barrier(CLK_GLOBAL_MEM_FENCE);      
                 };
                 
                 KERNEL void zeroing(GLOBAL_MEM float2* x)
