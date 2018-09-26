@@ -38,7 +38,7 @@ def test_init():
     nfft.plan(om, Nd, Kd, Jd)
 
     NufftObj = NUFFT_hsa()
-
+    NufftObj.debug = 1
     NufftObj.plan(om, Nd, Kd, Jd)
     
     NufftObj.offload(API = 'ocl',   platform_number = 0, device_number = 0)
@@ -73,14 +73,15 @@ def test_init():
     import time
     t0 = time.time()
 #     k = nfft.xx2k(nfft.x2xx(image))
-    for pp in range(0,10):
+    for pp in range(0,50):
 #         y = nfft.k2y(nfft.xx2k(nfft.x2xx(image)))    
 #             y = nfft.forward(image)
 #             y = nfft.k2y(k)
-            x = nfft.adjoint(y)
+                k = nfft.y2k(y)
+#             x = nfft.adjoint(y)
 #             y = nfft.forward(image)
 #     y2 = NufftObj.y.get(   NufftObj.queue, async=False)
-    t_cpu = (time.time() - t0)/10.0 
+    t_cpu = (time.time() - t0)/50.0 
     print(t_cpu)
     
 #     del nfft
@@ -88,17 +89,18 @@ def test_init():
     gy2=NufftObj.forward(gx)
 #     gk =     NufftObj.xx2k(NufftObj.x2xx(gx))
     t0= time.time()
-    for pp in range(0,100):
+    for pp in range(0,20):
 #         pass
 #         gy2 = NufftObj.forward(gx)
 #         gy2 = NufftObj.k2y(gk)
-        gx2 = NufftObj.adjoint(gy2)
+#         gx2 = NufftObj.adjoint(gy2)
+            gk2 = NufftObj.y2k(gy2)
 #         del gy2
 #     c = gx2.get()
 #         gy=NufftObj.forward(gx)        
         
-#     NufftObj.thr.synchronize()
-    t_cl = (time.time() - t0)/100
+    NufftObj.thr.synchronize()
+    t_cl = (time.time() - t0)/20
     print(t_cl)
     
     print('gy close? = ', numpy.allclose(y, gy.get(),  atol=numpy.linalg.norm(y)*1e-3))

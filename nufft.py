@@ -39,6 +39,7 @@ class NUFFT_cpu:
         .. todo:: test 3D case
         """        
         self.dtype=numpy.complex64
+        self.debug = 0  # debug
         pass
 
     def plan(self, om, Nd, Kd, Jd, ft_axes = None):
@@ -62,7 +63,7 @@ class NUFFT_cpu:
         >>> NufftObj.plan(om, Nd, Kd, Jd) 
         
         """         
-        self.debug = 0  # debug
+        
 
 #         n_shift = tuple(0*x for x in Nd)
         self.ndims = len(Nd) # dimension
@@ -71,7 +72,10 @@ class NUFFT_cpu:
         self.ft_axes = ft_axes
 #     
         self.st = helper.plan(om, Nd, Kd, Jd, ft_axes = ft_axes)
-#         self.st = helper.plan0(om, Nd, Kd, Jd)
+        st_tmp = helper.plan0(om, Nd, Kd, Jd)
+        if self.debug is 1:
+            print('error between current and old interpolators=', scipy.sparse.linalg.norm(self.st['p'] - st_tmp['p'])/scipy.sparse.linalg.norm(self.st['p']))
+            print('error between current and old scaling=', numpy.linalg.norm(self.st['sn'] - st_tmp['sn']))
         
         self.Nd = self.st['Nd']  # backup
         self.Kd = self.st['Kd']
@@ -368,52 +372,53 @@ class NUFFT_hsa(NUFFT_cpu):
             
             return 1
 
-        
-#         print('device = ', device)
 #         Create context from device
-        self.thr = api.Thread(device, async_ = True) #pyopencl.create_some_context()
-#         self.queue = pyopencl.CommandQueue( self.ctx)
-
+        self.thr = api.Thread(device) #pyopencl.create_some_context()
+        print('Using opencl or cuda = ', self.thr.api)
+        
+#         print('Using opencl?  ', self.thr.api is reikna.cluda.ocl)
 #         """
 #         Wavefront: as warp in cuda. Can control the width in a workgroup
 #         Wavefront is required in spmv_vector as it improves data coalescence.
 #         see cCSR_spmv and zSparseMatVec
 #         """
         self.wavefront = api.DeviceParameters(device).warp_size
-#         print(api.DeviceParameters(device).max_work_group_size)
-        print(self.wavefront)
-#         print(type(self.wavefront))
-#          pyopencl.characterize.get_simd_group_size(device[0], dtype.size)
-#         if sys.version_info[0] == 3:
-        from .src.re_subroutine import cMultiplyScalar, cCopy, cAddScalar,cAddVec, cCSR, cELL, cSelect, cMultiplyVec, cMultiplyVecInplace, cMultiplyConjVec, cDiff, cSqrt, cAnisoShrink, cHypot
 
-        # import complex float routines
-#         print(dtypes.ctype(dtype))
-        prg = self.thr.compile( 
-                                cMultiplyScalar.R + #cCopy.R, 
+        print('wavefront = ',self.wavefront)
+
+        from .src.re_subroutine import cMultiplyScalar, cCopy, cAddScalar,cAddVec,  cSelect, cMultiplyVec, cMultiplyVecInplace, cMultiplyConjVec, cDiff, cSqrt, cAnisoShrink, cHypot, cSpmv, cSpmvh, atomic_add
+
+
+        kernel_sets = ( cMultiplyScalar.R + 
                                 cCopy.R + cHypot.R +
                                 cAddScalar.R + 
-                                cSelect.R +cMultiplyConjVec.R + cAddVec.R+ cELL.R + 
-                                cMultiplyVecInplace.R +cCSR.R+cDiff.R+ cSqrt.R+ cAnisoShrink.R+ cMultiplyVec.R,
-                                render_kwds=dict(
-                                    LL =  str(self.wavefront)), fast_math=False)
-#                                fast_math = False)
-#                                 "#define LL  "+ str(self.wavefront) + "   "+cCSR_spmv.R)
-#                                ),
-#                                 fast_math=False)
-#         prg2 = pyopencl.Program(self.ctx, "#define LL "+ str(self.wavefront) + " "+cCSR_spmv.R).build()
+                                cSelect.R + 
+                                cMultiplyConjVec.R + 
+                                cAddVec.R+  
+                                cMultiplyVecInplace.R + 
+                                cDiff.R+ cSqrt.R+ cAnisoShrink.R+ cMultiplyVec.R + cSpmv.R + cSpmvh.R)
         
+        try:
+            if self.thr.api is cluda.cuda:
+                kernel_sets =  atomic_add.cuda_add + kernel_sets
+        except:
+            try:
+                print("No cuda device, trying ocl")
+                if self.thr.api is cluda.ocl:
+                    kernel_sets =  atomic_add.ocl_add + kernel_sets
+            except:
+                print('no ocl interface')
+                
+        prg = self.thr.compile(kernel_sets, 
+                                render_kwds=dict(LL =  str(self.wavefront)), 
+                                fast_math=False)
+
         self.cMultiplyScalar = prg.cMultiplyScalar
-        
-#         self.cCSR_spmvh = prg.cCSR_spmvh
-#         self.zeroing = prg.zeroing
-#         self.add = prg.AddVec
-#         self.cMultiplyScalar.set_scalar_arg_dtypes( cMultiplyScalar.scalar_arg_dtypes)
         self.cCopy = prg.cCopy
         self.cAddScalar = prg.cAddScalar
         self.cAddVec = prg.cAddVec
-        self.cCSR_spmv = prg.cCSR_spmv
-        self.cCSR_spmvh = prg.cCSR_spmvh     
+        self.cCSR_spmv_vector = prg.cCSR_spmv_vector
+        self.cCSR_spmvh_scalar = prg.cCSR_spmvh_scalar     
         self.cSelect = prg.cSelect
         self.cMultiplyVecInplace = prg.cMultiplyVecInplace
         self.cMultiplyVec = prg.cMultiplyVec
@@ -422,26 +427,27 @@ class NUFFT_hsa(NUFFT_cpu):
         self.cSqrt= prg.cSqrt
         self.cAnisoShrink = prg.cAnisoShrink        
         self.cHypot = prg.cHypot               
-        self.cELL_spmv_scalar = prg.cELL_spmv_scalar
-        self.cELL_spmv_vector = prg.cELL_spmv_vector
-        self.cELL_spmvh_scalar = prg.cELL_spmvh_scalar
+#         self.cELL_spmv_scalar = prg.cELL_spmv_scalar
+#         self.cELL_spmv_vector = prg.cELL_spmv_vector
+#         self.cELL_spmvh_scalar = prg.cELL_spmvh_scalar
                       
-#         self.pELL_spmv_scalar = prg.pELL_spmv_scalar
-#         self.pELL_spmv_vector = prg.pELL_spmv_vector
+        self.pELL_spmv_scalar = prg.pELL_spmv_scalar
+        self.pELL_spmv_vector = prg.pELL_spmv_vector
+        self.pELL_spmvh_scalar = prg.pELL_spmvh_scalar        
 
         self.pELL_nRow = numpy.uint32(self.st['pELL'].nRow)
         self.pELL_prodJd = numpy.uint32(self.st['pELL'].prodJd)
-        self.pELL_sumJd = numpy.uint32(numpy.sum(self.st['Jd']))
+        self.pELL_sumJd = numpy.uint32(self.st['pELL'].sumJd)
         self.pELL_dim   = numpy.uint32(self.st['pELL'].dim)
-        self.pELL_Jd= self.thr.to_device(numpy.array(self.st['Jd']).astype(numpy.uint32))
+        self.pELL_Jd= self.thr.to_device(self.st['pELL'].Jd.astype(numpy.uint32))
         self.pELL_currsumJd = self.thr.to_device(self.st['pELL'].curr_sumJd.astype(numpy.uint32))
         self.pELL_meshindex = self.thr.to_device(self.st['pELL'].meshindex.astype(numpy.uint32))
         self.pELL_kindx = self.thr.to_device(self.st['pELL'].kindx.astype(numpy.uint32))
         self.pELL_udata = self.thr.to_device(self.st['pELL'].udata.astype(self.dtype))
         
 #         print('dim = ', self.pELL_dim )
-        self.ellcol = self.thr.to_device(self.st['ell'].col)
-        self.elldata = self.thr.to_device(self.st['ell'].data.astype(self.dtype))
+#         self.ellcol = self.thr.to_device(self.st['ell'].col)
+#         self.elldata = self.thr.to_device(self.st['ell'].data.astype(self.dtype))
         
         
         self.NdGPUorder = self.thr.to_device( self.NdCPUorder)
@@ -468,16 +474,13 @@ class NUFFT_hsa(NUFFT_cpu):
 #         self.spHsp_indptr =self.thr.to_device(  self.spHsp.indptr)
 #         self.spHsp_numrow = self.Kdprod
 #         del self.spHsp
-#         import reikna.cluda
+
         import reikna.fft
-#         api = 
-#         self.thr = reikna.cluda.ocl_api().Thread(self.queue)        
-        self.fft = reikna.fft.FFT(numpy.empty(self.st['Kd'], dtype=self.dtype), numpy.arange(0, self.ndims)).compile(self.thr, fast_math=True)
-#         self.fft = reikna.fft.FFT(self.k_Kd).compile(thr, fast_math=True)
-#         self.fft = FFT(self.ctx, self.queue,  self.k_Kd, fast_math=True)
-#         self.ifft = FFT(self.ctx, self.queue, self.k_Kd2,  fast_math=True)
+
+        self.fft = reikna.fft.FFT(numpy.empty(self.st['Kd'], dtype=self.dtype), self.ft_axes).compile(self.thr, fast_math=True)
+
         self.zero_scalar=self.dtype(0.0+0.0j)
-#     def solver(self,  gy, maxiter):#, solver='cg', maxiter=200):
+
     def solve(self,gy, solver=None, *args, **kwargs):
         """
         The solver of NUFFT_hsa
@@ -533,13 +536,8 @@ class NUFFT_hsa(NUFFT_cpu):
             del k
             gx = self.xx2x(xx)
             del xx
-#             self.y = self.thr.copy_array(gy) 
-# 
-#             self._y2k()
-#             self._k2xx()
-#             self._xx2x()
-#             gx = self.thr.copy_array(self.x_Nd)
             return gx
+        
     def selfadjoint(self, gx):
         """
         selfadjoint NUFFT (Teplitz) on the heterogeneous device
@@ -564,6 +562,7 @@ class NUFFT_hsa(NUFFT_cpu):
         self.cMultiplyVecInplace(self.SnGPUArray, xx, local_size=None, global_size=int(self.Ndprod))
         self.thr.synchronize()
         return xx
+    
     def xx2k(self, xx):
         """
         Private: oversampled FFT on the heterogeneous device
@@ -579,12 +578,13 @@ class NUFFT_hsa(NUFFT_cpu):
         self.fft( k, k,inverse=False)
         self.thr.synchronize()
         return k
+    
     def k2y(self, k):
         """
         Private: interpolation by the Sparse Matrix-Vector Multiplication
         """
         y =self.thr.array( (self.st['M'],), dtype=self.dtype).fill(0)
-#         self.cCSR_spmv(                                
+#         self.cCSR_spmv_vector(                                
 #                            self.sp_numrow, 
 #                            self.sp_indptr,
 #                            self.sp_indices,
@@ -594,7 +594,7 @@ class NUFFT_hsa(NUFFT_cpu):
 #                            local_size=int(self.wavefront),
 #                            global_size=int(self.sp_numrow*self.wavefront) 
 #                             )
-#         self.cELL_scalar(                                
+#         self.cELL_spmv_scalar(                                
 #                            self.sp_numrow, 
 #                            numpy.int32(self.st['ell'].colWidth),
 #                            self.sp_indices,
@@ -605,18 +605,18 @@ class NUFFT_hsa(NUFFT_cpu):
 #                            global_size=int(self.sp_numrow) 
 #                             )
 
-        self.cELL_spmv_vector(                                
-                          self.sp_numrow, 
-                          numpy.uint32(self.st['ell'].colWidth),
-                          self.sp_indices,
-                          self.sp_data, 
-                          k,
-                          y,
-                          local_size=int(self.wavefront),
-                          global_size=int(self.sp_numrow*self.wavefront) 
-                           )
+#         self.cELL_spmv_vector(                                
+#                           self.sp_numrow, 
+#                           numpy.uint32(self.st['ell'].colWidth),
+#                           self.sp_indices,
+#                           self.sp_data, 
+#                           k,
+#                           y,
+#                           local_size=int(self.wavefront),
+#                           global_size=int(self.sp_numrow*self.wavefront) 
+#                            )
         
-#         self.pELL_scalar(
+#         self.pELL_spmv_scalar(
 #                             self.pELL_nRow,
 #                             self.pELL_prodJd,
 #                             self.pELL_sumJd, 
@@ -631,25 +631,21 @@ class NUFFT_hsa(NUFFT_cpu):
 #                             local_size=None,
 #                             global_size= int(self.pELL_nRow)             
 #                             )                 
-#         self.pELL_vector(
-#                             self.pELL_nRow,
-#                             self.pELL_prodJd,
-#                             self.pELL_sumJd, 
-#                             self.pELL_dim,
-#                             self.pELL_Jd,
-#                             self.pELL_currsumJd,
-#                             self.pELL_meshindex,
-#                             self.pELL_kindx,
-#                             self.pELL_udata, 
-#                             k,
-#                             y,
-#                             local_size= int(self.wavefront),
-#                             global_size= int(self.pELL_nRow*self.wavefront)             
-#                             )           
-#         print('test_csrdata0', test_csrdata0.get())
-#         print('test_indices0', test_indices0.get())
-#         print('dim = ', self.pELL_dim)
-#         print('self.pELL_kindx=', self.pELL_kindx.get()[0,:])
+        self.pELL_spmv_vector(
+                            self.pELL_nRow,
+                            self.pELL_prodJd,
+                            self.pELL_sumJd, 
+                            self.pELL_dim,
+                            self.pELL_Jd,
+                            self.pELL_currsumJd,
+                            self.pELL_meshindex,
+                            self.pELL_kindx,
+                            self.pELL_udata, 
+                            k,
+                            y,
+                            local_size= int(self.wavefront),
+                            global_size= int(self.pELL_nRow*self.wavefront)             
+                            )           
         self.thr.synchronize()
         return y
     
@@ -676,7 +672,7 @@ class NUFFT_hsa(NUFFT_cpu):
 #         self.thr.synchronize()
 
 
-#         self.cCSR_spmvh(
+#         self.cCSR_spmvh_scalar(
 #         self.sp_numrow,
 #         self.sp_indptr,
 #         self.sp_indices,
@@ -688,21 +684,38 @@ class NUFFT_hsa(NUFFT_cpu):
 #         local_size=None,
 #         global_size=int(self.sp_numrow) )       
 
-        self.cELL_spmvh_scalar(
-                          self.sp_numrow, 
-                          numpy.uint32(self.st['ell'].colWidth),
-                          self.sp_indices,
-                          self.sp_data, 
-                        kx,
-                        ky,
-                        y,
-                        local_size=None,
-                        global_size=int(self.sp_numrow) )      
+#         self.cELL_spmvh_scalar(
+#                           self.sp_numrow, 
+#                           numpy.uint32(self.st['ell'].colWidth),
+#                           self.sp_indices,
+#                           self.sp_data, 
+#                         kx,
+#                         ky,
+#                         y,
+#                         local_size=None,
+#                         global_size=int(self.sp_numrow) )      
+        self.pELL_spmvh_scalar(
+                            self.pELL_nRow,
+                            self.pELL_prodJd,
+                            self.pELL_sumJd, 
+                            self.pELL_dim,
+                            self.pELL_Jd,
+                            self.pELL_currsumJd,
+                            self.pELL_meshindex,
+                            self.pELL_kindx,
+                            self.pELL_udata, 
+                            kx,
+                            ky,
+                            y,
+                            local_size=None,
+                            global_size= int(self.pELL_nRow)             
+                            )         
 #         self.cAddVec(k, g_err, gk, local_size=None, global_size=(self.sp_numcol) )
 #         self.add(k, g_err, local_size=None, global_size=(self.sp_numcol) )
         k = kx+1.0j* ky
         
-        self.thr.synchronize()
+#         self.thr.synchronize()
+        
         return k
     def y2k_old(self, y):
         """
@@ -715,7 +728,7 @@ class NUFFT_hsa(NUFFT_cpu):
 #         self.zeroing(g_err, local_size=None,
 #                            global_size=int(self.sp_numcol) )
 #         self.thr.synchronize()
-#         self.cCSR_spmvh(
+#         self.cCSR_spmv_scalar(
 #         self.sp_numrow,
 #         self.sp_indptr,
 #         self.sp_indices,
@@ -725,7 +738,7 @@ class NUFFT_hsa(NUFFT_cpu):
 #         g_err,
 #         local_size=None,
 #         global_size=int(self.sp_numrow) )        
-        self.cCSR_spmv(
+        self.cCSR_spmv_vector(
                            self.spH_numrow, 
                            self.spH_indptr,
                            self.spH_indices,
