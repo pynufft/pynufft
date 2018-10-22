@@ -41,7 +41,7 @@ def test_init():
     NufftObj.debug = 1
     NufftObj.plan(om, Nd, Kd, Jd)
     
-    NufftObj.offload(API = 'ocl',   platform_number = 0, device_number = 0)
+    NufftObj.offload(API = 'ocl',   platform_number = 1, device_number = 0)
     
 #     NufftObj.offload(API = 'ocl',   platform_number = 0, device_number = 0)
     y = nfft.k2y(nfft.xx2k(nfft.x2xx(image)))
@@ -77,8 +77,8 @@ def test_init():
 #         y = nfft.k2y(nfft.xx2k(nfft.x2xx(image)))    
 #             y = nfft.forward(image)
 #             y = nfft.k2y(k)
-                k = nfft.y2k(y)
-#             x = nfft.adjoint(y)
+#                 k = nfft.y2k(y)
+            x = nfft.adjoint(y)
 #             y = nfft.forward(image)
 #     y2 = NufftObj.y.get(   NufftObj.queue, async=False)
     t_cpu = (time.time() - t0)/50.0 
@@ -93,8 +93,8 @@ def test_init():
 #         pass
 #         gy2 = NufftObj.forward(gx)
 #         gy2 = NufftObj.k2y(gk)
-#         gx2 = NufftObj.adjoint(gy2)
-            gk2 = NufftObj.y2k(gy2)
+            gx2 = NufftObj.adjoint(gy2)
+#             gk2 = NufftObj.y2k(gy2)
 #         del gy2
 #     c = gx2.get()
 #         gy=NufftObj.forward(gx)        

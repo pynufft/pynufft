@@ -27,28 +27,10 @@ def create_laplacian_kernel(nufft):
     uker = numpy.zeros(nufft.st['Kd'][:],dtype=numpy.complex64,order='C')
     n_dims= numpy.size(nufft.st['Nd'])
 
-#     if n_dims == 1:
-#         uker[0] = -2.0
-#         uker[1] = 1.0
-#         uker[-1] = 1.0
-#     elif n_dims == 2:
-#         uker[0,0] = -4.0
-#         uker[1,0] = 1.0
-#         uker[-1,0] = 1.0
-#         uker[0,1] = 1.0
-#         uker[0,-1] = 1.0
-#     elif n_dims == 3:  
-#         uker[0,0,0] = -6.0
-#         uker[1,0,0] = 1.0
-#         uker[-1,0,0] = 1.0
-#         uker[0,1,0] = 1.0
-#         uker[0,-1,0] = 1.0
-#         uker[0,0,1] = 1.0
-#         uker[0,0,-1] = 1.0      
-#     else: # n_dims > 3
-################################
-#    Multi-dimensional laplacian kernel (generalize the above 1D - 3D to multi-dimensional arrays)
-################################
+    ################################
+    #    Multi-dimensional laplacian kernel (generalize the above 1D - 3D to multi-dimensional arrays)
+    ################################
+    
     indx = [slice(0, 1) for ss in range(0, n_dims)] # create the n_dims dimensional slice which are all zeros
     uker[indx] = - 2.0*n_dims # Equivalent to  uker[0,0,0] = -6.0
     for pp in range(0,n_dims):
@@ -60,19 +42,17 @@ def create_laplacian_kernel(nufft):
         indx1 = list(indx)# indexing the 1 Python2/3 compatible
         indx1[pp] = -1
         uker[indx1] = 1
-################################
-#    FFT of the multi-dimensional laplacian kernel
-################################        
+    ################################
+    #    FFT of the multi-dimensional laplacian kernel
+    ################################        
     uker =numpy.fft.fftn(uker) #, self.nufftobj.st['Kd'], range(0,numpy.ndim(uker)))
     return uker  
 def indxmap_diff(Nd):
     """
     Preindixing for rapid image gradient ()
-    
     Diff(x) = x.flat[d_indx[0]] - x.flat
-    
     Diff_t(x) =  x.flat[dt_indx[0]] - x.flat
-                            
+
     :param Nd: the dimension of the image
     :type Nd: tuple with integers
     :returns d_indx: iamge gradient
@@ -93,30 +73,6 @@ def indxmap_diff(Nd):
 
     return d_indx,  dt_indx  
 
-#     def _linear_phase(self, n_shift):
-#         """
-#         Private: Select the center of FOV
-#         """
-#         om = self.st['om']
-#         M = self.st['M']
-#         final_shifts = tuple(
-#             numpy.array(n_shift) +
-#             numpy.array(
-#                 self.Nd) /
-#             2)
-#         phase = numpy.exp(
-#             1.0j *
-#             numpy.sum(
-#                 om *
-#                 numpy.tile(
-#                     final_shifts,
-#                     (M,
-#                      1)),
-#                 1))
-#         # add-up all the linear phasees in all axes,
-# 
-#         self.st['p'] = scipy.sparse.diags(phase, 0).dot(self.st['p0'])
-#         return 0  # shifted sparse matrix
 def QR_process(om, N, J, K, sn):
 
     M = numpy.size(om)  # 1D size
@@ -133,102 +89,31 @@ def QR_process(om, N, J, K, sn):
 
     sn2 = numpy.reshape(sn, (N, 1))
     C = C*sn2
+    bn =numpy.exp(1.0j*gam* numpy.outer(numpy.arange(0, N) - N/2, dk))
+
+    return C, arg, bn
+
+def solve_c(C, bn):
     CH = C.T.conj()
     C = CH.dot(C)
-    
-    bn =numpy.exp(1.0j*gam* numpy.outer(numpy.arange(0, N) - N/2, dk))
     bn = CH.dot(bn)
 
-#     t3=time.time()
     C = numpy.linalg.pinv(C)
     c = C.dot(bn)
+    return c    
 
-    return c, arg
 def QR2(om, N, J, K, sn, ft_flag):
-
-    M = numpy.size(om)  # 1D size
-    gam = 2.0 * numpy.pi / (K * 1.0)
-    nufft_offset0 = nufft_offset(om, J, K)  # om/gam -  nufft_offset , [M,1]
-    dk = 1.0 * om / gam - nufft_offset0  # om/gam -  nufft_offset , [M,1]
-    
-    
-    arg = outer_sum(-numpy.arange(1, J + 1) * 1.0, dk) #[J, M]
-    C_0 =numpy.outer(numpy.arange(0, N) - N/2,  numpy.arange(1, J + 1))
-
-    C = numpy.exp(1.0j * gam*C_0)
-    
-
-    sn2 = numpy.reshape(sn, (N, 1))
-    C = C*sn2
-    CH = C.T.conj()
-    C = CH.dot(C)
-    
-    bn =numpy.exp(1.0j*gam* numpy.outer(numpy.arange(0, N) - N/2, dk))
-    bn = CH.dot(bn)
-
-#     t3=time.time()
-    C = numpy.linalg.pinv(C)
-    c = C.dot(bn)
+    C, arg, bn = QR_process(om, N, J, K, sn)
+    c = solve_c(C, bn)
     u2 = OMEGA_u(c, N, K, om, arg, ft_flag).T.conj()
-    return u2
-
-def order_reduction(om, N, J, K, sn, L):
-    """
-    Compute the min-max interpolator consider the factor matrix
-    L is the conjugate of the factor matrix of Tucker decomposition
-    Note: only suitable for precalculated interpolator
-    factor_matrix L: shape = (N, r), r is the rank
-    
-    """
-
-    M = numpy.size(om)  # 1D size
-    gam = 2.0 * numpy.pi / (K * 1.0)
-    nufft_offset0 = nufft_offset(om, J, K)  # om/gam -  nufft_offset , [M,1]
-    dk = 1.0 * om / gam - nufft_offset0  # om/gam -  nufft_offset , [M,1]
-    
-    
-    arg = outer_sum(-numpy.arange(1, J + 1) * 1.0, dk) #[J, M]
-    C_0 =numpy.outer(numpy.arange(0, N) - N/2,  numpy.arange(1, J + 1))
-
-    C = numpy.exp(1.0j * gam*C_0)
-    
-    sn2 = numpy.reshape(sn, (N, 1))
-    C = C*sn2
-    CH = C.T.conj()
-    C = CH.dot(C)
-    
-    bn =numpy.exp(1.0j*gam* numpy.outer(numpy.arange(0, N) - N/2, dk))
-    '''
-    bn: shape = (N, M), M: the number of non-Cartesian locations
-    However, factor_matrix has a shape of (N, r)
-    First reshape factor matrix to (N, 1, r) and reshape bn to (N, M, 1)
-    '''
-    r = L.shape[1]
-    bn2 = numpy.reshape(bn, (N, M, 1), order='C')
-    L2 = numpy.reshape(L, (N, 1, r), order='C')
-    bn3 = bn2 * L2 # (N, M, r)
-    bn3 = numpy.reshape(bn3, (N, M*r), order='C')
-    
-    '''
-    Now compute L* bn
-    '''
-    
-    bn3 = CH.dot(bn3)
-
-#     t3=time.time()
-    C = numpy.linalg.pinv(C)
-    c = C.dot(bn3)
-    c = numpy.reshape(c, (J, M, r),  order='C')
-    u2 = numpy.empty_like(c)
-    for pp in range(0, r): # r should be very small, which justifies a for-loop
-        u2[:,:,pp] = OMEGA_u(c[:,:,pp], N, K, om, arg, True).T.conj()
     
     return u2
+
+
 
 def get_sn(J, K, N):
+    
     Nmid = (N - 1.0) / 2.0
-
-
     nlist = numpy.arange(0, N) * 1.0 - Nmid    
     (kb_a, kb_m) = kaiser_bessel('string', J, 'best', 0, K / N)
     if J > 1:
@@ -239,67 +124,67 @@ def get_sn(J, K, N):
     return sn       
 
 def OMEGA_u(c, N, K, omd, arg, ft_flag):
-        gam = 2.0 * numpy.pi / (K * 1.0)
-
-        phase_scale =  1.0j * gam * (N*1.0 - 1.0) / 2.0
-        phase = numpy.exp(phase_scale * arg)  # [J? M] linear phase
-
-        if ft_flag is True:
-            u = phase * c
-            phase0= numpy.exp(  - 1.0j*omd*N/2.0)
-            u = phase0 * u
-        else:
-            print('ft_flag = ',c)
-            u = c
-            pass
-        return u
+    
+    gam = 2.0 * numpy.pi / (K * 1.0)
+    
+    phase_scale =  1.0j * gam * (N*1.0 - 1.0) / 2.0
+    phase = numpy.exp(phase_scale * arg)  # [J? M] linear phase
+    
+    if ft_flag is True:
+        u = phase * c
+        phase0= numpy.exp( - 1.0j*omd*N/2.0)
+        u = phase0 * u
+    
+    else:
+        u = c
+    return u
     
 def OMEGA_k(J,K, omd, Kd, dimid, dd, ft_flag):
-        """
-        Compute the index of k-space k_indx
-        """
-            # indices into oversampled FFT components
-        # FORMULA 7
-        M = omd.shape[0]
-        koff = nufft_offset(omd, J, K)
-        # FORMULA 9, find the indexes on Kd grids, of each M point
-        if ft_flag is True: # tensor
-            k_indx = numpy.mod(
-                outer_sum(
-                    numpy.arange(
-                        1,
-                        J + 1) * 1.0,
-                    koff),
-                K)        
-        else:
-            k_indx =  numpy.reshape(omd, (1, M)).astype(numpy.int)
-#         k_indx = numpy.mod(
-#             outer_sum(
-#                 numpy.arange(
-#                     1,
-#                     J + 1) * 1.0,
-#                 koff),
-#             K)
-
-        """
-            JML: For GPU computing, indexing must be C-order (row-major)
-            Multi-dimensional cuda or opencl arrays are row-major (order="C"), which  starts from the higher dimension.
-            Note: This is different from the MATLAB indexing(for fortran order, colum major, low-dimension first 
-        """
-
-        if dimid < dd - 1:  # trick: pre-convert these indices into offsets!
-            #            ('trick: pre-convert these indices into offsets!')
-            k_indx = k_indx * numpy.prod(Kd[dimid+1:dd]) - 1 
-        """
-        Note: F-order matrices must be reshaped into an 1D array before sparse matrix-vector multiplication.
-        The original F-order (in Fessler and Sutton 2003) is not suitable for GPU array (C-order).
-        Currently, in-place reshaping in F-order only works in numpy.
-        
-        """
-#             if dimid > 0:  # trick: pre-convert these indices into offsets!
-#                 #            ('trick: pre-convert these indices into offsets!')
-#                 kd[dimid] = kd[dimid] * numpy.prod(Kd[0:dimid]) - 1           
-        return k_indx
+    """
+    Compute the index of k-space k_indx
+    """
+        # indices into oversampled FFT components
+    # FORMULA 7
+    M = omd.shape[0]
+    koff = nufft_offset(omd, J, K)
+    # FORMULA 9, find the indexes on Kd grids, of each M point
+    if ft_flag is True: # tensor
+        k_indx = numpy.mod(
+            outer_sum(
+                numpy.arange(
+                    1,
+                    J + 1) * 1.0,
+                koff),
+            K)        
+    else:
+        k_indx =  numpy.reshape(omd, (1, M)).astype(numpy.int)
+    #         k_indx = numpy.mod(
+    #             outer_sum(
+    #                 numpy.arange(
+    #                     1,
+    #                     J + 1) * 1.0,
+    #                 koff),
+    #             K)
+    
+    """
+        JML: For GPU computing, indexing must be C-order (row-major)
+        Multi-dimensional cuda or opencl arrays are row-major (order="C"), which  starts from the higher dimension.
+        Note: This is different from the MATLAB indexing(for fortran order, colum major, low-dimension first 
+    """
+    
+    if dimid < dd - 1:  # trick: pre-convert these indices into offsets!
+        #            ('trick: pre-convert these indices into offsets!')
+        k_indx = k_indx * numpy.prod(Kd[dimid+1:dd]) - 1 
+    """
+    Note: F-order matrices must be reshaped into an 1D array before sparse matrix-vector multiplication.
+    The original F-order (in Fessler and Sutton 2003) is not suitable for GPU array (C-order).
+    Currently, in-place reshaping in F-order only works in numpy.
+    
+    """
+    #             if dimid > 0:  # trick: pre-convert these indices into offsets!
+    #                 #            ('trick: pre-convert these indices into offsets!')
+    #                 kd[dimid] = kd[dimid] * numpy.prod(Kd[0:dimid]) - 1           
+    return k_indx
 
 class pELL:
     def __init__(self, M,  Jd, curr_sumJd, meshindex, kindx, udata):
@@ -505,7 +390,9 @@ def partial_combination(ud, kd, Jd):
     return ud2, kd2, Jd2
 
 def full_kron(ud, kd, Jd, Kd, M):
-    (udata, kindx)=khatri_rao(ud, kd, Jd)
+#     (udata, kindx)=khatri_rao(ud, kd, Jd)
+    udata = khatri_rao_u(ud)
+    kindx = khatri_rao_k(kd)
     CSR  = create_csr(udata, kindx, Kd, Jd, M) # must have 
     # Dimension reduction: Nd -> 1 
     # Tuple (Nd) -> array (shape = M*prodJd)
@@ -513,23 +400,54 @@ def full_kron(ud, kd, Jd, Kd, M):
 #     Note: the shape of uu and kk is (M, prodJd)
     ELL = create_ell(   udata,  kindx)#, Kd, Jd, M)    
     return CSR, ELL
-
-def khatri_rao(ud, kd, Jd):
-    dd = len(Jd)
+def khatri_rao_k(kd):
+    dd = len(kd)
     
     kk = kd[0]  # [M, J1] # pointers to indices
     M = kd[0].shape[0]
-    uu = ud[0]  # [M, J1]
-    Jprod = Jd[0]
+#     uu = ud[0]  # [M, J1]
+    Jprod = kd[0].shape[1]
     for dimid in range(1, dd):
-        Jprod *= Jd[dimid]#numpy.prod(Jd[:dimid + 1])
+        Jprod *= kd[dimid].shape[1] #numpy.prod(Jd[:dimid + 1])
 
         kk = block_outer_sum(kk, kd[dimid]) + 1  # outer sum of indices
         kk = kk.reshape((M, Jprod), order='C')
-        uu = numpy.einsum('ij,ik->ijk', uu, ud[dimid])
+#         uu = numpy.einsum('mi,mj->mij', uu, ud[dimid])
+#         uu = uu.reshape((M, Jprod), order='C')
+     
+    return kk
+def khatri_rao_u( ud):
+    dd = len(ud)
+    
+#     kk = kd[0]  # [M, J1] # pointers to indices
+    M = ud[0].shape[0]
+    uu = ud[0]  # [M, J1]
+    Jprod = ud[0].shape[1]
+    for dimid in range(1, dd):
+        Jprod *=ud[dimid].shape[1]#numpy.prod(Jd[:dimid + 1])
+
+#         kk = block_outer_sum(kk, kd[dimid]) + 1  # outer sum of indices
+#         kk = kk.reshape((M, Jprod), order='C')
+        uu = numpy.einsum('mi,mj->mij', uu, ud[dimid])
         uu = uu.reshape((M, Jprod), order='C')
      
-    return uu, kk
+    return uu
+# def khatri_rao(ud, kd, Jd):
+#     dd = len(Jd)
+#     
+#     kk = kd[0]  # [M, J1] # pointers to indices
+#     M = kd[0].shape[0]
+#     uu = ud[0]  # [M, J1]
+#     Jprod = Jd[0]
+#     for dimid in range(1, dd):
+#         Jprod *= Jd[dimid]#numpy.prod(Jd[:dimid + 1])
+# 
+#         kk = block_outer_sum(kk, kd[dimid]) + 1  # outer sum of indices
+#         kk = kk.reshape((M, Jprod), order='C')
+#         uu = numpy.einsum('mi,mj->mij', uu, ud[dimid])
+#         uu = uu.reshape((M, Jprod), order='C')
+#      
+#     return uu, kk
 def rdx_kron(ud, kd, Jd, M):
     """
     Radix-n Kronecker product of multi-dimensional array
@@ -729,164 +647,122 @@ def plan(om, Nd, Kd, Jd, ft_axes = None):
 
     return st #new
 
-def plan1(om, Nd, Kd, Jd, ft_axes = None):
-    """
-    Compute the coil sensitivity aware interpolator
-    """
-#         self.debug = 0  # debug
-
-    if type(Nd) != tuple:
-        raise TypeError('Nd must be tuple, e.g. (256, 256)')
-
-    if type(Kd) != tuple:
-        raise TypeError('Kd must be tuple, e.g. (512, 512)')
-
-    if type(Jd) != tuple:
-        raise TypeError('Jd must be tuple, e.g. (6, 6)')
-
-    if (len(Nd) != len(Kd)) | (len(Nd) != len(Jd))  | len(Kd) != len(Jd):
-        raise KeyError('Nd, Kd, Jd must be in the same length, e.g. Nd=(256,256),Kd=(512,512),Jd=(6,6)')
-
-    dd = numpy.size(Nd)
-
-    if ft_axes is None:
-        ft_axes = tuple(xx for xx in range(0, dd))
-
-#     print('ft_axes = ', ft_axes)
-    ft_flag = () # tensor
-    
-    for pp in range(0, dd):
-        if pp in ft_axes:
-            ft_flag += (True, )
-        else:
-            ft_flag += (False, )
-#     print('ft_flag = ', ft_flag)
-###############################################################
-# check input errors
-###############################################################
-    st = {}
-    
-
-###############################################################
-# First, get alpha and beta: the weighting and freq
-# of formula (28) in Fessler's paper
-# in order to create slow-varying image space scaling
-###############################################################
+# def plan1(om, Nd, Kd, Jd, ft_axes = None):
+#     """
+#     Compute the coil sensitivity aware interpolator
+#     """
+# #         self.debug = 0  # debug
+# 
+#     if type(Nd) != tuple:
+#         raise TypeError('Nd must be tuple, e.g. (256, 256)')
+# 
+#     if type(Kd) != tuple:
+#         raise TypeError('Kd must be tuple, e.g. (512, 512)')
+# 
+#     if type(Jd) != tuple:
+#         raise TypeError('Jd must be tuple, e.g. (6, 6)')
+# 
+#     if (len(Nd) != len(Kd)) | (len(Nd) != len(Jd))  | len(Kd) != len(Jd):
+#         raise KeyError('Nd, Kd, Jd must be in the same length, e.g. Nd=(256,256),Kd=(512,512),Jd=(6,6)')
+# 
+#     dd = numpy.size(Nd)
+# 
+#     if ft_axes is None:
+#         ft_axes = tuple(xx for xx in range(0, dd))
+# 
+# #     print('ft_axes = ', ft_axes)
+#     ft_flag = () # tensor
+#     
+#     for pp in range(0, dd):
+#         if pp in ft_axes:
+#             ft_flag += (True, )
+#         else:
+#             ft_flag += (False, )
+# 
+#     st = {}
+#     
+# 
+#     st['tol'] = 0
+#     st['Jd'] = Jd
+#     st['Nd'] = Nd
+#     st['Kd'] = Kd
+#     M = om.shape[0]
+#     st['M'] = numpy.int32(M)
+#     st['om'] = om
+#     
+#     
 #     for dimid in range(0, dd):
+# 
 #         (tmp_alpha, tmp_beta) = nufft_alpha_kb_fit(
 #             Nd[dimid], Jd[dimid], Kd[dimid])
 #         st.setdefault('alpha', []).append(tmp_alpha)
 #         st.setdefault('beta', []).append(tmp_beta)
-    st['tol'] = 0
-    st['Jd'] = Jd
-    st['Nd'] = Nd
-    st['Kd'] = Kd
-    M = om.shape[0]
-    st['M'] = numpy.int32(M)
-    st['om'] = om
-    
-###############################################################
-# create scaling factors st['sn'] given alpha/beta
-# higher dimension implementation
-###############################################################
-
-    """
-    Now compute the 1D scaling factors
-    snd: tuple
-    """
-    
-    for dimid in range(0, dd):
-
-        (tmp_alpha, tmp_beta) = nufft_alpha_kb_fit(
-            Nd[dimid], Jd[dimid], Kd[dimid])
-        st.setdefault('alpha', []).append(tmp_alpha)
-        st.setdefault('beta', []).append(tmp_beta)
-        
-    snd = ()
-    for dimid in range(0, dd):        
-        snd += (nufft_scale(
-            Nd[dimid],
-            Kd[dimid],
-            st['alpha'][dimid],
-            st['beta'][dimid]), )
-    """
-     higher-order Kronecker product of all dimensions
-    """      
-    st['sn'] = Kronector_snd(snd, dd).real # only real scaling is relevant
-    
-    
-    
-    # [J? M] interpolation coefficient vectors.
-    # Iterate over all dimensions and
-    # multiply the coefficients of all dimensions
-
-    ud = []
-    for dimid in range(0, dd):  # iterate through all dimensions
-        N = Nd[dimid]
-        J = Jd[dimid]
-        K = Kd[dimid]
-        alpha = st['alpha'][dimid]
-        beta = st['beta'][dimid]
-        
-
-#         C, bn, arg = QR_process(om[:, dimid], N, J,
-#                                K, sn)
-#         C = numpy.linalg.pinv(C)
-#         c = C.dot(bn)
-
-        ###############################################################
-        # formula 29 , 26 of Fessler's paper
-        ###############################################################
-
-        # pseudo-inverse of CSSC using large N approx [J? J?]
-        if ft_flag[dimid] is True:
-
-#         ###############################################################
-#         # formula 30  of Fessler's paper
-#         ###############################################################
-
-#         ###############################################################
-#         # fast approximation to min-max interpolator 
-#         ###############################################################
-
-#             c, arg = min_max(N, J, K, alpha, beta, om[:, dimid])
-#         ###############################################################
-#        # QR: a more accurate solution but slower than above fast approximation
-#        ###############################################################
-
-#             c, arg = QR_process(om[:,dimid], N, J, K, snd[dimid])
-#             c, arg = order_reduction(   om[:,dimid],    N,  J,  K,  snd[dimid], factor_matrix)
-
-            #### phase shift
-            ud += (OMEGA_u(c, N, K, om[:,dimid], arg, ft_flag[dimid]).T.conj(), )# compute the 1-D interpolators
-        else:
-            ud += (numpy.ones((1, M), dtype = dtype).T, )
-
-
-    """
-    Now compute the column indeces for 1D interpolators
-    Each length-Jd interpolator includes Jd points, which are linked to Jd k-space locations
-    kd is a tuple storing the 1D interpolators. 
-    A following Kronecker product will be needed.
-    """
-    kd = []
-    for dimid in range(0, dd):  # iterate over all dimensions
-        kd += (OMEGA_k(J,K, om[:,dimid], Kd, dimid, dd, ft_flag[dimid]).T, )
-
-
-    
-    CSR, ELL = full_kron(ud, kd, Jd, Kd, M)
-    st['p'] = CSR
-#     st['ell'] = ELL
-
-    ud2, kd2, Jd2 = partial_combination(ud, kd, Jd)
-    
-    st['pELL'] = create_partialELL(ud2, kd2, Jd2, M) 
-    
-    # no dimension-reduction Nd -> Nd
-    # Tuple (Nd) -> array (shape = M*sumJd)
-
-    return st #new
+#         
+#     snd = ()
+#     list_C = []
+#     list_arg = []
+#     list_bn = []
+#     for dimid in range(0, dd):        
+#         snd += (nufft_scale(
+#             Nd[dimid],
+#             Kd[dimid],
+#             st['alpha'][dimid],
+#             st['beta'][dimid]), )
+#         C, arg, bn = QR_process(om[:, dimid], Nd[dimid], Jd[dimid], Kd[dimid], snd[dimid]) 
+#         """
+#         Save the C matrix, arg and bn. They will be reused.
+#         """
+#         list_C += [C, ]
+#         list_arg += [arg, ]
+#         list_bn += [bn, ]
+#     st['sn'] = Kronector_snd(snd, dd).real # only real scaling is relevant
+# 
+#     # [J? M] interpolation coefficient vectors.
+#     # Iterate over all dimensions and
+#     # multiply the coefficients of all dimensions
+# 
+#     ud = []
+#     for dimid in range(0, dd):  # iterate through all dimensions
+#         N = Nd[dimid]
+#         J = Jd[dimid]
+#         K = Kd[dimid]
+#         alpha = st['alpha'][dimid]
+#         beta = st['beta'][dimid]
+# 
+#         """
+#         Compute the coil sensitivity aware interpolator
+#         """
+# 
+#         if ft_flag[dimid] is True:
+# 
+#             c = solve_c( list_C[dimid],  list_bn[dimid]) 
+#             # C: NxJ, 
+#             # bn: NxM (xr)
+#             # c: J x M    (x    r)
+# 
+#             u2 = OMEGA_u( c, N, K, om[:, dimid], list_arg[dimid], ft_flag[dimid]).T.conj()
+#             # u2: J x M    (x    r)
+# 
+#             ud += [u2,]
+# 
+#         else:
+#             ud += (numpy.ones((1, M), dtype = dtype).T, )
+# 
+#     """
+#     Now compute the column indeces for 1D interpolators
+#     Each length-Jd interpolator includes Jd points, which are linked to Jd k-space locations
+#     kd is a tuple storing the 1D interpolators. 
+#     A following Kronecker product will be needed.
+#     """
+#     
+#     kd = []
+#     for dimid in range(0, dd):  # iterate over all dimensions
+#         kd += (OMEGA_k(J,K, om[:,dimid], Kd, dimid, dd, ft_flag[dimid]).T, )
+# 
+#     CSR, ELL = full_kron(ud, kd, Jd, Kd, M)
+#     st['p'] = CSR
+# 
+#     return st #new
 
 def plan0(om, Nd, Kd, Jd):
 #         self.debug = 0  # debug

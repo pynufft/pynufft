@@ -1,3 +1,3 @@
 # from . import src 
-from .nufft import NUFFT_cpu, NUFFT_hsa
+from .nufft import NUFFT_cpu, NUFFT_hsa, NUFFT_coil
 from .src._helper import helper

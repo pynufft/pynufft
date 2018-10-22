@@ -14,7 +14,7 @@ import scipy.special
 # import sys
 # if sys.version_info[0] == 3:
 #     try:
-from .src._helper import helper
+from .src._helper import helper, helper1
 
 class NUFFT_cpu:
     """
@@ -649,7 +649,7 @@ class NUFFT_hsa(NUFFT_cpu):
         self.thr.synchronize()
         return y
     
-    def y2k(self, y):
+    def y2k_new(self, y):
         """
         Private: gridding by the Sparse Matrix-Vector Multiplication
         However, serial atomic add is far too slow and inaccurate.
@@ -717,7 +717,7 @@ class NUFFT_hsa(NUFFT_cpu):
 #         self.thr.synchronize()
         
         return k
-    def y2k_old(self, y):
+    def y2k(self, y):
         """
         Private: gridding by the Sparse Matrix-Vector Multiplication
         """
@@ -772,3 +772,81 @@ class NUFFT_hsa(NUFFT_cpu):
         """
         x = self.x2xx(xx)
         return x
+
+class NUFFT_coil(NUFFT_cpu):
+    """
+    Class NUFFT_hsa for heterogeneous systems.
+   """
+
+    def __init__(self):
+        """
+        Constructor.
+        
+        :param None:
+        :type None: Python NoneType
+        :return: NUFFT: the pynufft_hsa.NUFFT instance
+        :rtype: NUFFT: the pynufft_hsa.NUFFT class
+        :Example:
+
+        >>> import pynufft
+        >>> NufftObj = pynufft.NUFFT_hsa()
+
+
+        .. note:: requires plan() and offload()
+        .. seealso:: :method:`plan()' 'offload()'
+        .. todo:: test 3D case
+        """
+        
+        pass
+        NUFFT_cpu.__init__(self)
+
+    def plan1(self, om, Nd, Kd, Jd, ft_axes, image_stack):
+        """
+        Design the min-max interpolator.
+        
+        :param om: The M off-grid locations in the frequency domain. Normalized between [-pi, pi]
+        :param Nd: The matrix size of equispaced image. Example: Nd=(256,256) for a 2D image; Nd = (128,128,128) for a 3D image
+        :param Kd: The matrix size of the oversampled frequency grid. Example: Kd=(512,512) for 2D image; Kd = (256,256,256) for a 3D image
+        :param Jd: The interpolator size. Example: Jd=(6,6) for 2D image; Jd = (6,6,6) for a 3D image
+        :type om: numpy.float array, matrix size = M * ndims
+        :type Nd: tuple, ndims integer elements. 
+        :type Kd: tuple, ndims integer elements. 
+        :type Jd: tuple, ndims integer elements. 
+        :returns: 0
+        :rtype: int, float
+        :Example:
+
+        >>> import pynufft
+        >>> NufftObj = pynufft.NUFFT_cpu()
+        >>> NufftObj.plan(om, Nd, Kd, Jd) 
+        
+        """         
+        
+
+#         n_shift = tuple(0*x for x in Nd)
+        self.ndims = len(Nd) # dimension
+        if ft_axes is None:
+            ft_axes = range(0, self.ndims)
+        self.ft_axes = ft_axes
+#     
+        self.st = helper1.plan1(om, Nd, Kd, Jd, ft_axes,  image_stack)
+#         st_tmp = helper.plan0(om, Nd, Kd, Jd)
+        if self.debug is 1:
+            print('error between current and old interpolators=', scipy.sparse.linalg.norm(self.st['p'] - st_tmp['p'])/scipy.sparse.linalg.norm(self.st['p']))
+            print('error between current and old scaling=', numpy.linalg.norm(self.st['sn'] - st_tmp['sn']))
+        
+        self.Nd = self.st['Nd']  # backup
+        self.Kd = self.st['Kd']
+        self.sn = numpy.asarray(self.st['sn'].astype(self.dtype)  ,order='C')# backup
+            
+        
+        # Calculate the density compensation function
+        self.sp = self.st['p'].copy().tocsr()
+        self.spH = (self.st['p'].getH().copy()).tocsr()        
+        self.Kdprod = numpy.int32(numpy.prod(self.st['Kd']))
+        self.Jdprod = numpy.int32(numpy.prod(self.st['Jd']))
+        del self.st['p'], self.st['sn']
+#         self._precompute_sp()        
+#         del self.st['p0'] 
+        self.NdCPUorder, self.KdCPUorder, self.nelem =     helper.preindex_copy(self.st['Nd'], self.st['Kd'])
+        return 0
