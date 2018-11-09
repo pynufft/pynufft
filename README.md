@@ -14,9 +14,9 @@ Please use Python3. PyNUFFT has been tested with Python3.4. However, it should w
 
 Version 0.3.3.10 is a bug-fixed version. 
 
-Experimental support for Python2. Some tests pass in Python2.7.15 but Python2 is not recommended.
+Experimental support for Python2. Some tests pass in Python2.7.15 but the full support for Python2 is pending.
 
-Update for Reikna 0.8.0: async keyword is changed to async_
+Remove the keyword async for compatibility reasons because Reikna has changed the keyword to async_.
 
 
 ### Summary
