@@ -280,7 +280,7 @@ def plan1(om, Nd, Kd, Jd, ft_axes, image_stack):
     # multiply the coefficients of all dimensions
     from .Nd_tensor import htensor
     Htensor = htensor()
-    r = 2
+    r = 4
     Nc = image_stack.shape[-1]
     rank = ()
     for dimid in range(0, dd):

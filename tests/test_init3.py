@@ -1,9 +1,9 @@
-from .. import NUFFT_cpu, NUFFT_hsa
+from .. import NUFFT_cpu, NUFFT_memsave
 
 import numpy
 dtype = numpy.complex64
 
-def test_init():
+def test_init3():
     import cProfile
     import numpy
 #     import matplotlib.pyplot
@@ -37,7 +37,7 @@ def test_init():
     
     nfft.plan(om, Nd, Kd, Jd)
 
-    NufftObj = NUFFT_hsa()
+    NufftObj = NUFFT_memsave()
     NufftObj.debug = 1
     NufftObj.plan(om, Nd, Kd, Jd)
     

@@ -62,8 +62,15 @@ def _create_kspace_sampling_density(nufft):
 # 
 #     uker =numpy.fft.fftn(uker) #, self.nufftobj.st['Kd'], range(0,numpy.ndim(uker)))
 #     return uker  
- 
-def L1TVLAD(nufft, gy, maxiter, rho  ): # main function of solver
+# def GBPDNA(nufft. gy, maxiter, rho):
+#     def A(x):
+#         gy = nufft.forward(x)
+#         return gy
+#     def AH(gy):
+#         x2 = nufft.adjoint(gy)
+#         return x2
+    
+def L1TVLAD(nufft, gy, maxiter, rho): # main function of solver
     """
     L1-total variation regularized least absolute deviation 
     """

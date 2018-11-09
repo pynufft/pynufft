@@ -1,5 +1,8 @@
 
 ocl_add = """
+
+
+// #pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
 KERNEL void atomic_add_float( 
         GLOBAL_MEM float *ptr, 
         const float temp) 

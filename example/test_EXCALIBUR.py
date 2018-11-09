@@ -98,7 +98,7 @@ def Nd_sense(image_stack, maxiter = 20, sigma = 10):
     return H, mu0, mu
 
 matplotlib.pyplot.gray()
-Nc = 12
+Nc = 3
 filename = '/home/sram/Cambridge_2012/WORD_PPTS/multicoil_NUFFT/simulation/pMRI/coils_12.mat'
 K0 = scipy.io.loadmat(filename)['K0'][:,:,0:Nc]
 Kn = scipy.io.loadmat(filename)['Kn'][:,:,0:Nc]
@@ -133,7 +133,7 @@ y = NufftObj.forward(M0)
 
 
 y2 = numpy.fft.fftshift(numpy.fft.ifft2(numpy.fft.fftshift(y.reshape(Nd,order='C'))))
-y3 = NufftObj_coil.forward(numpy.ones_like(M0)*(1.0 + 0.0j))
+y3 = NufftObj_coil.forward((M0)*(1.0 + 0.0j))
 # print(y3.shape)
 y3 = y3.reshape((Nc, 256, 256), order='C')
  

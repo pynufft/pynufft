@@ -43,7 +43,7 @@ def create_fake_coils(N, n_coil):
     
     image_sense = ()
     
-    r = N/4
+    r = N/2
     phase_factor =  2
     for nn in range(0,n_coil):
         

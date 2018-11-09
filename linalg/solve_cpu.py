@@ -183,6 +183,8 @@ def L1TVLAD(nufft, y, maxiter, rho  ): # main function of solver
 
     return xkp1 #(u,u_stack)
 
+    
+    
 def L1TVOLS(nufft, y, maxiter, rho ): # main function of solver
     """
     L1-total variation regularized ordinary least square 
@@ -196,6 +198,8 @@ def L1TVOLS(nufft, y, maxiter, rho ): # main function of solver
     def AH(y):
         x2 = nufft.adjoint(y)
         return x2
+    
+        
     
     uker = mu*_create_kspace_sampling_density(nufft)   - LMBD* helper.create_laplacian_kernel(nufft)
     

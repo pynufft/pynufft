@@ -398,8 +398,8 @@ def full_kron(ud, kd, Jd, Kd, M):
     # Tuple (Nd) -> array (shape = M*prodJd)
     
 #     Note: the shape of uu and kk is (M, prodJd)
-    ELL = create_ell(   udata,  kindx)#, Kd, Jd, M)    
-    return CSR, ELL
+#     ELL = create_ell(   udata,  kindx)#, Kd, Jd, M)    
+    return CSR#, ELL
 def khatri_rao_k(kd):
     dd = len(kd)
     
@@ -499,7 +499,7 @@ def min_max(N, J, K, alpha, beta, om, ft_flag):
     u2 = OMEGA_u(c, N, K, om, arg, ft_flag).T.conj()
     return u2
 
-def plan(om, Nd, Kd, Jd, ft_axes = None):
+def plan(om, Nd, Kd, Jd, ft_axes = None, format='CSR'):
 #         self.debug = 0  # debug
 
     if type(Nd) != tuple:
@@ -633,14 +633,15 @@ def plan(om, Nd, Kd, Jd, ft_axes = None):
         kd += [OMEGA_k(J,K, om[:,dimid], Kd, dimid, dd, ft_flag[dimid]).T, ]
 
 
-    
-    CSR, ELL = full_kron(ud, kd, Jd, Kd, M)
-    st['p'] = CSR
+    if format is 'CSR':
+        
+        CSR = full_kron(ud, kd, Jd, Kd, M)
+        st['p'] = CSR
 #     st['ell'] = ELL
 
-    ud2, kd2, Jd2 = partial_combination(ud, kd, Jd)
-    
-    st['pELL'] = create_partialELL(ud2, kd2, Jd2, M) 
+#     ud2, kd2, Jd2 = partial_combination(ud, kd, Jd)
+    elif format is 'pELL':
+        st['pELL'] = create_partialELL(ud, kd, Jd, M) 
     
     # no dimension-reduction Nd -> Nd
     # Tuple (Nd) -> array (shape = M*sumJd)
