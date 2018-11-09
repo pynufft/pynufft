@@ -7,13 +7,17 @@ NUFFT can calculate the frequency components at non-equispaced locations.
 
 A minimal "getting start" tutorial is available at http://jyhmiinlin.github.io/pynufft/ .
 
-Please use Python3. PyNUFFT has been tested with Python3.4. However, it should work with Python3.5-3.6.
+Please use Python3. PyNUFFT has been tested with Python3.4. However, it should work with Python3.5-3.6. 
 
-### New in version 0.3.3.7
 
-Version 0.3.3.7 is a bug-fixed version. 
+### New in version 0.3.3.10
 
-Toeplitz is removed from the NUFFT_cpu and NUFFT_gpu to avoid the MemoryError.
+Version 0.3.3.10 is a bug-fixed version. 
+
+Experimental support for Python2. Some tests pass in Python2.7.15 but Python2 is not recommended.
+
+Update for Reikna 0.8.0: async keyword is changed to async_
+
 
 ### Summary
 

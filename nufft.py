@@ -338,7 +338,7 @@ class NUFFT_hsa(NUFFT_cpu):
         
 #         print('device = ', device)
 #         Create context from device
-        self.thr = api.Thread(device, async = False) #pyopencl.create_some_context()
+        self.thr = api.Thread(device) #pyopencl.create_some_context()
 #         self.queue = pyopencl.CommandQueue( self.ctx)
 
 #         """
