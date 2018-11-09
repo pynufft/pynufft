@@ -401,22 +401,22 @@ DATA_PATH = pkg_resources.resource_filename('pynufft', './src/data/')
 image = numpy.load(DATA_PATH +'phantom_3D_128_128_128.npz')['arr_0']#[0::2, 0::2, 0::2]
 image = numpy.array(image, order='C')
 
-image = numpy.load('/home/sram/UCL/DATA/G/2 McwBra DICOM/CScontNoECG_DICOM/3D_volume.npz')['arr_0']
-image = image/numpy.max(abs(image.ravel()))
-image = image[32:32+128, 32:32+128,12:12+64]
-image = numpy.abs(image)
+# image = numpy.load('/home/sram/UCL/DATA/G/2 McwBra DICOM/CScontNoECG_DICOM/3D_volume.npz')['arr_0']
+# image = image/numpy.max(abs(image.ravel()))
+# image = image[32:32+128, 32:32+128,12:12+64]
+# image = numpy.abs(image)
 # print(special_license)
 
 # pyplot.imshow(numpy.abs(image[:,:,64]), label='original signal',cmap=gray)
 # pyplot.show()
 
-Nd = (128,128,64) # time grid, tuple
-Kd = (256,256,128) # frequency grid, tuple
+Nd = (128,128,128) # time grid, tuple
+Kd = (256,256,256) # frequency grid, tuple
 Jd = (6,6,6) # interpolator 
 mid_slice = int(Nd[2]/2)
 #     om=       numpy.load(DATA_PATH+'om3D.npz')['arr_0']
 numpy.random.seed(0)
-om = numpy.random.randn(int(5e+6),3)*0.7
+om = numpy.random.randn(int(5e+4),3)
 print(om.shape)
 from pynufft import NUFFT_cpu, NUFFT_memsave, NUFFT_hsa
 NufftObj = NUFFT_memsave()
@@ -429,7 +429,7 @@ gx = NufftObj.thr.to_device(image.astype(numpy.complex64))
 gy =NufftObj.forward(gx) 
 import time
 t0 = time.time()
-restore_x2 = GBPDNA_old(NufftObj, gy, maxiter=200)
+restore_x2 = GBPDNA_old(NufftObj, gy, maxiter=500)
 t1 = time.time()
 # restore_x = NufftObj.solve(gy,'cg', maxiter=50)
 t2 = time.time()
