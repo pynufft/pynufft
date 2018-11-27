@@ -189,7 +189,7 @@ KERNEL void pELL_spmvh_vector(
     
 
 KERNEL void pELL_spmvh_mCoil(
-        const    uint    Nc,             // number of coils
+        const    uint    Reps,             // number of coils
         const    uint    nRow,        // number of rows
         const    uint    prodJd,     // product of Jd
         const    uint    sumJd,     // sum of Jd
@@ -210,14 +210,16 @@ KERNEL void pELL_spmvh_mCoil(
     const uint b = g - (prodJd*a);
     const uint myRow = a*d + t;
     const uint j = b;
-    uint m = myRow / Nc;
-    uint nc = myRow - m * Nc;
+    uint m = myRow / Reps;
+    uint nc = myRow - m * Reps;
+    
     
     // uint myRow= get_global_id(0);
     float2 zero;
     zero.x = 0.0;
     zero.y = 0.0;
-    if (myRow < nRow*Nc)
+    if (m< nRow)
+    {    if (nc < Reps)
     {
          float2 u = zero;
        //  for (uint j = 0;  j  <  prodJd; j ++)
@@ -247,11 +249,12 @@ KERNEL void pELL_spmvh_mCoil(
             u.x =  spdata.x*ydata.x + spdata.y*ydata.y;
             u.y =  - spdata.y*ydata.x + spdata.x*ydata.y;
             
-            atomic_add_float(kx + col*Nc + nc, u.x);
-            atomic_add_float(ky + col*Nc + nc, u.y);
+            atomic_add_float(kx + col*Reps + nc, u.x);
+            atomic_add_float(ky + col*Reps + nc, u.y);
            
       }; // Iterate for (uint j = 0;  j  <  prodJd; j ++)
-    };  // if (myRow < nRow)
+    }; // if (nc < Reps)
+    };  // if (m < nRow)
     
 };    // End of pELL_spmv_mCoil  
         

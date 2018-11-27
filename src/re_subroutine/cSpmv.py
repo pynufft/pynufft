@@ -209,7 +209,7 @@ KERNEL void pELL_spmv_vector(
     
 
 KERNEL void pELL_spmv_mCoil(    
-     const     uint   Nc,            // Number of coils
+     const     uint   Reps,            // Number of coils
       const    uint    nRow,        // number of rows
       const    uint    prodJd,     // product of Jd
       const    uint    sumJd,     // sum of Jd
@@ -219,8 +219,8 @@ KERNEL void pELL_spmv_mCoil(
       GLOBAL_MEM const uint *meshindex,            // meshindex, prodJd * dim
       GLOBAL_MEM const uint *kindx,    // unmixed column indexes of all dimensions
       GLOBAL_MEM const float2 *udata,// interpolation data before Kronecker product
-      GLOBAL_MEM const float2 *vec,     // multi-channel kspace data, prodKd * Nc
-      GLOBAL_MEM float2 *out)   // multi-channel output, nRow * Nc
+      GLOBAL_MEM const float2 *vec,     // multi-channel kspace data, prodKd * Reps
+      GLOBAL_MEM float2 *out)   // multi-channel output, nRow * Reps
 {   
     const uint t = get_local_id(0);
     const uint vecWidth=${LL};
@@ -230,15 +230,15 @@ KERNEL void pELL_spmv_mCoil(
     // One row per wavefront
     uint vecsPerBlock=get_local_size(0)/vecWidth;
     uint myRow=(get_group_id(0)*vecsPerBlock) + (t/ vecWidth); // the myRow-th non-Cartesian sample
-    uint m = myRow / Nc;
-    uint nc = myRow - m * Nc;
+    uint m = myRow / Reps;
+    uint nc = myRow - m * Reps;
     LOCAL_MEM float2 partialSums[${LL}];
     float2 zero;
     zero.x = 0.0;
     zero.y = 0.0;
     partialSums[t] = zero;
     
-    if (myRow < nRow * Nc)
+    if (myRow < nRow * Reps)
     {
      const uint vecStart = 0; 
      const uint vecEnd =prodJd;             
@@ -265,7 +265,7 @@ KERNEL void pELL_spmv_mCoil(
             spdata.y = tmp_x * tmp_udata.y + spdata.y * tmp_udata.x; 
             index_shift  += J;
         }
-        float2 vecdata=vec[col * Nc + nc];
+        float2 vecdata=vec[col * Reps + nc];
         y.x =  spdata.x*vecdata.x - spdata.y*vecdata.y;
         y.y =  spdata.y*vecdata.x + spdata.x*vecdata.y;
         partialSums[t] = y + partialSums[t];

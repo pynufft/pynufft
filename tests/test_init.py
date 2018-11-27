@@ -41,7 +41,7 @@ def test_init():
     NufftObj.debug = 1
     NufftObj.plan(om, Nd, Kd, Jd)
     
-    NufftObj.offload(API = 'ocl',   platform_number = 0, device_number = 0)
+    NufftObj.offload(API = 'ocl',   platform_number = 1, device_number = 0)
     
 #     NufftObj.offload(API = 'ocl',   platform_number = 0, device_number = 0)
     y = nfft.k2y(nfft.xx2k(nfft.x2xx(image)))

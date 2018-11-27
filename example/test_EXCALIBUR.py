@@ -98,7 +98,7 @@ def Nd_sense(image_stack, maxiter = 20, sigma = 10):
     return H, mu0, mu
 
 matplotlib.pyplot.gray()
-Nc = 3
+Nc = 8
 filename = '/home/sram/Cambridge_2012/WORD_PPTS/multicoil_NUFFT/simulation/pMRI/coils_12.mat'
 K0 = scipy.io.loadmat(filename)['K0'][:,:,0:Nc]
 Kn = scipy.io.loadmat(filename)['Kn'][:,:,0:Nc]
@@ -110,10 +110,10 @@ H, mu0, mu = Nd_sense(multi_image_noisy, maxiter = 2, sigma = 20)
 
 om2= fake_Cartesian(Nd)
 
-from pynufft import NUFFT_cpu, NUFFT_coil
+from pynufft import NUFFT_cpu, NUFFT_excalibur
 
 NufftObj = NUFFT_cpu()
-NufftObj_coil = NUFFT_coil()
+NufftObj_coil = NUFFT_excalibur()
 
 NufftObj.plan(om2, Nd, (512,512), (6,6))
 
