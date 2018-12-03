@@ -14,8 +14,6 @@ Please use Python3. PyNUFFT has been tested with Python3.4. However, it should w
 
 Version 0.3.3.10 is a bug-fixed version. 
 
-Experimental support for Python2. Some tests pass in Python2.7.15 but the full support for Python2 is pending.
-
 Remove the keyword async for compatibility reasons because Reikna has changed the keyword to async_.
 
 
@@ -27,13 +25,13 @@ Pynufft implements Fessler's min-max NUFFT, with the following features:
 - Based on numerical libraries, such as Numpy, Scipy (matplotlib for displaying examples).
 - Provides the python interface including forward transform, adjoint transform and other routines.
 - Provides 1D/2D/3D examples for further developments.
-- (Experimental) support of NUFFT on NVIDIA's graphic processing units (GPUs) and multi-core CPU platforms.
+- (Experimental) support of NUFFT on NVIDIA's graphic processing units (GPUs) and opencl devices (GPUs or a multi-core CPU)
 
-### Limitations
+### Bugs
 
-The FFTW is not provided in the official Numpy source. But you could include FFTW library in Numpy.
+Experimental support for Python2. Some tests pass Python2.7.15 but the full support for Python2 is still pending.
 
-Check out the tutorial (http://jyhmiinlin.github.io/pynufft/misc/fftw.html) or the Anaconda's Python distribution.
+
 
 ### Other nufft implementations in Python:
 
@@ -45,7 +43,9 @@ nfft: Pure Python implementation of 1D nfft (https://github.com/jakevdp/nfft).
 
 nufftpy: Pure Python NUFFT of Python-nufft (https://github.com/jakevdp/nufftpy). 
 
-mripy: A Python based MRI package (https://github.com/peng-cao/mripy). combines Numba and NUFFT.
+mripy: A Python based MRI package (https://github.com/peng-cao/mripy), which combines Numba and NUFFT.
+
+BART provides a Python wrapper.
 
 ### Acknowledgements
 
@@ -55,6 +55,8 @@ If you find pynufft useful, please cite:
 
 Jyh-Miin Lin and Hsiao-Wen Chung, Pynufft: python non-uniform fast Fourier transform for MRI, Building Bridges in Medical Sciences 2017, St John's College, CB2 1TP Cambridge, UK, 2017
 
+Lin, Jyh-Miin. "Python Non-Uniform Fast Fourier Transform (PyNUFFT): An Accelerated Non-Cartesian MRI Package on a Heterogeneous Platform (CPU/GPU)." Journal of Imaging 4.3 (2018): 51.
+
 And Fessler and Sutton's min-max NUFFT algorithm:
 Fessler JA, Sutton BP. Nonuniform fast Fourier transforms using min-max interpolation. IEEE Trans Signal Process 2003;51(2):560-574.
 
@@ -62,9 +64,13 @@ Please open an issue if you have any question related to pynufft.
 
 ### Cite pynufft
 
-@INPROCEEDINGS{lin2017bbmc_pynufft,
-	author = {Jyh-Miin Lin and Hsiao-Wen Chung},
-	booktitle = {Building Bridges in Medical Sciences 2017, St John's College, CB2 1TP Cambridge, UK},
-	title = {{Pynufft: python non-uniform fast Fourier transform for MRI}},
-	year = {2017}
+@article{lin2018python,
+  title={Python Non-Uniform Fast Fourier Transform (PyNUFFT): An Accelerated Non-Cartesian MRI Package on a Heterogeneous Platform (CPU/GPU)},
+  author={Lin, Jyh-Miin},
+  journal={Journal of Imaging},
+  volume={4},
+  number={3},
+  pages={51},
+  year={2018},
+  publisher={Multidisciplinary Digital Publishing Institute}
 }
