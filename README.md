@@ -53,8 +53,6 @@ pynufft was funded by the Ministry of Science and Technology, Taiwan, Cambridge 
 
 If you find pynufft useful, please cite:
 
-Jyh-Miin Lin and Hsiao-Wen Chung, Pynufft: python non-uniform fast Fourier transform for MRI, Building Bridges in Medical Sciences 2017, St John's College, CB2 1TP Cambridge, UK, 2017
-
 Lin, Jyh-Miin. "Python Non-Uniform Fast Fourier Transform (PyNUFFT): An Accelerated Non-Cartesian MRI Package on a Heterogeneous Platform (CPU/GPU)." Journal of Imaging 4.3 (2018): 51.
 
 And Fessler and Sutton's min-max NUFFT algorithm:
