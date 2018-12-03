@@ -265,6 +265,8 @@ def create_csr(uu, kk, Kd, Jd, M):
     # The shape of sparse matrix
     csrshape = (M, numpy.prod(Kd))
 
+    print('csrdata.shape', csrdata.shape)
+    print('colindx.shape', colindx.shape)
     # Build sparse matrix (interpolator)
 #     csr = scipy.sparse.csr_matrix((csrdata, (rowindx, colindx)),
 #                                        shape=csrshape)
@@ -391,6 +393,7 @@ def partial_combination(ud, kd, Jd):
 
 def full_kron(ud, kd, Jd, Kd, M):
 #     (udata, kindx)=khatri_rao(ud, kd, Jd)
+    
     udata = khatri_rao_u(ud)
     kindx = khatri_rao_k(kd)
     CSR  = create_csr(udata, kindx, Kd, Jd, M) # must have 
@@ -630,7 +633,8 @@ def plan(om, Nd, Kd, Jd, ft_axes = None, format='CSR'):
     """
     kd = []
     for dimid in range(0, dd):  # iterate over all dimensions
-        kd += [OMEGA_k(J,K, om[:,dimid], Kd, dimid, dd, ft_flag[dimid]).T, ]
+        
+        kd += [OMEGA_k(Jd[dimid],Kd[dimid], om[:,dimid], Kd, dimid, dd, ft_flag[dimid]).T, ]
 
 
     if format is 'CSR':

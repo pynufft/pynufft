@@ -48,7 +48,7 @@ def Nd_sense(image_stack, maxiter = 20):
         
         new_norm = numpy.linalg.norm(H)
         H = H/new_norm
-        H = Nd_smooth(H, 0.1, -1)
+        H = Nd_smooth(H, 1, -1)
 
 
 

@@ -43,12 +43,12 @@ def create_fake_coils(N, n_coil):
     
     image_sense = ()
     
-    r = N/4
-    phase_factor =  2
+    r = N
+    phase_factor =  0
     for nn in range(0,n_coil):
         
         tmp_angle = nn*2*numpy.pi/n_coil
-        shift_r = int(N/3)
+        shift_r = int(N)
         shift_x= (numpy.cos(tmp_angle)*shift_r).astype(dtype)
         shift_y= (numpy.sin(tmp_angle)*shift_r).astype(dtype)
 #         ZZ= numpy.exp(-((xx-N/2-shift_x)/r)**2-((yy-N/2-shift_y)/r)**2).astype(numpy.complex64)

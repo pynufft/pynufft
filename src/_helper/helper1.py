@@ -280,7 +280,7 @@ def plan1(om, Nd, Kd, Jd, ft_axes, image_stack):
     # multiply the coefficients of all dimensions
     from .Nd_tensor import htensor
     Htensor = htensor()
-    r = 4
+    r = 1
     Nc = image_stack.shape[-1]
     rank = ()
     for dimid in range(0, dd):
@@ -290,6 +290,13 @@ def plan1(om, Nd, Kd, Jd, ft_axes, image_stack):
             rank += (r, )
             
 #     rank += (Nc, )
+
+
+#     indptr = numpy.zeros( (M + 1, Nc ) , order='C', dtype = numpy.int32)
+    csrindices = numpy.empty((M, Nc, numpy.prod(Jd)), order='C', dtype = numpy.int32  )
+     
+    csrdata = numpy.empty((M, Nc, numpy.prod(Jd)), order='C', dtype = numpy.complex128  )
+    
     for nc in range(0, Nc):
 #         tmp_image = image_stack[...,nc]*(-1.0j)
         
@@ -356,9 +363,16 @@ def plan1(om, Nd, Kd, Jd, ft_axes, image_stack):
 
         CSR = full_kron2(ud, kd, Jd, Kd, M, core_tensor)
         del core_tensor
-        if nc == 0:
-            st['p'] = CSR
-        else:
-            st['p'] = scipy.sparse.bmat([[st['p']],[CSR]])
-
+        
+#         indptr[:, nc] = CSR.indptr + (numpy.arange(0, M+1) * (Nc - 1) + nc ) * numpy.prod(Jd)
+        csrindices[:, nc, :] = numpy.reshape(CSR.indices, (M, numpy.prod(Jd)), order='C')
+        csrdata[:, nc, :] = numpy.reshape(CSR.data, (M, numpy.prod(Jd)), order='C')
+        
+#         if nc == 0:
+#             st['p'] = CSR
+#         else:
+#             st['p'] = scipy.sparse.bmat([[st['p']],[CSR]])
+    csrdata = numpy.array(csrdata, order='C')
+    csrindices = numpy.array(csrindices, order='C')
+    st['p'] = scipy.sparse.csr_matrix(  (csrdata.ravel(order='C'), csrindices.ravel(order='C'), numpy.arange(0, M*Nc +1)* numpy.prod(Jd)))
     return st #new

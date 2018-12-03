@@ -499,12 +499,19 @@ class NUFFT_hsa(NUFFT_cpu):
         try:
             return solve(self,  gy,  solver, *args, **kwargs)
         except:
-            if numpy.ndarray==type(gy):
-                print("input gy must be a reikna array with dtype = numpy.complex64")
-                raise TypeError
-            else:
-                print("wrong")
-                raise TypeError
+            try:
+                    print('The input array may not be a GPUarray.')
+                    print('Automatically moving the input array to gpu, which is throttled by PCI bus.')
+                    print('You have been warned!')
+                    py = self.thr.to_device(numpy.asarray(gy.astype(self.dtype),  order = 'C' ))
+                    return solve(self,  py,  solver, *args, **kwargs)
+            except:
+                if numpy.ndarray==type(gy):
+                    print("input gy must be a reikna array with dtype = numpy.complex64")
+                    raise #TypeError
+                else:
+                    print("wrong")
+                    raise #TypeError
           
     def forward(self, gx):
             """
@@ -520,8 +527,8 @@ class NUFFT_hsa(NUFFT_cpu):
                 xx = self.x2xx(gx)
             except: # gx is not a gpu array 
                 try:
-                    print('The inputarray may not be a GPUarray.')
-                    print('Automatically moving the inputarray to gpu, which may be slow.')
+                    print('The input array may not be a GPUarray.')
+                    print('Automatically moving the input array to gpu, which is throttled by PCI bus.')
                     print('You have been warned!')
                     px = self.thr.to_device(numpy.asarray(gx.astype(self.dtype),  order = 'C' ))
                     xx = self.x2xx(px)
@@ -545,7 +552,21 @@ class NUFFT_hsa(NUFFT_cpu):
             :return: gx: The output gpu array, with size=Nd
             :rtype: reikna gpu array with dtype =numpy.complex64
             """        
-            k = self.y2k(gy)
+            
+            try:
+                k = self.y2k(gy)
+            except: # gx is not a gpu array 
+                try:
+                    print('The input array may not be a GPUarray.')
+                    print('Automatically moving the input array to gpu, which is throttled by PCI bus.')
+                    print('You have been warned!')
+                    py = self.thr.to_device(numpy.asarray(gy.astype(self.dtype),  order = 'C' ))
+                    k = self.y2k(py)
+                except:
+                    print('Failed at self.adjont! Please check the gy shape, type, stride.')
+                    raise
+                            
+#             k = self.y2k(gy)
             xx = self.k2xx(k)
             del k
             gx = self.xx2x(xx)
@@ -1020,6 +1041,7 @@ class NUFFT_memsave(NUFFT_hsa):
                             )           
         self.thr.synchronize()
         return y
+    
     def y2k_scalar(self, y):
         """
         Private: gridding by the Sparse Matrix-Vector Multiplication
@@ -1073,7 +1095,8 @@ class NUFFT_memsave(NUFFT_hsa):
     def y2k(self, y):
         """
         Private: gridding by the Sparse Matrix-Vector Multiplication
-        However, serial atomic add is far too slow and inaccurate.
+        However, atomic add is far too slow and inaccurate.
+        
         """
         k = self.thr.array(self.st['Kd'], dtype = self.dtype).fill(0.0 + 0.0j)
         kx = self.thr.array(self.st['Kd'], dtype = numpy.float32).fill(0.0)
@@ -1126,9 +1149,9 @@ class NUFFT_mCoil(NUFFT_hsa):
         print("Note: In the future the api will change!")
         print("You have been warned!")
         
-    def plan(self, om, Nd, Kd, Jd, ft_axes, image_stack):
+    def plan(self, om, Nd, Kd, Jd, ft_axes=None, image_stack=None):
         """
-        Design the min-max interpolator.
+        Design the multi-coil interpolator. .
         
         :param om: The M off-grid locations in the frequency domain. Normalized between [-pi, pi]
         :param Nd: The matrix size of equispaced image. Example: Nd=(256,256) for a 2D image; Nd = (128,128,128) for a 3D image

@@ -1,4 +1,4 @@
-from .. import NUFFT_cpu, NUFFT_hsa
+from .. import NUFFT_cpu, NUFFT_hsa, NUFFT_memsave
 
 import numpy
 dtype = numpy.complex64
@@ -37,12 +37,16 @@ def test_init():
     
     nfft.plan(om, Nd, Kd, Jd)
 
-    NufftObj = NUFFT_hsa()
+    NufftObj = NUFFT_memsave()
+    NufftObj2 = NUFFT_memsave()
     NufftObj.debug = 1
     NufftObj.plan(om, Nd, Kd, Jd)
+    NufftObj2.plan(om, Nd, Kd, Jd)
     
     NufftObj.offload(API = 'ocl',   platform_number = 1, device_number = 0)
-    
+    NufftObj2.offload(API = 'ocl',   platform_number = 1, device_number = 0)
+#     NufftObj.offload(API = 'cuda',   platform_number = 0, device_number = 0)
+#     print('api=', NufftObj.thr.api_name())
 #     NufftObj.offload(API = 'ocl',   platform_number = 0, device_number = 0)
     y = nfft.k2y(nfft.xx2k(nfft.x2xx(image)))
     
