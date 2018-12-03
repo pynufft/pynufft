@@ -49,7 +49,9 @@ BART provides a Python wrapper.
 
 ### Acknowledgements
 
-pynufft was funded by the Ministry of Science and Technology, Taiwan, Cambridge Commonwealth, European and International Trust (Cambridge, UK), and Ministry of Education, Taiwan.  
+PyNufft was funded by the Cambridge Commonwealth, European and International Trust (Cambridge, UK), and Ministry of Education, Taiwan. 
+
+We gratefully acknowledge the support of NVIDIA Corporation with the donation of a Titan X Pascal and a Quadro P6000 GPU used for this research. 
 
 If you find pynufft useful, please cite:
 
