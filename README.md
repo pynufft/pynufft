@@ -19,19 +19,19 @@ Remove the keyword async for compatibility reasons because Reikna has changed th
 
 ### Summary
 
-Pynufft implements Fessler's min-max NUFFT, with the following features:
+PyNufft implements NUFFT, with the following features:
 
 - Written in pure Python.
-- Based on numerical libraries, such as Numpy, Scipy (matplotlib for displaying examples).
-- Provides the python interface including forward transform, adjoint transform and other routines.
+- Based on Python numerical libraries, such as Numpy, Scipy (matplotlib for displaying examples).
+- Provides the Python interface including forward transform, adjoint transform and other routines.
 - Provides 1D/2D/3D examples for further developments.
-- (Experimental) support of NUFFT on NVIDIA's graphic processing units (GPUs) and opencl devices (GPUs or a multi-core CPU)
+- (Experimental) support of NVIDIA's graphic processing units (GPUs) and opencl devices (GPUs or a multi-core CPU)
 
 ### Bugs
 
 Experimental support for Python2. Some tests pass Python2.7.15 but the full support for Python2 is still pending.
 
-
+Kernel size of 5-7 has been tested. The numerical accuracy is limited to single-precision.  
 
 ### Other nufft implementations in Python:
 
@@ -49,7 +49,7 @@ BART provides a Python wrapper.
 
 ### Acknowledgements
 
-PyNufft was funded by the Cambridge Commonwealth, European and International Trust (Cambridge, UK), and Ministry of Education, Taiwan. 
+PyNufft was funded by the Cambridge Commonwealth, European and International Trust (Cambridge, UK), Ministry of Education, Taiwan, Ministry of Science and Technology, Taiwan.   
 
 We gratefully acknowledge the support of NVIDIA Corporation with the donation of a Titan X Pascal and a Quadro P6000 GPU used for this research. 
 
@@ -57,8 +57,8 @@ If you find pynufft useful, please cite:
 
 Lin, Jyh-Miin. "Python Non-Uniform Fast Fourier Transform (PyNUFFT): An Accelerated Non-Cartesian MRI Package on a Heterogeneous Platform (CPU/GPU)." Journal of Imaging 4.3 (2018): 51.
 
-And Fessler and Sutton's min-max NUFFT algorithm:
-Fessler JA, Sutton BP. Nonuniform fast Fourier transforms using min-max interpolation. IEEE Trans Signal Process 2003;51(2):560-574.
+Note the kernel is based on the Fessler and Sutton's min-max NUFFT algorithm. Please cite their work, as follows:
+Fessler JA, Sutton BP. Nonuniform fast Fourier transforms using min-max interpolation. IEEE Trans Signal Process 2003;51(2):560-574. 
 
 Please open an issue if you have any question related to pynufft.
 
