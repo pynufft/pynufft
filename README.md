@@ -55,10 +55,10 @@ We gratefully acknowledge the support of NVIDIA Corporation with the donation of
 
 If you find pynufft useful, please cite:
 
-<cite>Lin, Jyh-Miin. "Python Non-Uniform Fast Fourier Transform (PyNUFFT): An Accelerated Non-Cartesian MRI Package on a Heterogeneous Platform (CPU/GPU)." Journal of Imaging 4.3 (2018): 51.<\cite>
+Lin, Jyh-Miin. "Python Non-Uniform Fast Fourier Transform (PyNUFFT): An Accelerated Non-Cartesian MRI Package on a Heterogeneous Platform (CPU/GPU)." Journal of Imaging 4.3 (2018): 51.
 
 Note the kernel is based on the Fessler and Sutton's min-max NUFFT algorithm. Please cite their work, as follows:
-<cite>Fessler JA, Sutton BP. Nonuniform fast Fourier transforms using min-max interpolation. IEEE Trans Signal Process 2003;51(2):560-574. <\cite>
+Fessler JA, Sutton BP. Nonuniform fast Fourier transforms using min-max interpolation. IEEE Trans Signal Process 2003;51(2):560-574.
 
 Please open an issue if you have any question related to pynufft.
 
