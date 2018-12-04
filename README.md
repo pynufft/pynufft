@@ -7,7 +7,7 @@ NUFFT can calculate the frequency components at non-equispaced locations.
 
 A minimal "getting start" tutorial is available at http://jyhmiinlin.github.io/pynufft/ .
 
-Please use Python3. PyNUFFT has been tested with Python3.4. However, it should work with Python3.5-3.6. 
+Please use Python3. PyNUFFT has been tested with Python 3.4 and 3.6. However, it should work with Python 3.5. 
 
 
 ### New in version 0.3.3.10
@@ -49,16 +49,16 @@ BART provides a Python wrapper.
 
 ### Acknowledgements
 
-PyNufft was funded by the Cambridge Commonwealth, European and International Trust (Cambridge, UK), Ministry of Education, Taiwan, Ministry of Science and Technology, Taiwan.   
+PyNufft was funded by the Cambridge Commonwealth, European and International Trust (Cambridge, UK) and Ministry of Education, Taiwan. 
 
-We gratefully acknowledge the support of NVIDIA Corporation with the donation of a Titan X Pascal and a Quadro P6000 GPU used for this research. 
+We gratefully acknowledge the support of NVIDIA Corporation with the donation of a Titan X Pascal and a Quadro P6000 GPU used for developing the GPU code. 
 
 If you find pynufft useful, please cite:
 
-Lin, Jyh-Miin. "Python Non-Uniform Fast Fourier Transform (PyNUFFT): An Accelerated Non-Cartesian MRI Package on a Heterogeneous Platform (CPU/GPU)." Journal of Imaging 4.3 (2018): 51.
+<cite>Lin, Jyh-Miin. "Python Non-Uniform Fast Fourier Transform (PyNUFFT): An Accelerated Non-Cartesian MRI Package on a Heterogeneous Platform (CPU/GPU)." Journal of Imaging 4.3 (2018): 51.<\cite>
 
 Note the kernel is based on the Fessler and Sutton's min-max NUFFT algorithm. Please cite their work, as follows:
-Fessler JA, Sutton BP. Nonuniform fast Fourier transforms using min-max interpolation. IEEE Trans Signal Process 2003;51(2):560-574. 
+<cite>Fessler JA, Sutton BP. Nonuniform fast Fourier transforms using min-max interpolation. IEEE Trans Signal Process 2003;51(2):560-574. <\cite>
 
 Please open an issue if you have any question related to pynufft.
 
