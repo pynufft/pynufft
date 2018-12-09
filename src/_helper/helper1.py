@@ -197,7 +197,7 @@ def order_reduction(om, N, J, K, sn, L):
     
     return u2
 
-def plan1(om, Nd, Kd, Jd, ft_axes, image_stack):
+def plan1(om, Nd, Kd, Jd, ft_axes, coil_sense):
     """
     Compute the coil sensitivity aware interpolator
     """
@@ -217,7 +217,7 @@ def plan1(om, Nd, Kd, Jd, ft_axes, image_stack):
 
     dd = numpy.size(Nd)
 
-    if (len(image_stack.shape) != dd + 1):
+    if (len(coil_sense.shape) != dd + 1):
         raise TypeError('Wrong dimension')
 
     if ft_axes is None:
@@ -281,7 +281,7 @@ def plan1(om, Nd, Kd, Jd, ft_axes, image_stack):
     from .Nd_tensor import htensor
     Htensor = htensor()
     r = 1
-    Nc = image_stack.shape[-1]
+    Nc = coil_sense.shape[-1]
     rank = ()
     for dimid in range(0, dd):
         if ft_flag[dimid] is True:
@@ -298,21 +298,21 @@ def plan1(om, Nd, Kd, Jd, ft_axes, image_stack):
     csrdata = numpy.empty((M, Nc, numpy.prod(Jd)), order='C', dtype = numpy.complex128  )
     
     for nc in range(0, Nc):
-#         tmp_image = image_stack[...,nc]*(-1.0j)
+#         tmp_image = coil_sense[...,nc]*(-1.0j)
         
         
-        Htensor.hosvd( image_stack[...,nc], rank=rank)
+        Htensor.hosvd( coil_sense[...,nc], rank=rank)
 
-#         uuu, sss,vvvt = scipy.sparse.linalg.svds(image_stack[...,nc],k=r)
+#         uuu, sss,vvvt = scipy.sparse.linalg.svds(coil_sense[...,nc],k=r)
 #         Htensor.U[0] = uuu
 #         Htensor.U[1] = vvvt.T.conj()
-        core_tensor = Htensor.forward(image_stack[...,nc])
+        core_tensor = Htensor.forward(coil_sense[...,nc])
         
         max_core_tensor = numpy.max(abs(core_tensor.flatten()))
 #         print('maximum core tensor value=', max_core_tensor)
 #         core_tensor[ abs(core_tensor)< 0.1*max_core_tensor] *= 0
         print('core tensor values=', numpy.diag(core_tensor))
-#     core_tensor = image_stack
+#     core_tensor = coil_sense
 #     for jj in range(0, dd):
 #         core_tensor=  Htensor.nmode(core_tensor, Htensor.U[jj], jj, if_conj = True)
         

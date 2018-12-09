@@ -3,7 +3,7 @@ import matplotlib.pyplot
 import numpy
 import scipy.ndimage.filters
 dtype = numpy.complex64
-def fake_Cartesian(Nd):
+def fake_Cartesian_old(Nd):
     dd = len(Nd)
     Ndprod = numpy.prod(Nd)
     om = numpy.zeros((Ndprod, dd), dtype = numpy.float)
@@ -30,7 +30,14 @@ def fake_Cartesian(Nd):
         om[:,3] = d.ravel(order='C')
 #     print(a,b)
     return om
-    
+def fake_Cartesian(Nd):
+    dd = len(Nd) # dimensions
+    Ndprod = numpy.prod(Nd)
+    om = numpy.zeros((Ndprod, dd), dtype = numpy.float)
+    grid = numpy.indices(Nd)
+    for dimid in range(0, dd):
+        om[:, dimid] = (grid[dimid].ravel() *2/ Nd[dimid] - 1.0)*numpy.pi
+    return om    
 def create_fake_coils(N, n_coil):
     
     xx,yy = numpy.meshgrid(numpy.arange(0,N),numpy.arange(0,N))
@@ -161,7 +168,7 @@ H = H - numpy.min(abs(H.ravel()))
 
 
 
-NufftObj_coil.plan1(om2, Nd, (512,512), (5,5), ft_axes = (0,1), image_stack = H)
+NufftObj_coil.plan1(om2, Nd, (512,512), (5,5), ft_axes = (0,1), coil_sense = H)
 
 y = NufftObj.forward(M0)
 

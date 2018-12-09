@@ -39,11 +39,11 @@ om = scipy.io.loadmat('/home/sram/Cambridge_2012/DATA_MATLAB/Ciuciu/Trajectories
 om = om/numpy.max(om.real.ravel()) * numpy.pi
 
 print(om.shape)
-from pynufft import NUFFT_cpu, NUFFT_hsa, NUFFT_memsave
+from pynufft import NUFFT_cpu, NUFFT_hsa, NUFFT_memsave, NUFFT_mCoil
 # from pynufft import NUFFT_memsave
 NufftObj_cpu = NUFFT_cpu()
 NufftObj_hsa = NUFFT_hsa()
-NufftObj_memsave = NUFFT_memsave()
+NufftObj_memsave = NUFFT_mCoil()
 
 import time
 t0=time.time()
