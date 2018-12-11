@@ -42,7 +42,7 @@ class NUFFT_cpu:
         self.debug = 0  # debug
         pass
 
-    def plan(self, om, Nd, Kd, Jd, ft_axes = None):
+    def plan(self, om, Nd, Kd, Jd, ft_axes = None, coil_sense = None):
         """
         Design the min-max interpolator.
         
@@ -81,7 +81,29 @@ class NUFFT_cpu:
         self.Kd = self.st['Kd']
         self.sn = numpy.asarray(self.st['sn'].astype(self.dtype)  ,order='C')# backup
             
-        
+        if coil_sense is None: # single-coil
+            self.parallel_flag = 0
+#             self.sense = None
+            self.sense = numpy.ones( Nd, dtype = self.dtype, order='C')
+            
+            self.Reps = numpy.uint32( 1)
+            print('self.Reps = ', self.Reps ,'self.parallel_flag=', self.parallel_flag)
+        else: # multi-coil
+            self.parallel_flag = 1
+            self.sense = numpy.asarray( coil_sense, dtype = self.dtype, order='C')
+            
+            self.Reps = numpy.uint32( coil_sense.shape[-1])
+            print('self.Reps = ', self.Reps ,'self.parallel_flag=', self.parallel_flag)
+        if self.parallel_flag is 1:
+            self.multi_Nd =   self.Nd + (self.Reps, )
+            self.multi_Kd =   self.Kd + (self.Reps, )
+            self.multi_M =   (self.st['M'], )+ (self.Reps, )
+            self.sense2 = self.sense*numpy.reshape(self.sn, self.Nd + (1, )) # broadcasting the sense and scaling factor (Roll-off)
+        elif self.parallel_flag is 0:
+            self.multi_Nd =   self.Nd# + (self.Reps, )
+            self.multi_Kd =   self.Kd #+ (self.Reps, )
+            self.multi_M =   (self.st['M'], )
+            self.sense2 = self.sense*self.sn        
         # Calculate the density compensation function
         self.sp = self.st['p'].copy().tocsr()
         self.spH = (self.st['p'].getH().copy()).tocsr()        
@@ -305,6 +327,370 @@ class NUFFT_cpu:
     def tensorize(self, input_vec):
         arr = numpy.reshape(input_vec, self.tensor_shape, order='C')
         return arr     
+
+    def matvec(self, input_vec):
+        """
+        mathematicians' way
+        equivalent to forward, but both the input and output are vectors
+        """
+        input_array = self.tensorize(input_vec)
+        vec = self.vectorize(self.forward(input_array))
+        return vec
+    
+    def rmatvec(self, input_vec):
+        """
+        mathematicians' way
+        equivalent to adjoint, but both the input and output are vectors
+        """        
+        tensor = self.adjoint(input_vec)
+        vec = tensor.flatten(order='C')
+        return vec
+
+
+class NUFFT_cpu2:
+    """
+    Class NUFFT_cpu
+   """    
+    def __init__(self):
+        """
+        Constructor.
+        
+        :param None:
+        :type None: Python NoneType
+        :return: NUFFT: the pynufft_hsa.NUFFT instance
+        :rtype: NUFFT: the pynufft_hsa.NUFFT class
+        :Example:
+
+        >>> import pynufft
+        >>> NufftObj = pynufft.NUFFT_cpu()
+
+
+        .. note:: requires plan() 
+        .. seealso:: :method:`plan()' 
+        .. todo:: test 3D case
+        """        
+        self.dtype=numpy.complex64
+        self.debug = 0  # debug
+        pass
+
+    def plan(self, om, Nd, Kd, Jd, ft_axes = None, coil_sense = None):
+        """
+        Design the min-max interpolator.
+        
+        :param om: The M off-grid locations in the frequency domain. Normalized between [-pi, pi]
+        :param Nd: The matrix size of equispaced image. Example: Nd=(256,256) for a 2D image; Nd = (128,128,128) for a 3D image
+        :param Kd: The matrix size of the oversampled frequency grid. Example: Kd=(512,512) for 2D image; Kd = (256,256,256) for a 3D image
+        :param Jd: The interpolator size. Example: Jd=(6,6) for 2D image; Jd = (6,6,6) for a 3D image
+        :type om: numpy.float array, matrix size = M * ndims
+        :type Nd: tuple, ndims integer elements. 
+        :type Kd: tuple, ndims integer elements. 
+        :type Jd: tuple, ndims integer elements. 
+        :returns: 0
+        :rtype: int, float
+        :Example:
+
+        >>> import pynufft
+        >>> NufftObj = pynufft.NUFFT_cpu()
+        >>> NufftObj.plan(om, Nd, Kd, Jd) 
+        
+        """         
+        
+
+#         n_shift = tuple(0*x for x in Nd)
+        self.ndims = len(Nd) # dimension
+        if ft_axes is None:
+            ft_axes = range(0, self.ndims)
+        self.ft_axes = ft_axes
+#     
+        self.st = helper.plan(om, Nd, Kd, Jd, ft_axes = ft_axes, format = 'CSR')
+#         st_tmp = helper.plan0(om, Nd, Kd, Jd)
+#         if self.debug is 1:
+#             print('error between current and old interpolators=', scipy.sparse.linalg.norm(self.st['p'] - st_tmp['p'])/scipy.sparse.linalg.norm(self.st['p']))
+#             print('error between current and old scaling=', numpy.linalg.norm(self.st['sn'] - st_tmp['sn']))
+        
+        self.Nd = self.st['Nd']  # backup
+        self.Kd = self.st['Kd']
+        self.sn = numpy.asarray(self.st['sn'].astype(self.dtype)  ,order='C')# backup
+            
+        if coil_sense is None: # single-coil
+            self.parallel_flag = 0
+#             self.sense = None
+            self.sense = numpy.ones( Nd, dtype = self.dtype, order='C')
+            
+            self.Reps = numpy.uint32( 1)
+            print('self.Reps = ', self.Reps ,'self.parallel_flag=', self.parallel_flag)
+        else: # multi-coil
+            self.parallel_flag = 1
+            self.sense = numpy.asarray( coil_sense, dtype = self.dtype, order='C')
+            
+            self.Reps = numpy.uint32( coil_sense.shape[-1])
+            print('self.Reps = ', self.Reps ,'self.parallel_flag=', self.parallel_flag)
+        if self.parallel_flag is 1:
+            self.multi_Nd =   self.Nd + (self.Reps, )
+            self.multi_Kd =   self.Kd + (self.Reps, )
+            self.multi_M =   (self.st['M'], )+ (self.Reps, )
+            self.sense2 = self.sense*numpy.reshape(self.sn, self.Nd + (1, )) # broadcasting the sense and scaling factor (Roll-off)
+        elif self.parallel_flag is 0:
+            self.multi_Nd =   self.Nd# + (self.Reps, )
+            self.multi_Kd =   self.Kd #+ (self.Reps, )
+            self.multi_M =   (self.st['M'], )
+            self.sense2 = self.sense*self.sn        
+            
+        if self.parallel_flag is 1:
+            self.multi_prodKd = (numpy.prod(self.Kd), self.Reps)
+        else:
+            self.multi_prodKd = (numpy.prod(self.Kd), )
+        # Calculate the density compensation function
+        self.sp = self.st['p'].copy().tocsr()
+        self.spH = (self.st['p'].getH().copy()).tocsr()        
+        self.Kdprod = numpy.int32(numpy.prod(self.st['Kd']))
+        self.Jdprod = numpy.int32(numpy.prod(self.st['Jd']))
+        del self.st['p'], self.st['sn']
+#         self._precompute_sp()        
+#         del self.st['p0'] 
+        self.NdCPUorder, self.KdCPUorder, self.nelem =     helper.preindex_copy(self.st['Nd'], self.st['Kd'])
+
+        
+        return 0
+        
+#         print('untrimmed',self.st['pHp'].nnz)
+#         self.truncate_selfadjoint(1e-1)
+#         print('trimmed', self.st['pHp'].nnz)
+ 
+    def _precompute_sp(self):
+        """
+
+        Private: Precompute adjoint (gridding) and Toepitz interpolation matrix.
+        
+        :param None: 
+        :type None: Python Nonetype
+        :return: self: instance
+        """
+        try:
+#             self.sp = self.st['p']
+#             self.spH = (self.st['p'].getH().copy()).tocsr()
+#             self.spHsp =self.spH.dot(self.sp).tocsr()
+            W0 = numpy.ones((self.st['M'],), dtype = numpy.complex64)
+            W = self.xx2k(self.adjoint(W0))
+            self.W = (W*W.conj())**0.5
+            del W0
+            del W
+        except:
+            print("errors occur in self.precompute_sp()")
+            raise
+#         self.truncate_selfadjoint( 1e-2)
+
+    def _matvec(self, x_vec):
+        """
+        (To be tested): dot operation provided for scipy.sparse.linalg
+        wrapper of self.forward()
+        """
+        
+        x2 = numpy.reshape(x_vec, self.Nd, order='F')
+        
+        return self.forward(x2) 
+
+    def solve(self,y, solver=None, *args, **kwargs):
+        """
+        Solve NUFFT_cpu
+        
+        :param y: data, numpy array, (M,) size
+        :param solver: could be 'cg', 'L1TVOLS', 'L1TVLAD' 
+        :param maxiter: the number of iterations
+        :type y: numpy array, dtype = numpy.complex64
+        :type solver: string
+        :type maxiter: int
+        :return: numpy array with size Nd
+        """        
+        from .linalg.solve_cpu import solve
+        return solve(self,  y,  solver, *args, **kwargs)
+
+    def forward(self, x):
+        """
+        Forward NUFFT on CPU
+        
+        :param x: The input numpy array, with size=Nd
+        :type: numpy array with dtype =numpy.complex64
+        :return: gy: The output numpy array, with size=(M,)
+        :rtype: numpy array with dtype =numpy.complex64
+        """
+        y = self.k2y(self.xx2k(self.x2xx(x)))
+
+        return y
+
+    def adjoint(self, y):
+        """
+        Adjoint NUFFT on CPU
+        
+        :param y: The input numpy array, with size=(M,)
+        :type: numpy array with dtype =numpy.complex64
+        :return: x: The output numpy array, with size=Nd
+        :rtype: numpy array with dtype =numpy.complex64
+        """     
+        x = self.xx2x(self.k2xx(self.y2k(y)))
+
+        return x
+
+    def selfadjoint(self, x):
+        """
+        selfadjoint NUFFT (Teplitz) on CPU
+        
+        :param x: The input numpy array, with size=Nd
+        :type: numpy array with dtype =numpy.complex64
+        :return: x: The output numpy array, with size=Nd
+        :rtype: numpy array with dtype =numpy.complex64
+        """       
+#         x2 = self.adjoint(self.forward(x))
+        
+        x2 = self.xx2x(self.k2xx(self.k2y2k(self.xx2k(self.x2xx(x)))))
+#         x2 = self.k2xx(self.W*self.xx2k(x))
+#         x2 = self.k2xx(self.k2y2k(self.xx2k(x)))
+        
+        return x2
+    def selfadjoint2(self, x):  
+        x2 = self.k2xx(self.W*self.xx2k(x))
+        return x2
+    def x2z(self, x):
+        z = numpy.broadcast_to(x, self.multi_Nd) 
+        return z
+    def z2xx(self, z):
+        xx = z*self.sense2
+        return xx
+    def xx2z(self, xx):
+        z = xx*self.sense2.conj()
+        return z
+    
+    def z2x(self, z):
+        if self.parallel_flag is 1:
+            x = numpy.average(z, axis = self.ndims + 1)
+        elif self.parallel_flag is 0:
+            x = z
+        return x
+    
+    def x2xx(self, x):
+        """
+        Private: Scaling on CPU
+        Inplace multiplication of self.x_Nd by the scaling factor self.sn.
+        """    
+        xx = x * self.sn
+        return xx
+
+    def xx2k(self, xx):
+        """
+        Private: oversampled FFT on CPU
+        
+        Firstly, zeroing the self.k_Kd array
+        Second, copy self.x_Nd array to self.k_Kd array by cSelect
+        Third: inplace FFT
+        """
+#         dd = numpy.size(self.Kd)      
+        output_x = numpy.zeros(self.multi_Kd, dtype=self.dtype,order='C')
+#         output_x[crop_slice_ind(xx.shape)] = xx
+        if self.parallel_flag is 0:
+            output_x.ravel()[self.KdCPUorder]=xx.ravel()[self.NdCPUorder]
+        elif self.parallel_flag is 1:
+            for reps in range(0, self.Reps):
+                output_x[..., reps].ravel()[self.KdCPUorder]=xx[..., reps].ravel()[self.NdCPUorder]
+        k = numpy.fft.fftn(output_x, axes = self.ft_axes)
+#         k = numpy.fft.fftn(a=xx, s=tuple(self.Kd[ax] for ax in self.ft_axes), axes = self.ft_axes)
+        return k
+    
+    def k2vec(self,k):
+#         if self.parallel_flag is 1:
+#             mpkd = (numpy.prod(self.Kd), self.Reps)
+#         else:
+#             mpkd = (numpy.prod(self.Kd), )
+        k_vec = numpy.reshape(k, self.multi_prodKd, order='C')
+        return k_vec
+    
+    def vec2y(self,k_vec):
+        '''
+        gridding: 
+        '''
+        y = self.sp.dot(k_vec)
+#         y = self.st['ell'].spmv(k_vec)
+        
+        return y
+    
+    def k2y(self, k):
+        """
+        Private: interpolation by the Sparse Matrix-Vector Multiplication
+        """
+        y = self.vec2y(self.k2vec(k)) #numpy.reshape(self.st['p'].dot(Xk), (self.st['M'], ), order='F')
+        
+        return y
+    
+    def y2vec(self, y):
+        '''
+       regridding non-uniform data, (unsorted vector)
+        '''
+#         k_vec = self.st['p'].getH().dot(y)
+        k_vec = self.spH.dot(y)
+#         k_vec = self.st['ell'].spmvH(y)
+        
+        return k_vec
+    def vec2k(self, k_vec):
+        '''
+        Sorting the vector to k-spectrum Kd array
+        '''
+        k = numpy.reshape(k_vec, self.multi_Kd, order='C')
+        
+        return k
+    
+    def y2k(self, y):
+        """
+        Private: gridding by the Sparse Matrix-Vector Multiplication
+        """
+        k_vec = self.y2vec(y)
+        k = self.vec2k(k_vec)
+        return k
+
+    def k2xx(self, k):
+        """
+        Private: the inverse FFT and image cropping (which is the reverse of _xx2k() method)
+        """
+#         dd = numpy.size(self.Kd)
+        
+        k = numpy.fft.ifftn(k, axes = self.ft_axes)
+        xx= numpy.zeros(self.multi_Nd,  dtype=self.dtype, order='C')
+        if self.parallel_flag is 1:
+            for reps in range(0, self.Reps):
+                xx[..., reps].ravel()[self.NdCPUorder]=k[..., reps].ravel()[self.KdCPUorder]
+        elif self.parallel_flag is 0:
+            xx.ravel()[self.NdCPUorder]=k.ravel()[self.KdCPUorder]
+#         xx = xx[crop_slice_ind(self.Nd)]
+        return xx
+
+    def xx2x(self, xx):
+        """
+        Private: rescaling, which is identical to the  _x2xx() method
+        """
+        x = self.x2xx(xx)
+        return x
+    def k2y2k(self, k):
+        """
+        Private: the integrated interpolation-gridding by the Sparse Matrix-Vector Multiplication
+        """
+
+        Xk = self.k2vec(k)
+         
+#         k = self.spHsp.dot(Xk)
+#         k = self.spH.dot(self.sp.dot(Xk))
+        k = self.y2vec(self.vec2y(Xk))
+        k = self.vec2k(k)
+        return k
+    def lsmr(self, y, maxiter=50):
+        vec = numpy.empty(self.multi_Kd, dtype = self.dtype)
+        if self.parallel_flag is 1:
+            for reps in range(0, self.Reps):
+                vec[..., reps] = scipy.sparse.linalg.lsmr(self.sp, y[..., reps], maxiter = maxiter)[0]
+        elif self.parallel_flag is 0:
+            vec = scipy.sparse.linalg.lsmr(self.sp, y, maxiter = maxiter)[0]
+        k = self.vec2k(vec)
+        xx = self.k2xx(k)
+        x = xx/self.sn
+        return x
+        
 
     def matvec(self, input_vec):
         """
@@ -807,330 +1193,6 @@ class NUFFT_hsa(NUFFT_cpu):
     
 
     
-# class NUFFT_memsave(NUFFT_hsa):
-#     """
-#     Class NUFFT_memsave: memory reduced NUFFT with partial precomputation.
-#     Note: In the future I hope to replace NUFFT_hsa with NUFFT_memsave so the api is not fixed
-#    """
-# 
-#     def __init__(self):
-#         """
-#         Constructor.
-#         
-#         :param None:
-#         :type None: Python NoneType
-#         :return: NUFFT: the pynufft_hsa.NUFFT instance
-#         :rtype: NUFFT: the pynufft_hsa.NUFFT class
-#         :Example:
-# 
-#         >>> import pynufft
-#         >>> NufftObj = pynufft.NUFFT_hsa()
-# 
-# 
-#         .. note:: requires plan() and offload()
-#         .. seealso:: :method:`plan()' 'offload()'
-#         .. todo:: test 3D case
-#         """
-#         
-#         pass
-#         NUFFT_hsa.__init__(self)
-#         print("Note: In the future the api will change!")
-#         print("You have been warned!")
-#         
-#     def plan(self, om, Nd, Kd, Jd, ft_axes = None):
-#         """
-#         Design the min-max interpolator.
-#         
-#         :param om: The M off-grid locations in the frequency domain. Normalized between [-pi, pi]
-#         :param Nd: The matrix size of equispaced image. Example: Nd=(256,256) for a 2D image; Nd = (128,128,128) for a 3D image
-#         :param Kd: The matrix size of the oversampled frequency grid. Example: Kd=(512,512) for 2D image; Kd = (256,256,256) for a 3D image
-#         :param Jd: The interpolator size. Example: Jd=(6,6) for 2D image; Jd = (6,6,6) for a 3D image
-#         :type om: numpy.float array, matrix size = M * ndims
-#         :type Nd: tuple, ndims integer elements. 
-#         :type Kd: tuple, ndims integer elements. 
-#         :type Jd: tuple, ndims integer elements. 
-#         :returns: 0
-#         :rtype: int, float
-#         :Example:
-# 
-#         >>> import pynufft
-#         >>> NufftObj = pynufft.NUFFT_cpu()
-#         >>> NufftObj.plan(om, Nd, Kd, Jd) 
-#         
-#         """         
-#         
-# 
-# #         n_shift = tuple(0*x for x in Nd)
-#         self.ndims = len(Nd) # dimension
-#         if ft_axes is None:
-#             ft_axes = range(0, self.ndims)
-#         self.ft_axes = ft_axes
-# #     
-#         self.st = helper.plan(om, Nd, Kd, Jd, ft_axes = ft_axes, format = 'pELL')
-#         ## Partial precomputation
-#         
-#         self.Nd = self.st['Nd']  # backup
-#         self.Kd = self.st['Kd']
-#         self.sn = numpy.asarray(self.st['sn'].astype(self.dtype)  ,order='C')# backup
-#             
-#         
-#         # Calculate the density compensation function
-# #         self.sp = self.st['p'].copy().tocsr()
-# #         self.spH = (self.st['p'].getH().copy()).tocsr()        
-#         self.Kdprod = numpy.int32(numpy.prod(self.st['Kd']))
-#         self.Jdprod = numpy.int32(numpy.prod(self.st['Jd']))
-# #         del self.st['p'], self.st['sn']
-# #         self._precompute_sp()        
-# #         del self.st['p0'] 
-#         self.NdCPUorder, self.KdCPUorder, self.nelem =     helper.preindex_copy(self.st['Nd'], self.st['Kd'])
-#         return 0
-#     def offload(self, API, platform_number=0, device_number=0):
-#         """
-#         self.offload():
-#         
-#         Off-load NUFFT to the opencl or cuda device(s)
-#         
-#         :param API: define the device type, which can be 'cuda' or 'ocl'
-#         :param platform_number: define which platform to be used. The default platform_number = 0.
-#         :param device_number: define which device to be used. The default device_number = 0.
-#         :type API: string
-#         :type platform_number: int
-#         :type device_number: int
-#         :return: self: instance
-# 
-#         """
-#         from reikna import cluda
-#         import reikna.transformations
-#         from reikna.cluda import functions, dtypes
-#         try: # try to create api/platform/device using the given parameters
-#             if 'cuda' == API:
-#                 api = cluda.cuda_api()
-#             elif 'ocl' == API:
-#                 api = cluda.ocl_api()
-#      
-#             platform = api.get_platforms()[platform_number]
-#             
-#             device = platform.get_devices()[device_number]
-#         except: # if failed, find out what's going wrong?
-#             helper.diagnose()
-#             
-#             return 1
-# 
-# #         Create context from device
-#         self.thr = api.Thread(device) #pyopencl.create_some_context()
-#         print('Using opencl or cuda = ', self.thr.api)
-#         
-# #         print('Using opencl?  ', self.thr.api is reikna.cluda.ocl)
-# #         """
-# #         Wavefront: as warp in cuda. Can control the width in a workgroup
-# #         Wavefront is required in spmv_vector as it improves data coalescence.
-# #         see cCSR_spmv and zSparseMatVec
-# #         """
-#         self.wavefront = api.DeviceParameters(device).warp_size
-# 
-#         print('wavefront = ',self.wavefront)
-# 
-#         from .src.re_subroutine import cMultiplyScalar, cCopy, cAddScalar,cAddVec,  cSelect, cMultiplyVec, cMultiplyVecInplace, cMultiplyConjVec, cDiff, cSqrt, cAnisoShrink, cHypot, cSpmv, cSpmvh, atomic_add
-# 
-# 
-#         kernel_sets = ( cMultiplyScalar.R + 
-#                                 cCopy.R + cHypot.R +
-#                                 cAddScalar.R + 
-#                                 cSelect.R + 
-#                                 cMultiplyConjVec.R + 
-#                                 cAddVec.R+  
-#                                 cMultiplyVecInplace.R + 
-#                                 cDiff.R+ cSqrt.R+ cAnisoShrink.R+ cMultiplyVec.R + cSpmv.R + cSpmvh.R)
-#         
-#         try: # switching between cuda and opencl
-#             if self.thr.api is cluda.cuda:
-#                 print('Select cuda interface')
-#                 kernel_sets =  atomic_add.cuda_add + kernel_sets
-#         except:
-#             try:
-#                 print("Selecting opencl interface")
-#                 if self.thr.api is cluda.ocl:
-#                     kernel_sets =  atomic_add.ocl_add + kernel_sets
-#             except:
-#                 print('no ocl interface')
-#                 
-#         prg = self.thr.compile(kernel_sets, 
-#                                 render_kwds=dict(LL =  str(self.wavefront)), 
-#                                 fast_math=False)
-# 
-#         self.cMultiplyScalar = prg.cMultiplyScalar
-#         self.cCopy = prg.cCopy
-#         self.cAddScalar = prg.cAddScalar
-#         self.cAddVec = prg.cAddVec
-#         self.cCSR_spmv_vector = prg.cCSR_spmv_vector
-#         self.cCSR_spmvh_scalar = prg.cCSR_spmvh_scalar     
-#         self.cSelect = prg.cSelect
-#         self.cMultiplyVecInplace = prg.cMultiplyVecInplace
-#         self.cMultiplyVec = prg.cMultiplyVec
-#         self.cMultiplyConjVec = prg.cMultiplyConjVec
-#         self.cDiff = prg.cDiff
-#         self.cSqrt= prg.cSqrt
-#         self.cAnisoShrink = prg.cAnisoShrink        
-#         self.cHypot = prg.cHypot               
-# #         self.cELL_spmv_scalar = prg.cELL_spmv_scalar
-# #         self.cELL_spmv_vector = prg.cELL_spmv_vector
-# #         self.cELL_spmvh_scalar = prg.cELL_spmvh_scalar
-#                       
-# #         self.pELL_spmv_scalar = prg.pELL_spmv_scalar
-#         self.pELL_spmv_vector = prg.pELL_spmv_vector
-#         self.pELL_spmvh_vector = prg.pELL_spmvh_vector
-# 
-#         self.pELL_nRow = numpy.uint32(self.st['pELL'].nRow)
-#         self.pELL_prodJd = numpy.uint32(self.st['pELL'].prodJd)
-#         self.pELL_sumJd = numpy.uint32(self.st['pELL'].sumJd)
-#         self.pELL_dim   = numpy.uint32(self.st['pELL'].dim)
-#         self.pELL_Jd= self.thr.to_device(self.st['pELL'].Jd.astype(numpy.uint32))
-# #         self.pELL_currsumJd = self.thr.to_device(self.st['pELL'].curr_sumJd.astype(numpy.uint32))
-#         self.pELL_meshindex = self.thr.to_device(self.st['pELL'].meshindex.astype(numpy.uint32))
-#         self.pELL_kindx = self.thr.to_device(self.st['pELL'].kindx.astype(numpy.uint32))
-#         self.pELL_udata = self.thr.to_device(self.st['pELL'].udata.astype(self.dtype))
-#         
-# #         print('dim = ', self.pELL_dim )
-# #         self.ellcol = self.thr.to_device(self.st['ell'].col)
-# #         self.elldata = self.thr.to_device(self.st['ell'].data.astype(self.dtype))
-#         
-#         
-#         self.NdGPUorder = self.thr.to_device( self.NdCPUorder)
-#         self.KdGPUorder =  self.thr.to_device( self.KdCPUorder)
-#         self.Ndprod = numpy.int32(numpy.prod(self.st['Nd']))
-#         self.Kdprod = numpy.int32(numpy.prod(self.st['Kd']))
-#         self.M = numpy.int32( self.st['M'])
-#         
-#         self.SnGPUArray = self.thr.to_device(  self.sn)
-#         
-# #         self.sp_data = self.thr.to_device( self.sp.data.astype(self.dtype))
-# #         self.sp_indices =self.thr.to_device( self.sp.indices.astype(numpy.uint32))
-# #         self.sp_indptr = self.thr.to_device( self.sp.indptr.astype(numpy.uint32))
-# #         self.sp_numrow =  self.M
-# #         self.sp_numcol = self.Kdprod
-# #         del self.sp
-# #         self.spH_data = self.thr.to_device(  self.spH.data.astype(self.dtype))
-# #         self.spH_indices = self.thr.to_device(  self.spH.indices.astype(numpy.uint32))
-# #         self.spH_indptr = self.thr.to_device(  self.spH.indptr.astype(numpy.uint32))
-# #         self.spH_numrow = self.Kdprod
-# #         del self.spH
-# 
-# #         self.spHsp_data = self.thr.to_device(  self.spHsp.data.astype(self.dtype))
-# #         self.spHsp_indices = self.thr.to_device( self.spHsp.indices)
-# #         self.spHsp_indptr =self.thr.to_device(  self.spHsp.indptr)
-# #         self.spHsp_numrow = self.Kdprod
-# #         del self.spHsp
-# 
-#         import reikna.fft
-# 
-#         self.fft = reikna.fft.FFT(numpy.empty(self.st['Kd'], dtype=self.dtype), self.ft_axes).compile(self.thr, fast_math=False)
-# 
-#         self.zero_scalar=self.dtype(0.0+0.0j)
-# 
-#         del self.st['pELL']
-#     
-#     def k2y(self, k):
-#         """
-#         Private: interpolation by the Sparse Matrix-Vector Multiplication
-#         """
-#         y =self.thr.array( (self.st['M'],), dtype=self.dtype).fill(0)
-#  
-#         self.pELL_spmv_vector(
-#                             self.pELL_nRow,
-#                             self.pELL_prodJd,
-#                             self.pELL_sumJd, 
-#                             self.pELL_dim,
-#                             self.pELL_Jd,
-# #                             self.pELL_currsumJd,
-#                             self.pELL_meshindex,
-#                             self.pELL_kindx,
-#                             self.pELL_udata, 
-#                             k,
-#                             y,
-#                             local_size= int(self.wavefront),
-#                             global_size= int(self.pELL_nRow*self.wavefront)             
-#                             )           
-#         self.thr.synchronize()
-#         return y
-#     
-#     def y2k_scalar(self, y):
-#         """
-#         Private: gridding by the Sparse Matrix-Vector Multiplication
-#         However, serial atomic add is far too slow and inaccurate.
-#         """
-#         k = self.thr.array(self.st['Kd'], dtype = self.dtype).fill(0.0 + 0.0j)
-#         kx = self.thr.array(self.st['Kd'], dtype = numpy.float32).fill(0.0)
-#         ky = self.thr.array(self.st['Kd'], dtype = numpy.float32).fill(0.0)
-# #         kx2 = self.thr.array(self.st['Kd'], dtype = numpy.float32).fill(0.0)
-# #         ky2 = self.thr.array(self.st['Kd'], dtype = numpy.float32).fill(0.0)
-# #         kx3 = self.thr.array(self.st['Kd'], dtype = numpy.float32).fill(0.0)
-# #         ky3 = self.thr.array(self.st['Kd'], dtype = numpy.float32).fill(0.0)
-# #         kx4 = self.thr.array(self.st['Kd'], dtype = numpy.float32).fill(0.0)
-# #         ky4 = self.thr.array(self.st['Kd'], dtype = numpy.float32).fill(0.0)
-#         
-#         
-#         
-# #         gk = self.thr.array(self.st['Kd'], dtype = self.dtype)
-#         
-# #         k.fill(0.0 + 0.0j)
-# #         kx.fill(0.0)
-# #         ky.fill(0.0)
-#  
-#         self.pELL_spmvh_scalar(
-#                             self.pELL_nRow,
-#                             self.pELL_prodJd,
-#                             self.pELL_sumJd, 
-#                             self.pELL_dim,
-#                             self.pELL_Jd,
-# #                             self.pELL_currsumJd,
-#                             self.pELL_meshindex,
-#                             self.pELL_kindx,
-#                             self.pELL_udata, 
-#                             kx, ky, 
-# #                             kx2, ky2,
-# #                             kx3, ky3, 
-# #                             kx4, ky4,
-#                             y,
-#                             local_size=None,
-# #                             local_size = int(self.pELL_prodJd),
-#                             global_size= int(self.pELL_nRow)# * self.pELL_prodJd)             
-#                             )         
-# #         self.thr.synchronize()
-#         k = kx+1.0j* ky
-#         
-#         
-# #         self.thr.synchronize()
-#         
-#         return k 
-#     
-#     def y2k(self, y):
-#         """
-#         Private: gridding by the Sparse Matrix-Vector Multiplication
-#         However, atomic add is far too slow and inaccurate.
-#         
-#         """
-#         k = self.thr.array(self.st['Kd'], dtype = self.dtype).fill(0.0 + 0.0j)
-#         kx = self.thr.array(self.st['Kd'], dtype = numpy.float32).fill(0.0)
-#         ky = self.thr.array(self.st['Kd'], dtype = numpy.float32).fill(0.0)
-# 
-#         self.pELL_spmvh_vector(
-#                             self.pELL_nRow,
-#                             self.pELL_prodJd,
-#                             self.pELL_sumJd, 
-#                             self.pELL_dim,
-#                             self.pELL_Jd,
-#                             self.pELL_meshindex,
-#                             self.pELL_kindx,
-#                             self.pELL_udata, 
-#                             kx, ky, 
-#                             y,
-#                             local_size=None,
-#                             global_size= int(self.pELL_nRow * self.pELL_prodJd)             
-#                             )         
-#         k = kx+1.0j* ky
-#         
-# #         self.thr.synchronize()
-#         return k
 #     
 class NUFFT_memsave(NUFFT_hsa):
     """

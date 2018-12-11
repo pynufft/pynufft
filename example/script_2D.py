@@ -89,6 +89,7 @@ W0 = numpy.ones((NufftObj.st['M'], ))
 # W_x = NufftObj.xx2k( NufftObj.adjoint(NufftObj.forward(NufftObj.k2xx(W0))))
 # W_y =  NufftObj.xx2k(NufftObj.x2xx(NufftObj.adjoint(NufftObj.k2y(W0))))
 W =  NufftObj.xx2k(NufftObj.adjoint(W0))
+
 # W =   NufftObj.y2k(W0)
 # matplotlib.pyplot.subplot(1,)
 matplotlib.pyplot.imshow(numpy.real((W*W.conj())**0.5))
