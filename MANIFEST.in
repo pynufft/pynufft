@@ -1,3 +1,8 @@
-include data/*.npz
+include src/data/*.npz
+include src/data/*.py
 include *.md
 include example/*.py
+include src/*/*.py
+include *.py
+include tests/*.py
+include linalg/*.py

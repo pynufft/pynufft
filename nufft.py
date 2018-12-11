@@ -10,7 +10,7 @@ import scipy.signal
 import scipy.linalg
 import scipy.special
 
-# from .... import src
+# from . import src
 # import sys
 # if sys.version_info[0] == 3:
 #     try:
