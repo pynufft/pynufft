@@ -197,7 +197,7 @@ class pELL:
         self.curr_sumJd = curr_sumJd
         self.meshindex = numpy.array(meshindex, order='C')
         self.kindx = numpy.array(kindx, order='C')
-        self.udata = numpy.array(udata, order='C')
+        self.udata = udata.astype(numpy.complex64)
         
 #         print('self.kindx', self.kindx.shape)
 #         print('self.udata',self.udata.shape)
@@ -342,7 +342,7 @@ def create_partialELL(ud, kd, Jd, M):
         udata[:, int(curr_sumJd[dimid] ): int(curr_sumJd[dimid]  + J)] = numpy.array(ud[dimid], order='C')
 
     series_prodJd = numpy.arange(0, numpy.prod(Jd))
-    
+    del ud, kd
     for dimid in range(dd-1, -1, -1):  # iterate over all dimensions
         
         J = Jd[dimid]

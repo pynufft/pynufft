@@ -136,7 +136,7 @@ def L1TVLAD(nufft, gy, maxiter, rho): # main function of solver
         rhs -= bf
         
 #         rhs *= mu
-        nufft.cMultiplyScalar( dtype(mu), rhs, local_size=None, global_size=int(nufft.Ndprod))
+        nufft.prg.cMultiplyScalar( dtype(mu), rhs, local_size=None, global_size=int(nufft.Ndprod))
         
 #         print(rhs.get())
         for pp in range(0, ndims): 
@@ -145,10 +145,10 @@ def L1TVLAD(nufft, gy, maxiter, rho): # main function of solver
             in_cDiff -= bb[pp]
             
     #         out_cDiff = nufft.thr.empty_like(in_cDiff) 
-            nufft.cDiff(dt_indx[pp], in_cDiff, tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
+            nufft.prg.cDiff(dt_indx[pp], in_cDiff, tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
             
     #         tmp_gpu *= LMBD
-            nufft.cMultiplyScalar( dtype(LMBD), tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
+            nufft.prg.cMultiplyScalar( dtype(LMBD), tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
             
             rhs += tmp_gpu
         
@@ -158,10 +158,10 @@ def L1TVLAD(nufft, gy, maxiter, rho): # main function of solver
 #         in_cDiff -= bb[1]
 #         
 # #         out_cDiff = nufft.thr.empty_like(in_cDiff) 
-#         nufft.cDiff(dt_indx[1], in_cDiff, tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
+#         nufft.prg.cDiff(dt_indx[1], in_cDiff, tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
 #         
 # #         tmp_gpu *= LMBD
-#         nufft.cMultiplyScalar( dtype(LMBD), tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
+#         nufft.prg.cMultiplyScalar( dtype(LMBD), tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
 #         
 #         rhs += tmp_gpu
         
@@ -186,9 +186,9 @@ def L1TVLAD(nufft, gy, maxiter, rho): # main function of solver
 #         zz[0] = cDiff(xkp1,  d_indx[0])
 #         zz[1] = cDiff(xkp1,  d_indx[1])
         for pp in range(0, ndims):
-            nufft.cDiff(d_indx[pp],  xkp1, zz[pp],  local_size=None, global_size=int(nufft.Ndprod)) 
-#         nufft.cDiff(d_indx[0],  xkp1, zz[0],  local_size=None, global_size=int(nufft.Ndprod))
-#         nufft.cDiff(d_indx[1],  xkp1, zz[1],  local_size=None, global_size=int(nufft.Ndprod))
+            nufft.prg.cDiff(d_indx[pp],  xkp1, zz[pp],  local_size=None, global_size=int(nufft.Ndprod)) 
+#         nufft.prg.cDiff(d_indx[0],  xkp1, zz[0],  local_size=None, global_size=int(nufft.Ndprod))
+#         nufft.prg.cDiff(d_indx[1],  xkp1, zz[1],  local_size=None, global_size=int(nufft.Ndprod))
         
 
 #         zf = AHA(xkp1)  -AHy
@@ -211,38 +211,38 @@ def L1TVLAD(nufft, gy, maxiter, rho): # main function of solver
         for pp in range(0, ndims):
             if pp > 0:
 #                 s += tmp_gpu
-                nufft.cHypot(s, s_tmp[pp], local_size=None, global_size=int(nufft.Ndprod))
+                nufft.prg.cHypot(s, s_tmp[pp], local_size=None, global_size=int(nufft.Ndprod))
 #                 nufft.thr.synchronize()
             else: # pp == 0
                 s = nufft.thr.copy_array(s_tmp[pp])
-#         nufft.cMultiplyConjVec(s1, s1, tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
+#         nufft.prg.cMultiplyConjVec(s1, s1, tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
 #         s = nufft.thr.copy_array(tmp_gpu)
 # #         s2 *= s2
-#         nufft.cMultiplyConjVec(s2, s2, tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
+#         nufft.prg.cMultiplyConjVec(s2, s2, tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
 #         s += tmp_gpu
         
 #         s = s1 + s2
         
         
-#         nufft.cSqrt(s, local_size=None, global_size=int(nufft.Ndprod))
+#         nufft.prg.cSqrt(s, local_size=None, global_size=int(nufft.Ndprod))
         
         s += 1e-6
         
         threshold_value = dtype(1/LMBD)
 #         r =(s > threshold_value)*(s-threshold_value)/s#numpy.maximum(s - threshold_value ,  0.0)/s
-        nufft.cAnisoShrink(threshold_value, s, tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
+        nufft.prg.cAnisoShrink(threshold_value, s, tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
         tmp_gpu /=s
         
 #         dd[0] = s1*r
 #         dd[1] = s2*r
 #         dd[0] = s1*tmp_gpu
         for pp in range(0, ndims):
-            nufft.cMultiplyVec(s_tmp[pp], tmp_gpu, dd[pp], local_size=None, global_size=int(nufft.Ndprod)) 
-#         nufft.cMultiplyVec(s1, tmp_gpu, dd[0], local_size=None, global_size=int(nufft.Ndprod)) 
+            nufft.prg.cMultiplyVec(s_tmp[pp], tmp_gpu, dd[pp], local_size=None, global_size=int(nufft.Ndprod)) 
+#         nufft.prg.cMultiplyVec(s1, tmp_gpu, dd[0], local_size=None, global_size=int(nufft.Ndprod)) 
         
 #         dd[1] = s2*tmp_gpu
         
-#         nufft.cMultiplyVec(s2, tmp_gpu, dd[1], local_size=None, global_size=int(nufft.Ndprod))
+#         nufft.prg.cMultiplyVec(s2, tmp_gpu, dd[1], local_size=None, global_size=int(nufft.Ndprod))
         
         tmp_gpu = zf+bf
         
@@ -251,7 +251,7 @@ def L1TVLAD(nufft, gy, maxiter, rho): # main function of solver
 #         df.real =0.0+ (df.real>threshold_value)*(df.real - threshold_value) +(df.real<= - threshold_value)*(df.real+threshold_value)
 #         df.imag = 0.0+(df.imag>threshold_value)*(df.imag - threshold_value) +(df.imag<= - threshold_value)*(df.imag+threshold_value)
     
-        nufft.cAnisoShrink(threshold_value,  tmp_gpu, df, local_size=None, global_size=int(nufft.Ndprod))
+        nufft.prg.cAnisoShrink(threshold_value,  tmp_gpu, df, local_size=None, global_size=int(nufft.Ndprod))
         
          
 #                 df =     sy
@@ -337,7 +337,7 @@ def L1TVOLS(nufft, gy, maxiter, rho  ): # main function of solver
 #         rhs -= bf
         
 #         rhs *= mu
-        nufft.cMultiplyScalar( dtype(mu), rhs, local_size=None, global_size=int(nufft.Ndprod))
+        nufft.prg.cMultiplyScalar( dtype(mu), rhs, local_size=None, global_size=int(nufft.Ndprod))
         
 #         print(rhs.get())
         for pp in range(0, ndims): 
@@ -346,10 +346,10 @@ def L1TVOLS(nufft, gy, maxiter, rho  ): # main function of solver
             in_cDiff -= bb[pp]
             
     #         out_cDiff = nufft.thr.empty_like(in_cDiff) 
-            nufft.cDiff(dt_indx[pp], in_cDiff, tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
+            nufft.prg.cDiff(dt_indx[pp], in_cDiff, tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
             
     #         tmp_gpu *= LMBD
-            nufft.cMultiplyScalar( dtype(LMBD), tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
+            nufft.prg.cMultiplyScalar( dtype(LMBD), tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
             
             rhs += tmp_gpu
         
@@ -359,10 +359,10 @@ def L1TVOLS(nufft, gy, maxiter, rho  ): # main function of solver
 #         in_cDiff -= bb[1]
 #         
 # #         out_cDiff = nufft.thr.empty_like(in_cDiff) 
-#         nufft.cDiff(dt_indx[1], in_cDiff, tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
+#         nufft.prg.cDiff(dt_indx[1], in_cDiff, tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
 #         
 # #         tmp_gpu *= LMBD
-#         nufft.cMultiplyScalar( dtype(LMBD), tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
+#         nufft.prg.cMultiplyScalar( dtype(LMBD), tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
 #         
 #         rhs += tmp_gpu
         
@@ -387,9 +387,9 @@ def L1TVOLS(nufft, gy, maxiter, rho  ): # main function of solver
 #         zz[0] = cDiff(xkp1,  d_indx[0])
 #         zz[1] = cDiff(xkp1,  d_indx[1])
         for pp in range(0, ndims):
-            nufft.cDiff(d_indx[pp],  xkp1, zz[pp],  local_size=None, global_size=int(nufft.Ndprod)) 
-#         nufft.cDiff(d_indx[0],  xkp1, zz[0],  local_size=None, global_size=int(nufft.Ndprod))
-#         nufft.cDiff(d_indx[1],  xkp1, zz[1],  local_size=None, global_size=int(nufft.Ndprod))
+            nufft.prg.cDiff(d_indx[pp],  xkp1, zz[pp],  local_size=None, global_size=int(nufft.Ndprod)) 
+#         nufft.prg.cDiff(d_indx[0],  xkp1, zz[0],  local_size=None, global_size=int(nufft.Ndprod))
+#         nufft.prg.cDiff(d_indx[1],  xkp1, zz[1],  local_size=None, global_size=int(nufft.Ndprod))
         
 
 #         zf = AHA(xkp1)  -AHy
@@ -409,42 +409,42 @@ def L1TVOLS(nufft, gy, maxiter, rho  ): # main function of solver
         
 #         s = s1**2 + s2**2
 #         s1 *= s1
-#             nufft.cMultiplyConjVec(s_tmp[pp], s_tmp[pp], tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
+#             nufft.prg.cMultiplyConjVec(s_tmp[pp], s_tmp[pp], tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
         for pp in range(0, ndims):
             if pp > 0:
 #                 s += tmp_gpu
-                nufft.cHypot(s, s_tmp[pp], local_size=None, global_size=int(nufft.Ndprod))
+                nufft.prg.cHypot(s, s_tmp[pp], local_size=None, global_size=int(nufft.Ndprod))
 #                 nufft.thr.synchronize()
             else: # pp == 0
                 s = nufft.thr.copy_array(s_tmp[pp])
-#         nufft.cMultiplyConjVec(s1, s1, tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
+#         nufft.prg.cMultiplyConjVec(s1, s1, tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
 #         s = nufft.thr.copy_array(tmp_gpu)
 # #         s2 *= s2
-#         nufft.cMultiplyConjVec(s2, s2, tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
+#         nufft.prg.cMultiplyConjVec(s2, s2, tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
 #         s += tmp_gpu
         
 #         s = s1 + s2
         
         
-#         nufft.cSqrt(s, local_size=None, global_size=int(nufft.Ndprod))
+#         nufft.prg.cSqrt(s, local_size=None, global_size=int(nufft.Ndprod))
         
         s += 1e-6
         
         threshold_value = dtype(1/LMBD)
 #         r =(s > threshold_value)*(s-threshold_value)/s#numpy.maximum(s - threshold_value ,  0.0)/s
-        nufft.cAnisoShrink(threshold_value, s, tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
+        nufft.prg.cAnisoShrink(threshold_value, s, tmp_gpu, local_size=None, global_size=int(nufft.Ndprod))
         tmp_gpu /=s
         
 #         dd[0] = s1*r
 #         dd[1] = s2*r
 #         dd[0] = s1*tmp_gpu
         for pp in range(0, ndims):
-            nufft.cMultiplyVec(s_tmp[pp], tmp_gpu, dd[pp], local_size=None, global_size=int(nufft.Ndprod)) 
-#         nufft.cMultiplyVec(s1, tmp_gpu, dd[0], local_size=None, global_size=int(nufft.Ndprod)) 
+            nufft.prg.cMultiplyVec(s_tmp[pp], tmp_gpu, dd[pp], local_size=None, global_size=int(nufft.Ndprod)) 
+#         nufft.prg.cMultiplyVec(s1, tmp_gpu, dd[0], local_size=None, global_size=int(nufft.Ndprod)) 
         
 #         dd[1] = s2*tmp_gpu
         
-#         nufft.cMultiplyVec(s2, tmp_gpu, dd[1], local_size=None, global_size=int(nufft.Ndprod))
+#         nufft.prg.cMultiplyVec(s2, tmp_gpu, dd[1], local_size=None, global_size=int(nufft.Ndprod))
         
 #         tmp_gpu = zf+bf
         
@@ -453,7 +453,7 @@ def L1TVOLS(nufft, gy, maxiter, rho  ): # main function of solver
 #         df.real =0.0+ (df.real>threshold_value)*(df.real - threshold_value) +(df.real<= - threshold_value)*(df.real+threshold_value)
 #         df.imag = 0.0+(df.imag>threshold_value)*(df.imag - threshold_value) +(df.imag<= - threshold_value)*(df.imag+threshold_value)
     
-#         nufft.cAnisoShrink(threshold_value,  tmp_gpu, df, local_size=None, global_size=int(nufft.Ndprod))
+#         nufft.prg.cAnisoShrink(threshold_value,  tmp_gpu, df, local_size=None, global_size=int(nufft.Ndprod))
         
          
 #                 df =     sy
@@ -495,7 +495,7 @@ def _pipe_density(nufft,maxiter):
             nufft.last_iter = maxiter   
     except:
         W = nufft.thr.copy_array(nufft.y)
-#         nufft.cMultiplyScalar(nufft.zero_scalar, W, local_size=None, global_size=int(nufft.M))
+#         nufft.prg.cMultiplyScalar(nufft.zero_scalar, W, local_size=None, global_size=int(nufft.M))
         W.fill(0.0 + 0.0j)
 #         V1= nufft.st['p'].getH()
     #     VVH = V.dot(V.getH()) 
@@ -505,7 +505,7 @@ def _pipe_density(nufft,maxiter):
 
             E = nufft.forward(nufft.adjoint(W))
             W /= E
-#                 nufft.cMultiplyVecInplace(self.SnGPUArray, self.x_Nd, local_size=None, global_size=int(self.Ndprod))
+#                 nufft.prg.cMultiplyVecInplace(self.SnGPUArray, self.x_Nd, local_size=None, global_size=int(self.Ndprod))
 
 
 
@@ -578,7 +578,7 @@ def solve(nufft,gy, solver=None,  maxiter=30, *args, **kwargs):
 #         rsold.fill(0.0 + 0.0j)
         nufft.reduce_sum(rsold, Ax)
 #         print('Ax',rsold) 
-        nufft.cAddVec(b, - Ax, r , local_size=None, global_size = int(nufft.Kdprod))
+        nufft.prg.cAddVec(b, - Ax, r , local_size=None, global_size = int(nufft.Kdprod))
 #         nufft.thr.synchronize()
         # p = r
         p   =   nufft.thr.copy_array(r)
@@ -586,7 +586,7 @@ def solve(nufft,gy, solver=None,  maxiter=30, *args, **kwargs):
         # rsold = r' * r
         tmp_array = nufft.thr.empty_like( r)
 #         tmp_array.fill(0.0 + 0.0j)
-        nufft.cMultiplyConjVec(r, r, tmp_array, local_size=None, global_size=int(nufft.Kdprod))
+        nufft.prg.cMultiplyConjVec(r, r, tmp_array, local_size=None, global_size=int(nufft.Kdprod))
 #         nufft.thr.synchronize()
         rsold = nufft.thr.empty_like(nufft.reduce_sum.parameter.output)
 #         rsold.fill(0.0 + 0.0j)
@@ -605,7 +605,7 @@ def solve(nufft,gy, solver=None,  maxiter=30, *args, **kwargs):
             Ap = nufft.y2k(tmp_p)
             del tmp_p
 #             alpha = rs_old/(p'*Ap)
-            nufft.cMultiplyConjVec(p, Ap, tmp_array, local_size=None, global_size=int(nufft.Kdprod))
+            nufft.prg.cMultiplyConjVec(p, Ap, tmp_array, local_size=None, global_size=int(nufft.Kdprod))
 #             nufft.thr.synchronize()
             nufft.reduce_sum(tmp_sum, tmp_array)
             
@@ -619,21 +619,21 @@ def solve(nufft,gy, solver=None,  maxiter=30, *args, **kwargs):
 #             print(pp,rsold , alpha, numpy.sum(tmp_array.get()) )
             # x = x + alpha*p
             p2 = nufft.thr.copy_array(p)
-            nufft.cMultiplyScalar(alpha.get(), p2,  local_size=None, global_size=int(nufft.Kdprod))
+            nufft.prg.cMultiplyScalar(alpha.get(), p2,  local_size=None, global_size=int(nufft.Kdprod))
 #             nufft.thr.synchronize()
-#             nufft.cAddVec(x, alpha, local_size=None, global_size=int(nufft.Kdprod))
+#             nufft.prg.cAddVec(x, alpha, local_size=None, global_size=int(nufft.Kdprod))
             x += p2
  
             # r = r - alpha * Ap
             p2= nufft.thr.copy_array(Ap)
 #             nufft.thr.synchronize()
-            nufft.cMultiplyScalar(alpha.get(), p2,  local_size=None, global_size=int(nufft.Kdprod))
+            nufft.prg.cMultiplyScalar(alpha.get(), p2,  local_size=None, global_size=int(nufft.Kdprod))
 #             nufft.thr.synchronize()
             r -= p2
 #             print(pp, numpy.sum(x.get()), numpy.sum(r.get()))
             # rs_new = r'*r
              
-            nufft.cMultiplyConjVec(r,    r,  tmp_array, local_size=None, global_size=int(nufft.Kdprod))
+            nufft.prg.cMultiplyConjVec(r,    r,  tmp_array, local_size=None, global_size=int(nufft.Kdprod))
 #             nufft.thr.synchronize()
             nufft.reduce_sum(rsnew, tmp_array)        
              
@@ -644,9 +644,9 @@ def solve(nufft,gy, solver=None,  maxiter=30, *args, **kwargs):
 #                 beta_cpu = 0
 #             print(beta, rsnew, rsold)
             p2= nufft.thr.copy_array(p)
-            nufft.cMultiplyScalar(beta.get(),   p2,  local_size=None, global_size=int(nufft.Kdprod))
+            nufft.prg.cMultiplyScalar(beta.get(),   p2,  local_size=None, global_size=int(nufft.Kdprod))
 #             nufft.thr.synchronize()
-            nufft.cAddVec(r, p2, p, local_size=None, global_size=int(nufft.Kdprod))
+            nufft.prg.cAddVec(r, p2, p, local_size=None, global_size=int(nufft.Kdprod))
 #             nufft.thr.synchronize()
             p = r + p2
              

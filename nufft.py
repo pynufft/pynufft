@@ -710,9 +710,11 @@ class NUFFT_cpu2:
         vec = tensor.flatten(order='C')
         return vec
 
-class NUFFT_hsa(NUFFT_cpu):
+class NUFFT_hsa_legacy(NUFFT_cpu):
     """
-    Class NUFFT_hsa for heterogeneous systems.
+    (deprecated) Classical precomputed NUFFT_hsa for heterogeneous systems.
+    Naive implementation of multi-dimensional NUFFT on GPU.
+    Will be removed in future releases due to large memory size of 3D interpolator.
    """
 
     def __init__(self):
@@ -809,24 +811,24 @@ class NUFFT_hsa(NUFFT_cpu):
         prg = self.thr.compile(kernel_sets, 
                                 render_kwds=dict(LL =  str(self.wavefront)), 
                                 fast_math=False)
-
-        self.cMultiplyScalar = prg.cMultiplyScalar
-        self.cCopy = prg.cCopy
-        self.cAddScalar = prg.cAddScalar
-        self.cAddVec = prg.cAddVec
-        self.cCSR_spmv_vector = prg.cCSR_spmv_vector
-        self.cCSR_spmvh_scalar = prg.cCSR_spmvh_scalar     
-        self.cSelect = prg.cSelect
-        self.cMultiplyVecInplace = prg.cMultiplyVecInplace
-        self.cMultiplyVec = prg.cMultiplyVec
-        self.cMultiplyConjVec = prg.cMultiplyConjVec
-        self.cDiff = prg.cDiff
-        self.cSqrt= prg.cSqrt
-        self.cAnisoShrink = prg.cAnisoShrink        
-        self.cHypot = prg.cHypot               
-#         self.cELL_spmv_scalar = prg.cELL_spmv_scalar
-#         self.cELL_spmv_vector = prg.cELL_spmv_vector
-#         self.cELL_spmvh_scalar = prg.cELL_spmvh_scalar
+        self.prg = prg
+#         self.prg.cMultiplyScalar = prg.cMultiplyScalar
+#         self.prg.cCopy = prg.cCopy
+#         self.prg.cAddScalar = prg.cAddScalar
+#         self.prg.cAddVec = prg.cAddVec
+#         self.prg.cCSR_spmv_vector = prg.cCSR_spmv_vector
+#         self.prg.cCSR_spmvh_scalar = prg.cCSR_spmvh_scalar     
+#         self.prg.cSelect = prg.cSelect
+#         self.prg.cMultiplyVecInplace = prg.cMultiplyVecInplace
+#         self.prg.cMultiplyVec = prg.cMultiplyVec
+#         self.prg.cMultiplyConjVec = prg.cMultiplyConjVec
+#         self.prg.cDiff = prg.cDiff
+#         self.prg.cSqrt= prg.cSqrt
+#         self.prg.cAnisoShrink = prg.cAnisoShrink        
+#         self.prg.cHypot = prg.cHypot               
+#         self.prg.cELL_spmv_scalar = prg.cELL_spmv_scalar
+#         self.prg.cELL_spmv_vector = prg.cELL_spmv_vector
+#         self.prg.cELL_spmvh_scalar = prg.cELL_spmvh_scalar
                       
 #         self.pELL_spmv_scalar = prg.pELL_spmv_scalar
 #         self.pELL_spmv_vector = prg.pELL_spmv_vector
@@ -846,25 +848,41 @@ class NUFFT_hsa(NUFFT_cpu):
 #         self.ellcol = self.thr.to_device(self.st['ell'].col)
 #         self.elldata = self.thr.to_device(self.st['ell'].data.astype(self.dtype))
         
-        
-        self.NdGPUorder = self.thr.to_device( self.NdCPUorder)
-        self.KdGPUorder =  self.thr.to_device( self.KdCPUorder)
+        self.volume = {}
+        self.volume['NdGPUorder'] =  self.thr.to_device( self.NdCPUorder)
+        self.volume['KdGPUorder'] =  self.thr.to_device( self.KdCPUorder)
+        self.volume['SnGPUArray'] = self.thr.to_device(  self.sn)
+#         self.NdGPUorder = self.thr.to_device( self.NdCPUorder)
+#         self.KdGPUorder =  self.thr.to_device( self.KdCPUorder)
         self.Ndprod = numpy.int32(numpy.prod(self.st['Nd']))
         self.Kdprod = numpy.int32(numpy.prod(self.st['Kd']))
         self.M = numpy.int32( self.st['M'])
         
-        self.SnGPUArray = self.thr.to_device(  self.sn)
+#         self.SnGPUArray = self.thr.to_device(  self.sn)
+        self.csr = {}
+        self.csrH = {}
+        self.csr['data'] = self.thr.to_device( self.sp.data.astype(self.dtype))
+        self.csr['indices'] = self.thr.to_device( self.sp.indices.astype(numpy.uint32))
+        self.csr['indptr'] =  self.thr.to_device( self.sp.indptr.astype(numpy.uint32))
+        self.csr['numrow'] = self.M
+        self.csr['numcol'] = self.Kdprod
         
-        self.sp_data = self.thr.to_device( self.sp.data.astype(self.dtype))
-        self.sp_indices =self.thr.to_device( self.sp.indices.astype(numpy.uint32))
-        self.sp_indptr = self.thr.to_device( self.sp.indptr.astype(numpy.uint32))
-        self.sp_numrow =  self.M
-        self.sp_numcol = self.Kdprod
+#         self.sp_data = self.thr.to_device( self.sp.data.astype(self.dtype))
+#         self.sp_indices =self.thr.to_device( self.sp.indices.astype(numpy.uint32))
+#         self.sp_indptr = self.thr.to_device( self.sp.indptr.astype(numpy.uint32))
+#         self.sp_numrow =  self.M
+#         self.sp_numcol = self.Kdprod
         del self.sp
-        self.spH_data = self.thr.to_device(  self.spH.data.astype(self.dtype))
-        self.spH_indices = self.thr.to_device(  self.spH.indices.astype(numpy.uint32))
-        self.spH_indptr = self.thr.to_device(  self.spH.indptr.astype(numpy.uint32))
-        self.spH_numrow = self.Kdprod
+        self.csrH['data'] = self.thr.to_device(  self.spH.data.astype(self.dtype))
+        self.csrH['indices'] =  self.thr.to_device(  self.spH.indices.astype(numpy.uint32))
+        
+        self.csrH['indptr'] =  self.thr.to_device(  self.spH.indptr.astype(numpy.uint32))
+        self.csrH['numrow'] = self.Kdprod
+        
+#         self.spH_data = self.thr.to_device(  self.spH.data.astype(self.dtype))
+#         self.spH_indices = self.thr.to_device(  self.spH.indices.astype(numpy.uint32))
+#         self.spH_indptr = self.thr.to_device(  self.spH.indptr.astype(numpy.uint32))
+#         self.spH_numrow = self.Kdprod
         del self.spH
 #         self.spHsp_data = self.thr.to_device(  self.spHsp.data.astype(self.dtype))
 #         self.spHsp_indices = self.thr.to_device( self.spHsp.indices)
@@ -877,7 +895,12 @@ class NUFFT_hsa(NUFFT_cpu):
         self.fft = reikna.fft.FFT(numpy.empty(self.st['Kd'], dtype=self.dtype), self.ft_axes).compile(self.thr, fast_math=False)
 
         self.zero_scalar=self.dtype(0.0+0.0j)
-
+    def release(self):
+        del self.volume
+        del self.csr
+        del self.csrH
+        del self.prg
+        del self.thr
     def solve(self,gy, solver=None, *args, **kwargs):
         """
         The solver of NUFFT_hsa
@@ -991,7 +1014,7 @@ class NUFFT_hsa(NUFFT_cpu):
         """           
         xx = self.thr.array(self.st['Nd'], dtype=self.dtype)
         self.thr.copy_array(x, xx, )#src_offset, dest_offset, size)
-        self.cMultiplyVecInplace(self.SnGPUArray, xx, local_size=None, global_size=int(self.Ndprod))
+        self.prg.cMultiplyVecInplace(self.volume['SnGPUArray'], xx, local_size=None, global_size=int(self.Ndprod))
         self.thr.synchronize()
         return xx
     
@@ -1005,8 +1028,8 @@ class NUFFT_hsa(NUFFT_cpu):
         """
         k = self.thr.array(self.st['Kd'], dtype = self.dtype)
         k.fill(0)
-#         self.cMultiplyScalar(self.zero_scalar, k, local_size=None, global_size=int(self.Kdprod))
-        self.cSelect(self.NdGPUorder,      self.KdGPUorder,  xx, k, local_size=None, global_size=int(self.Ndprod))
+#         self.prg.cMultiplyScalar(self.zero_scalar, k, local_size=None, global_size=int(self.Kdprod))
+        self.prg.cSelect(self.volume['NdGPUorder'],      self.volume['KdGPUorder'],  xx, k, local_size=None, global_size=int(self.Ndprod))
         self.fft( k, k,inverse=False)
         self.thr.synchronize()
         return k
@@ -1016,7 +1039,7 @@ class NUFFT_hsa(NUFFT_cpu):
 #         Private: interpolation by the Sparse Matrix-Vector Multiplication
 #         """
 #         y =self.thr.array( (self.st['M'],), dtype=self.dtype).fill(0)
-# #         self.cCSR_spmv_vector(                                
+# #         self.prg.cCSR_spmv_vector(                                
 # #                            self.sp_numrow, 
 # #                            self.sp_indptr,
 # #                            self.sp_indices,
@@ -1026,7 +1049,7 @@ class NUFFT_hsa(NUFFT_cpu):
 # #                            local_size=int(self.wavefront),
 # #                            global_size=int(self.sp_numrow*self.wavefront) 
 # #                             )
-# #         self.cELL_spmv_scalar(                                
+# #         self.prg.cELL_spmv_scalar(                                
 # #                            self.sp_numrow, 
 # #                            numpy.int32(self.st['ell'].colWidth),
 # #                            self.sp_indices,
@@ -1037,7 +1060,7 @@ class NUFFT_hsa(NUFFT_cpu):
 # #                            global_size=int(self.sp_numrow) 
 # #                             )
 # 
-# #         self.cELL_spmv_vector(                                
+# #         self.prg.cELL_spmv_vector(                                
 # #                           self.sp_numrow, 
 # #                           numpy.uint32(self.st['ell'].colWidth),
 # #                           self.sp_indices,
@@ -1085,17 +1108,17 @@ class NUFFT_hsa(NUFFT_cpu):
         Private: interpolation by the Sparse Matrix-Vector Multiplication
         """
         y =self.thr.array( (self.st['M'],), dtype=self.dtype).fill(0)
-        self.cCSR_spmv_vector(                                
-                           self.sp_numrow, 
-                           self.sp_indptr,
-                           self.sp_indices,
-                           self.sp_data, 
+        self.prg.cCSR_spmv_vector(                                
+                           self.csr['numrow'], 
+                           self.csr['indptr'],
+                           self.csr['indices'],
+                           self.csr['data'], 
                            k,
                            y,
                            local_size=int(self.wavefront),
-                           global_size=int(self.sp_numrow*self.wavefront) 
+                           global_size=int(self.csr['numrow']*self.wavefront) 
                             )
-#         self.cELL_spmv_scalar(                                
+#         self.prg.cELL_spmv_scalar(                                
 #                            self.sp_numrow, 
 #                            numpy.int32(self.st['ell'].colWidth),
 #                            self.sp_indices,
@@ -1106,7 +1129,7 @@ class NUFFT_hsa(NUFFT_cpu):
 #                            global_size=int(self.sp_numrow) 
 #                             )
 
-#         self.cELL_spmv_vector(                                
+#         self.prg.cELL_spmv_vector(                                
 #                           self.sp_numrow, 
 #                           numpy.uint32(self.st['ell'].colWidth),
 #                           self.sp_indices,
@@ -1156,15 +1179,15 @@ class NUFFT_hsa(NUFFT_cpu):
         """
         k = self.thr.array(self.st['Kd'], dtype = self.dtype)
    
-        self.cCSR_spmv_vector(
-                           self.spH_numrow, 
-                           self.spH_indptr,
-                           self.spH_indices,
-                           self.spH_data, 
+        self.prg.cCSR_spmv_vector(
+                           self.csrH['numrow'], 
+                           self.csrH['indptr'],
+                           self.csrH['indices'],
+                           self.csrH['data'], 
                            y,
                            k,
                            local_size=int(self.wavefront),
-                           global_size=int(self.spH_numrow*self.wavefront) 
+                           global_size=int(self.csrH['numrow']*self.wavefront) 
                             )#,g_times_l=int(csrnumrow))
 
         self.thr.synchronize()
@@ -1178,10 +1201,10 @@ class NUFFT_hsa(NUFFT_cpu):
         self.fft( k, k, inverse=True)
         self.thr.synchronize()
 #         self.x_Nd._zero_fill()
-#         self.cMultiplyScalar(self.zero_scalar, xx,  local_size=None, global_size=int(self.Ndprod ))
+#         self.prg.cMultiplyScalar(self.zero_scalar, xx,  local_size=None, global_size=int(self.Ndprod ))
         xx.fill(0)
-#         self.cSelect(self.queue, (self.Ndprod,), None,   self.KdGPUorder.data,  self.NdGPUorder.data,     self.k_Kd2.data, self.x_Nd.data )
-        self.cSelect(  self.KdGPUorder,  self.NdGPUorder,     k, xx, local_size=None, global_size=int(self.Ndprod ))
+#         self.prg.cSelect(self.queue, (self.Ndprod,), None,   self.KdGPUorder.data,  self.NdGPUorder.data,     self.k_Kd2.data, self.x_Nd.data )
+        self.prg.cSelect(  self.volume['KdGPUorder'],  self.volume['NdGPUorder'],     k, xx, local_size=None, global_size=int(self.Ndprod ))
         
         return xx
     def xx2x(self, xx):
@@ -1194,7 +1217,7 @@ class NUFFT_hsa(NUFFT_cpu):
 
     
 #     
-class NUFFT_memsave(NUFFT_hsa):
+class NUFFT_hsa(NUFFT_cpu):
     """
     Multi-coil or single-coil memory reduced NUFFT. 
     """
@@ -1218,7 +1241,7 @@ class NUFFT_memsave(NUFFT_hsa):
         """
         
         pass
-        NUFFT_hsa.__init__(self)
+        NUFFT_cpu.__init__(self)
         print("Note: In the future the api will change!")
         print("You have been warned!")
         
@@ -1370,52 +1393,27 @@ class NUFFT_memsave(NUFFT_hsa):
         prg = self.thr.compile(kernel_sets, 
                                 render_kwds=dict(LL =  str(self.wavefront)), 
                                 fast_math=False)
-
-        self.cMultiplyScalar = prg.cMultiplyScalar
-        self.cCopy = prg.cCopy
-        self.cAddScalar = prg.cAddScalar
-        self.cAddVec = prg.cAddVec
-        self.cCSR_spmv_vector = prg.cCSR_spmv_vector
-        self.cCSR_spmvh_scalar = prg.cCSR_spmvh_scalar     
-        self.cSelect = prg.cSelect
-        self.cMultiplyVecInplace = prg.cMultiplyVecInplace
-        self.cMultiplyConjVecInplace = prg.cMultiplyConjVecInplace
-        self.cMultiplyVec = prg.cMultiplyVec
-        self.cMultiplyConjVec = prg.cMultiplyConjVec
-        self.cDiff = prg.cDiff
-        self.cSqrt= prg.cSqrt
-        self.cAnisoShrink = prg.cAnisoShrink        
-        self.cHypot = prg.cHypot               
-#         self.cELL_spmv_scalar = prg.cELL_spmv_scalar
-#         self.cELL_spmv_vector = prg.cELL_spmv_vector
-#         self.cELL_spmvh_scalar = prg.cELL_spmvh_scalar
-                      
-#         self.pELL_spmv_scalar = prg.pELL_spmv_scalar
-
-#         self.pELL_spmv_vector = prg.pELL_spmv_vector
-#         self.pELL_spmvh_vector = prg.pELL_spmvh_vector
+        self.prg = prg
         
-        self.pELL_spmv_mCoil = prg.pELL_spmv_mCoil
-        self.pELL_spmvh_mCoil = prg.pELL_spmvh_mCoil
-        self.cSelect2 = prg.cSelect2
-        self.cDistribute = prg.cDistribute
-        self.cMerge = prg.cMerge
-        self.cPopulate= prg.cPopulate
-        self.cAggregate = prg.cAggregate
         
-        self.pELL_nRow = numpy.uint32(self.st['pELL'].nRow)
-        self.pELL_prodJd = numpy.uint32(self.st['pELL'].prodJd)
-        self.pELL_sumJd = numpy.uint32(self.st['pELL'].sumJd)
-        self.pELL_dim   = numpy.uint32(self.st['pELL'].dim)
-        self.pELL_Jd= self.thr.to_device(self.st['pELL'].Jd.astype(numpy.uint32))
-#         self.pELL_currsumJd = self.thr.to_device(self.st['pELL'].curr_sumJd.astype(numpy.uint32))
-        self.pELL_meshindex = self.thr.to_device(self.st['pELL'].meshindex.astype(numpy.uint32))
-        self.pELL_kindx = self.thr.to_device(self.st['pELL'].kindx.astype(numpy.uint32))
-        self.pELL_udata = self.thr.to_device(self.st['pELL'].udata.astype(self.dtype))
+        self.pELL = {} # dictionary
         
+        self.pELL['nRow'] = numpy.uint32(self.st['pELL'].nRow)
+        self.pELL['prodJd'] = numpy.uint32(self.st['pELL'].prodJd)
+        self.pELL['sumJd'] = numpy.uint32(self.st['pELL'].sumJd)
+        self.pELL['dim'] = numpy.uint32(self.st['pELL'].dim)
+        self.pELL['Jd'] = self.thr.to_device(self.st['pELL'].Jd.astype(numpy.uint32))
+        self.pELL['meshindex'] = self.thr.to_device(self.st['pELL'].meshindex.astype(numpy.uint32))
+        self.pELL['kindx'] = self.thr.to_device(self.st['pELL'].kindx.astype(numpy.uint32))
+        self.pELL['udata'] = self.thr.to_device(self.st['pELL'].udata.astype(self.dtype))
+    
+        self.volume = {}
+        self.volume['gpu_sense2'] = self.thr.to_device(self.sense2.astype(self.dtype))
+        self.volume['NdGPUorder'] =self.thr.to_device(self.NdCPUorder)
+        self.volume['KdGPUorder'] = self.thr.to_device(self.KdCPUorder)
         
 #         self.gpu_sense = self.thr.to_device((self.sense.astype(self.dtype)* self.sn.reshape(self.Nd + (1,))).astype(self.dtype))
-        self.gpu_sense2 = self.thr.to_device(self.sense2.astype(self.dtype))
+#         self.gpu_sense2 = self.thr.to_device(self.sense2.astype(self.dtype))
         #sense2 is the sensitivities multiplied by roll-off (scaling factor)
         
 #         print('dim = ', self.pELL_dim )
@@ -1423,13 +1421,13 @@ class NUFFT_memsave(NUFFT_hsa):
 #         self.elldata = self.thr.to_device(self.st['ell'].data.astype(self.dtype))
         
         
-        self.NdGPUorder = self.thr.to_device(self.NdCPUorder)
-        self.KdGPUorder =  self.thr.to_device(self.KdCPUorder)
+#         self.NdGPUorder = self.thr.to_device(self.NdCPUorder)
+#         self.KdGPUorder =  self.thr.to_device(self.KdCPUorder)
         self.Ndprod = numpy.int32(numpy.prod(self.st['Nd']))
         self.Kdprod = numpy.int32(numpy.prod(self.st['Kd']))
         self.M = numpy.int32(self.st['M'])
         
-        self.SnGPUArray = self.thr.to_device(self.sn)
+#         self.SnGPUArray = self.thr.to_device(self.sn)
         
 #         self.sp_data = self.thr.to_device( self.sp.data.astype(self.dtype))
 #         self.sp_indices =self.thr.to_device( self.sp.indices.astype(numpy.uint32))
@@ -1470,14 +1468,18 @@ class NUFFT_memsave(NUFFT_hsa):
         return xx
     
     def x2z(self, x):
-        x_in = self.thr.array(self.st['Nd'], dtype=self.dtype)
-        self.thr.copy_array(x, x_in,)#src_offset, dest_offset, size)
+#         print("In x2z")
+#         x_in = self.thr.array(self.st['Nd'], dtype=self.dtype)
+#         print("Copy input to output")
+#         self.thr.copy_array(x, x_in,)#src_offset, dest_offset, size)
         xx = self.thr.array(self.multi_Nd, dtype=self.dtype)
-        self.cPopulate(self.Reps, self.Ndprod, x_in, xx, local_size = None, global_size = int(self.Reps * self.Ndprod) )
+#         print("Now populate the array to multi-coil")
+        self.prg.cPopulate(self.Reps, self.Ndprod, x, xx, local_size = None, global_size = int(self.Reps * self.Ndprod) )
+#         print("End of x2z")
         return xx
                 
     def z2xx(self, xx):
-        self.cMultiplyVecInplace(self.gpu_sense2, xx, local_size=None, global_size=int(self.Ndprod * self.Reps))
+        self.prg.cMultiplyVecInplace(self.volume['gpu_sense2'], xx, local_size=None, global_size=int(self.Ndprod * self.Reps))
         self.thr.synchronize()
         return xx
     
@@ -1493,9 +1495,9 @@ class NUFFT_memsave(NUFFT_hsa):
         k = self.thr.array(self.multi_Kd, dtype = self.dtype)
                     
         k.fill(0)
-#         self.cMultiplyScalar(self.zero_scalar, k, local_size=None, global_size=int(self.Kdprod))
-#         self.cSelect(self.NdGPUorder,      self.KdGPUorder,  xx, k, local_size=None, global_size=int(self.Ndprod))
-        self.cSelect2(self.Reps, self.NdGPUorder, self.KdGPUorder, xx, k, local_size = None, global_size = int(self.Ndprod * self.Reps))
+#         self.prg.cMultiplyScalar(self.zero_scalar, k, local_size=None, global_size=int(self.Kdprod))
+#         self.prg.cSelect(self.NdGPUorder,      self.KdGPUorder,  xx, k, local_size=None, global_size=int(self.Ndprod))
+        self.prg.cSelect2(self.Reps, self.volume['NdGPUorder'], self.volume['KdGPUorder'], xx, k, local_size = None, global_size = int(self.Ndprod * self.Reps))
         self.fft( k, k,inverse=False)
 #         self.thr.synchronize()
         return k    
@@ -1509,21 +1511,21 @@ class NUFFT_memsave(NUFFT_hsa):
 #         else:
 #             y =self.thr.array( (self.st['M'], ), dtype=self.dtype).fill(0)
         y =self.thr.array( self.multi_M, dtype=self.dtype).fill(0)
-        self.pELL_spmv_mCoil(
+        self.prg.pELL_spmv_mCoil(
                             self.Reps, 
-                            self.pELL_nRow,
-                            self.pELL_prodJd,
-                            self.pELL_sumJd, 
-                            self.pELL_dim,
-                            self.pELL_Jd,
+                            self.pELL['nRow'],
+                            self.pELL['prodJd'],
+                            self.pELL['sumJd'], 
+                            self.pELL['dim'],
+                            self.pELL['Jd'],
 #                             self.pELL_currsumJd,
-                            self.pELL_meshindex,
-                            self.pELL_kindx,
-                            self.pELL_udata, 
+                            self.pELL['meshindex'],
+                            self.pELL['kindx'],
+                            self.pELL['udata'], 
                             k,
                             y,
                             local_size= int(self.wavefront),
-                            global_size= int(self.pELL_nRow * self.Reps * self.wavefront)             
+                            global_size= int(self.pELL['nRow'] * self.Reps * self.wavefront)             
                             )           
 #         self.thr.synchronize()
         return y
@@ -1543,20 +1545,20 @@ class NUFFT_memsave(NUFFT_hsa):
         kx = self.thr.array(self.multi_Kd, dtype = numpy.float32).fill(0.0)
         ky = self.thr.array(self.multi_Kd, dtype = numpy.float32).fill(0.0)
         
-        self.pELL_spmvh_mCoil(
+        self.prg.pELL_spmvh_mCoil(
                             self.Reps, 
-                            self.pELL_nRow,
-                            self.pELL_prodJd,
-                            self.pELL_sumJd, 
-                            self.pELL_dim,
-                            self.pELL_Jd,
-                            self.pELL_meshindex,
-                            self.pELL_kindx,
-                            self.pELL_udata, 
+                            self.pELL['nRow'],
+                            self.pELL['prodJd'],
+                            self.pELL['sumJd'], 
+                            self.pELL['dim'],
+                            self.pELL['Jd'],
+                            self.pELL['meshindex'],
+                            self.pELL['kindx'],
+                            self.pELL['udata'], 
                             kx, ky, 
                             y,
                             local_size=None,
-                            global_size= int(self.pELL_nRow * self.pELL_prodJd * self.Reps)             
+                            global_size= int(self.pELL['nRow'] * self.pELL['prodJd']* self.Reps)             
                             )         
         k = kx+1.0j* ky
         
@@ -1573,28 +1575,28 @@ class NUFFT_memsave(NUFFT_hsa):
         self.fft( k, k, inverse=True)
 #         self.thr.synchronize()
 #         self.x_Nd._zero_fill()
-#         self.cMultiplyScalar(self.zero_scalar, xx,  local_size=None, global_size=int(self.Ndprod ))
+#         self.prg.cMultiplyScalar(self.zero_scalar, xx,  local_size=None, global_size=int(self.Ndprod ))
 #         if self.parallel_flag is 1:
 #             xx = self.thr.array(self.st['Nd'] + (self.Reps, ), dtype = self.dtype)
 #         else:
 #             xx = self.thr.array(self.st['Nd'], dtype = self.dtype)
         xx = self.thr.array(self.multi_Nd, dtype = self.dtype)
         xx.fill(0)
-#         self.cSelect(self.queue, (self.Ndprod,), None,   self.KdGPUorder.data,  self.NdGPUorder.data,     self.k_Kd2.data, self.x_Nd.data )
-        self.cSelect2(self.Reps,  self.KdGPUorder,  self.NdGPUorder,     k, xx, local_size=None, global_size=int(self.Ndprod * self.Reps))
+#         self.prg.cSelect(self.queue, (self.Ndprod,), None,   self.volume['KdGPUorder'].data,  self.NdGPUorder.data,     self.k_Kd2.data, self.x_Nd.data )
+        self.prg.cSelect2(self.Reps,  self.volume['KdGPUorder'],  self.volume['NdGPUorder'],     k, xx, local_size=None, global_size=int(self.Ndprod * self.Reps))
         
         return xx
     def xx2z(self, xx):
         xx_in = self.thr.empty_like(xx)
         self.thr.copy_array(xx, xx_in)
         
-        self.cMultiplyConjVecInplace(self.gpu_sense2, xx_in, local_size=None, global_size =  int(self.Reps * self.Ndprod))
+        self.prg.cMultiplyConjVecInplace(self.volume['gpu_sense2'], xx_in, local_size=None, global_size =  int(self.Reps * self.Ndprod))
         return xx_in
             
     def z2x(self, xx_in):
         x = self.thr.array(self.st['Nd'], dtype=self.dtype)
         
-        self.cAggregate(self.Reps, self.Ndprod, xx_in, x, local_size = int(self.wavefront), global_size = int(self.Reps * self.Ndprod * self.wavefront))
+        self.prg.cAggregate(self.Reps, self.Ndprod, xx_in, x, local_size = int(self.wavefront), global_size = int(self.Reps * self.Ndprod * self.wavefront))
         return x
     def xx2x(self, xx):
         """
@@ -1602,22 +1604,22 @@ class NUFFT_memsave(NUFFT_hsa):
         """
         xx_in = self.xx2z(xx)
         x = self.z2x(xx_in)
-#         xx_in = self.thr.empty_like(xx)
-#         self.thr.copy_array(xx, xx_in)
-#         
-#         self.cMultiplyConjVecInplace(self.gpu_sense2, xx_in, local_size=None, global_size =  int(self.Reps * self.Ndprod))
-        
-#         x = self.thr.array(self.st['Nd'], dtype=self.dtype)
-#         
-#         self.cAggregate(self.Reps, self.Ndprod, xx_in, x, local_size = int(self.wavefront), global_size = int(self.Reps * self.Ndprod * self.wavefront))
-        
-#         self.cMultiplyConjVecInplace(self.SnGPUArray, x, local_size=None, global_size =  int(self.Ndprod))
-        
-#         self.cMerge(self.Reps, self.Ndprod, self.gpu_sense, xx, x, local_size = int(self.wavefront), global_size = int(self.Reps * self.Ndprod * self.wavefront))
-
+        del xx_in
         return x
-
-    def forward_seperate(self, gz):
+    def selfadjoint(self, gx):
+        """
+        selfadjoint NUFFT (Teplitz) on the heterogeneous device
+        
+        :param gx: The input gpu array, with size=Nd
+        :type: reikna gpu array with dtype =numpy.complex64
+        :return: gx: The output gpu array, with size=Nd
+        :rtype: reikna gpu array with dtype =numpy.complex64
+        """                
+        gy = self.forward(gx)
+        gx2 = self.adjoint(gy)
+        del gy
+        return gx2
+    def forward_separate(self, gz):
             """
             Forward NUFFT on the heterogeneous device
             
@@ -1663,26 +1665,27 @@ class NUFFT_memsave(NUFFT_hsa):
                     print('shape of the input = ', x.shape, ', but it should be ', self.Nd)
                 raise
         
-        y = self.forward_seperate(z)
+        y = self.forward_separate(z)
         return y
+    
     def adjoint(self, y):
         try:
-            z = self.adjoint_seperate(y)
+            z = self.adjoint_separate(y)
         except: # gx is not a gpu array 
             try:
                 print('The input array may not be a GPUarray.')
                 print('Automatically moving the input array to gpu, which is throttled by PCI bus.')
                 print('You have been warned!')
                 py = self.thr.to_device(numpy.asarray(y.astype(self.dtype),  order = 'C' ))
-                z = self.adjoint_seperate(py)
+                z = self.adjoint_separate(py)
             except:
                 print('Failed at self.adjont! Please check the gy shape, type, stride.')
                 raise        
-#         z = self.adjoint_seperate(y)
+#         z = self.adjoint_separate(y)
         x = self.z2x(z)
         return x
         
-    def adjoint_seperate(self, gy):
+    def adjoint_separate(self, gy):
             """
             Adjoint NUFFT on the heterogeneous device
             
@@ -1711,7 +1714,42 @@ class NUFFT_memsave(NUFFT_hsa):
             gx = self.xx2z(xx)
             del xx
             return gx
-
+    def release(self):
+        del self.volume
+        del self.prg
+        del self.pELL
+        del self.thr
+    def solve(self,gy, solver=None, *args, **kwargs):
+        """
+        The solver of NUFFT_hsa
+        
+        :param gy: data, reikna array, (M,) size
+        :param solver: could be 'cg', 'L1TVOLS', 'L1TVLAD' 
+        :param maxiter: the number of iterations
+        :type gy: reikna array, dtype = numpy.complex64
+        :type solver: string
+        :type maxiter: int
+        :return: reikna array with size Nd
+        """
+        from .linalg.solve_hsa import solve
+        
+            
+        try:
+            return solve(self,  gy,  solver, *args, **kwargs)
+        except:
+            try:
+                    print('The input array may not be a GPUarray.')
+                    print('Automatically moving the input array to gpu, which is throttled by PCI bus.')
+                    print('You have been warned!')
+                    py = self.thr.to_device(numpy.asarray(gy.astype(self.dtype),  order = 'C' ))
+                    return solve(self,  py,  solver, *args, **kwargs)
+            except:
+                if numpy.ndarray==type(gy):
+                    print("input gy must be a reikna array with dtype = numpy.complex64")
+                    raise #TypeError
+                else:
+                    print("wrong")
+                    raise #TypeError
 class NUFFT_excalibur(NUFFT_cpu):
     """
     Class NUFFT_hsa for heterogeneous systems.
