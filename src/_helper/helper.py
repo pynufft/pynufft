@@ -32,16 +32,16 @@ def create_laplacian_kernel(nufft):
     ################################
     
     indx = [slice(0, 1) for ss in range(0, n_dims)] # create the n_dims dimensional slice which are all zeros
-    uker[indx] = - 2.0*n_dims # Equivalent to  uker[0,0,0] = -6.0
+    uker[tuple(indx)] = - 2.0*n_dims # Equivalent to  uker[0,0,0] = -6.0
     for pp in range(0,n_dims):
 #         indx1 = indx.copy() # indexing the 1 Only for Python3
         indx1 = list(indx)# indexing; adding list() for Python2/3 compatibility
         indx1[pp] = 1
-        uker[indx1] = 1
+        uker[tuple(indx1)] = 1
 #         indx1 = indx.copy() # indexing the -1  Only for Python3
         indx1 = list(indx)# indexing the 1 Python2/3 compatible
         indx1[pp] = -1
-        uker[indx1] = 1
+        uker[tuple(indx1)] = 1
     ################################
     #    FFT of the multi-dimensional laplacian kernel
     ################################        
@@ -199,51 +199,6 @@ class pELL:
         self.kindx = numpy.array(kindx, order='C')
         self.udata = udata.astype(numpy.complex64)
         
-#         print('self.kindx', self.kindx.shape)
-#         print('self.udata',self.udata.shape)
-#         print('self.meshindex', self.meshindex.shape)
-#         print('meshindex = ', meshindex)
-#         print('curr_sumJd', self.curr_sumJd)
-#         print('prodJd', self.prodJd)
-#         print('nRow', self.nRow)
-#         if 0 == 1:
-#             y = 0+0j
-#             myRow = 0 
-#     #         tmp_sumJd = 0
-#     #         col = 0
-#             
-#             
-#             csrdata=numpy.empty((self.prodJd, ),dtype = numpy.complex64)
-#             csrindeces=numpy.empty((self.prodJd, ),dtype = numpy.uint32)
-#             
-#             for j in range(0, self.prodJd):
-#                 tmp_sumJd = 0
-#                 J = Jd[0]
-#                 index = myRow * self.sumJd +   tmp_sumJd +  self.meshindex.ravel()[j*self.dim +  0]  
-#     #             print(0 , j, index)   
-#                 col = self.kindx.ravel()[ index] 
-#                 spdata =self.udata.ravel()[index]
-#                 tmp_sumJd += J
-#                 
-#     #             if self.dim > 1:
-#                 for dimid in range(1, self.dim):
-#                     J = Jd[dimid]
-#                     index =   myRow * self.sumJd + tmp_sumJd + self.meshindex.ravel()[j* self.dim + dimid] 
-#     #                     print(dimid, j, index)   
-#                     col += self.kindx.ravel()[ index] + 1
-#                     spdata *= self.udata.ravel()[index]
-#                     tmp_sumJd  += J;
-#                 csrdata[j] = spdata      
-#                 csrindeces[j] = col
-#         print('csrdata2 = ', csrdata)
-#         print('csrindeces2 = ', csrindeces)
-#         print('kindx[0, :]', kindx[0,:])
-#             tmp_sumJd = tmp_sumJd + J;             
-        
-#         
-#         
-#         for pp in range(0, self.prodJd):
-            
         
     
 def create_csr(uu, kk, Kd, Jd, M):
@@ -265,8 +220,6 @@ def create_csr(uu, kk, Kd, Jd, M):
     # The shape of sparse matrix
     csrshape = (M, numpy.prod(Kd))
 
-    print('csrdata.shape', csrdata.shape)
-    print('colindx.shape', colindx.shape)
     # Build sparse matrix (interpolator)
 #     csr = scipy.sparse.csr_matrix((csrdata, (rowindx, colindx)),
 #                                        shape=csrshape)
@@ -626,7 +579,7 @@ def plan(om, Nd, Kd, Jd, ft_axes = None, format='CSR'):
 
 
     """
-    Now compute the column indeces for 1D interpolators
+    Now compute the column indices for 1D interpolators
     Each length-Jd interpolator includes Jd points, which are linked to Jd k-space locations
     kd is a tuple storing the 1D interpolators. 
     A following Kronecker product will be needed.

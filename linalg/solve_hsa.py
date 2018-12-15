@@ -661,7 +661,7 @@ def solve(nufft,gy, solver=None,  maxiter=30, *args, **kwargs):
         x2 = nufft.k2xx(x) # x is the solved k space
          
         # rescale the SnGPUArray
-        x2 /= nufft.SnGPUArray
+        x2 /= nufft.volume['gpu_sense2']
+        x3 = nufft.z2x(x2)
          
-         
-        return x2
+        return x3

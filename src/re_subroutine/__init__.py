@@ -1,4 +1,22 @@
 from __future__ import absolute_import # Python2 compatibility
+from . import cMultiplyScalar, cCopy, cAddScalar,cAddVec,  cSelect, cMultiplyVec, cMultiplyConjVecInplace, cMultiplyVecInplace, cMultiplyConjVec, cDiff, cSqrt, cAnisoShrink, cHypot, cSpmv, cSpmvh, atomic_add, cHadamard
+
+def create_kernel_sets(API):
+    kernel_sets = ( cMultiplyScalar.R + 
+                        cCopy.R + cHypot.R +
+                        cAddScalar.R + 
+                        cSelect.R + 
+                        cMultiplyConjVec.R + 
+                        cAddVec.R+  
+                        cMultiplyVecInplace.R + cMultiplyConjVecInplace.R + 
+                        cDiff.R+ cSqrt.R+ cAnisoShrink.R+ cMultiplyVec.R + cSpmv.R + cSpmvh.R + cHadamard.R)
+    if 'cuda' is API:
+        print('Select cuda interface')
+        kernel_sets =  atomic_add.cuda_add + kernel_sets
+    elif 'ocl' is API:
+        print("Selecting opencl interface")
+        kernel_sets =  atomic_add.ocl_add + kernel_sets
+    return kernel_sets
 """
 
 Metaprogramming subroutines (using reikna, pyopencl, pycuda)

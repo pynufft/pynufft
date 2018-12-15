@@ -785,69 +785,14 @@ class NUFFT_hsa_legacy(NUFFT_cpu):
 
         print('wavefront = ',self.wavefront)
 
-        from .src.re_subroutine import cMultiplyScalar, cCopy, cAddScalar,cAddVec,  cSelect, cMultiplyVec, cMultiplyVecInplace, cMultiplyConjVec, cDiff, cSqrt, cAnisoShrink, cHypot, cSpmv, cSpmvh, atomic_add
-
-
-        kernel_sets = ( cMultiplyScalar.R + 
-                                cCopy.R + cHypot.R +
-                                cAddScalar.R + 
-                                cSelect.R + 
-                                cMultiplyConjVec.R + 
-                                cAddVec.R+  
-                                cMultiplyVecInplace.R + 
-                                cDiff.R+ cSqrt.R+ cAnisoShrink.R+ cMultiplyVec.R + cSpmv.R + cSpmvh.R)
-        
-        try:
-            if self.thr.api is cluda.cuda:
-                kernel_sets =  atomic_add.cuda_add + kernel_sets
-        except:
-            try:
-                print("No cuda device, trying ocl")
-                if self.thr.api is cluda.ocl:
-                    kernel_sets =  atomic_add.ocl_add + kernel_sets
-            except:
-                print('no ocl interface')
-                
+        from .src.re_subroutine import create_kernel_sets
+        kernel_sets = create_kernel_sets(API)
+               
         prg = self.thr.compile(kernel_sets, 
                                 render_kwds=dict(LL =  str(self.wavefront)), 
                                 fast_math=False)
         self.prg = prg
-#         self.prg.cMultiplyScalar = prg.cMultiplyScalar
-#         self.prg.cCopy = prg.cCopy
-#         self.prg.cAddScalar = prg.cAddScalar
-#         self.prg.cAddVec = prg.cAddVec
-#         self.prg.cCSR_spmv_vector = prg.cCSR_spmv_vector
-#         self.prg.cCSR_spmvh_scalar = prg.cCSR_spmvh_scalar     
-#         self.prg.cSelect = prg.cSelect
-#         self.prg.cMultiplyVecInplace = prg.cMultiplyVecInplace
-#         self.prg.cMultiplyVec = prg.cMultiplyVec
-#         self.prg.cMultiplyConjVec = prg.cMultiplyConjVec
-#         self.prg.cDiff = prg.cDiff
-#         self.prg.cSqrt= prg.cSqrt
-#         self.prg.cAnisoShrink = prg.cAnisoShrink        
-#         self.prg.cHypot = prg.cHypot               
-#         self.prg.cELL_spmv_scalar = prg.cELL_spmv_scalar
-#         self.prg.cELL_spmv_vector = prg.cELL_spmv_vector
-#         self.prg.cELL_spmvh_scalar = prg.cELL_spmvh_scalar
-                      
-#         self.pELL_spmv_scalar = prg.pELL_spmv_scalar
-#         self.pELL_spmv_vector = prg.pELL_spmv_vector
-#         self.pELL_spmvh_scalar = prg.pELL_spmvh_scalar        
-# 
-#         self.pELL_nRow = numpy.uint32(self.st['pELL'].nRow)
-#         self.pELL_prodJd = numpy.uint32(self.st['pELL'].prodJd)
-#         self.pELL_sumJd = numpy.uint32(self.st['pELL'].sumJd)
-#         self.pELL_dim   = numpy.uint32(self.st['pELL'].dim)
-#         self.pELL_Jd= self.thr.to_device(self.st['pELL'].Jd.astype(numpy.uint32))
-#         self.pELL_currsumJd = self.thr.to_device(self.st['pELL'].curr_sumJd.astype(numpy.uint32))
-#         self.pELL_meshindex = self.thr.to_device(self.st['pELL'].meshindex.astype(numpy.uint32))
-#         self.pELL_kindx = self.thr.to_device(self.st['pELL'].kindx.astype(numpy.uint32))
-#         self.pELL_udata = self.thr.to_device(self.st['pELL'].udata.astype(self.dtype))
-        
-#         print('dim = ', self.pELL_dim )
-#         self.ellcol = self.thr.to_device(self.st['ell'].col)
-#         self.elldata = self.thr.to_device(self.st['ell'].data.astype(self.dtype))
-        
+
         self.volume = {}
         self.volume['NdGPUorder'] =  self.thr.to_device( self.NdCPUorder)
         self.volume['KdGPUorder'] =  self.thr.to_device( self.KdCPUorder)
@@ -1367,29 +1312,10 @@ class NUFFT_hsa(NUFFT_cpu):
 
         print('wavefront = ',self.wavefront)
 
-        from .src.re_subroutine import cMultiplyScalar, cCopy, cAddScalar,cAddVec,  cSelect, cMultiplyVec, cMultiplyConjVecInplace, cMultiplyVecInplace, cMultiplyConjVec, cDiff, cSqrt, cAnisoShrink, cHypot, cSpmv, cSpmvh, atomic_add, cHadamard
 
-        kernel_sets = ( cMultiplyScalar.R + 
-                                cCopy.R + cHypot.R +
-                                cAddScalar.R + 
-                                cSelect.R + 
-                                cMultiplyConjVec.R + 
-                                cAddVec.R+  
-                                cMultiplyVecInplace.R + cMultiplyConjVecInplace.R + 
-                                cDiff.R+ cSqrt.R+ cAnisoShrink.R+ cMultiplyVec.R + cSpmv.R + cSpmvh.R + cHadamard.R)
-        
-        try: # switching between cuda and opencl
-            if self.thr.api is cluda.cuda:
-                print('Select cuda interface')
-                kernel_sets =  atomic_add.cuda_add + kernel_sets
-        except:
-            try:
-                print("Selecting opencl interface")
-                if self.thr.api is cluda.ocl:
-                    kernel_sets =  atomic_add.ocl_add + kernel_sets
-            except:
-                print('no ocl interface')
-                
+        from .src.re_subroutine import create_kernel_sets
+        kernel_sets = create_kernel_sets(API)
+               
         prg = self.thr.compile(kernel_sets, 
                                 render_kwds=dict(LL =  str(self.wavefront)), 
                                 fast_math=False)
@@ -1412,40 +1338,10 @@ class NUFFT_hsa(NUFFT_cpu):
         self.volume['NdGPUorder'] =self.thr.to_device(self.NdCPUorder)
         self.volume['KdGPUorder'] = self.thr.to_device(self.KdCPUorder)
         
-#         self.gpu_sense = self.thr.to_device((self.sense.astype(self.dtype)* self.sn.reshape(self.Nd + (1,))).astype(self.dtype))
-#         self.gpu_sense2 = self.thr.to_device(self.sense2.astype(self.dtype))
-        #sense2 is the sensitivities multiplied by roll-off (scaling factor)
-        
-#         print('dim = ', self.pELL_dim )
-#         self.ellcol = self.thr.to_device(self.st['ell'].col)
-#         self.elldata = self.thr.to_device(self.st['ell'].data.astype(self.dtype))
-        
-        
-#         self.NdGPUorder = self.thr.to_device(self.NdCPUorder)
-#         self.KdGPUorder =  self.thr.to_device(self.KdCPUorder)
         self.Ndprod = numpy.int32(numpy.prod(self.st['Nd']))
         self.Kdprod = numpy.int32(numpy.prod(self.st['Kd']))
         self.M = numpy.int32(self.st['M'])
         
-#         self.SnGPUArray = self.thr.to_device(self.sn)
-        
-#         self.sp_data = self.thr.to_device( self.sp.data.astype(self.dtype))
-#         self.sp_indices =self.thr.to_device( self.sp.indices.astype(numpy.uint32))
-#         self.sp_indptr = self.thr.to_device( self.sp.indptr.astype(numpy.uint32))
-#         self.sp_numrow =  self.M
-#         self.sp_numcol = self.Kdprod
-#         del self.sp
-#         self.spH_data = self.thr.to_device(  self.spH.data.astype(self.dtype))
-#         self.spH_indices = self.thr.to_device(  self.spH.indices.astype(numpy.uint32))
-#         self.spH_indptr = self.thr.to_device(  self.spH.indptr.astype(numpy.uint32))
-#         self.spH_numrow = self.Kdprod
-#         del self.spH
-
-#         self.spHsp_data = self.thr.to_device(  self.spHsp.data.astype(self.dtype))
-#         self.spHsp_indices = self.thr.to_device( self.spHsp.indices)
-#         self.spHsp_indptr =self.thr.to_device(  self.spHsp.indptr)
-#         self.spHsp_numrow = self.Kdprod
-#         del self.spHsp
 
         import reikna.fft
         if self.Reps > 1: # batch mode
@@ -1614,43 +1510,53 @@ class NUFFT_hsa(NUFFT_cpu):
         :type: reikna gpu array with dtype =numpy.complex64
         :return: gx: The output gpu array, with size=Nd
         :rtype: reikna gpu array with dtype =numpy.complex64
-        """                
+        """      
+        try:
+            self.thr._context.push()
+        except:
+            pass        
         gy = self.forward(gx)
         gx2 = self.adjoint(gy)
         del gy
         return gx2
     def forward_separate(self, gz):
-            """
-            Forward NUFFT on the heterogeneous device
-            
-            :param gx: The input gpu array, with size=Nd
-            :type: reikna gpu array with dtype =numpy.complex64
-            :return: gy: The output gpu array, with size=(M,)
-            :rtype: reikna gpu array with dtype =numpy.complex64
-            """
-            
+        """
+        Forward NUFFT on the heterogeneous device
+        
+        :param gx: The input gpu array, with size=Nd
+        :type: reikna gpu array with dtype =numpy.complex64
+        :return: gy: The output gpu array, with size=(M,)
+        :rtype: reikna gpu array with dtype =numpy.complex64
+        """
+        try:
+            self.thr._context.push()
+        except:
+            pass            
+        try:
+            xx = self.z2xx(gz)
+        except: # gx is not a gpu array 
             try:
-                xx = self.z2xx(gz)
-            except: # gx is not a gpu array 
-                try:
-                    print('The input array may not be a GPUarray.')
-                    print('Automatically moving the input array to gpu, which is throttled by PCI bus.')
-                    print('You have been warned!')
-                    pz = self.thr.to_device(numpy.asarray(gz.astype(self.dtype),  order = 'C' ))
-                    xx = self.z2xx(pz)
-                except:
-                    if gz.shape != self.Nd + (self.Reps, ):
-                        print('shape of the input = ', gz.shape, ', but it should be ', self.Nd + (self.Reps, ))
-                    raise
-                
-            k = self.xx2k(xx)
-            del xx
-            gy = self.k2y(k)
-            del k
-            return gy
+                print('The input array may not be a GPUarray.')
+                print('Automatically moving the input array to gpu, which is throttled by PCI bus.')
+                print('You have been warned!')
+                pz = self.thr.to_device(numpy.asarray(gz.astype(self.dtype),  order = 'C' ))
+                xx = self.z2xx(pz)
+            except:
+                if gz.shape != self.Nd + (self.Reps, ):
+                    print('shape of the input = ', gz.shape, ', but it should be ', self.Nd + (self.Reps, ))
+                raise
+            
+        k = self.xx2k(xx)
+        del xx
+        gy = self.k2y(k)
+        del k
+        return gy
     def forward(self, x):
 #         z = self.x2z(x)
-        
+        try:
+            self.thr._context.push()
+        except:
+            pass        
         try:
             z = self.x2z(x)
         except: # gx is not a gpu array 
@@ -1670,6 +1576,10 @@ class NUFFT_hsa(NUFFT_cpu):
     
     def adjoint(self, y):
         try:
+            self.thr._context.push()
+        except:
+            pass        
+        try:
             z = self.adjoint_separate(y)
         except: # gx is not a gpu array 
             try:
@@ -1686,38 +1596,46 @@ class NUFFT_hsa(NUFFT_cpu):
         return x
         
     def adjoint_separate(self, gy):
-            """
-            Adjoint NUFFT on the heterogeneous device
-            
-            :param gy: The input gpu array, with size=(M,)
-            :type: reikna gpu array with dtype =numpy.complex64
-            :return: gx: The output gpu array, with size=Nd
-            :rtype: reikna gpu array with dtype =numpy.complex64
-            """        
-            
+        """
+        Adjoint NUFFT on the heterogeneous device
+        
+        :param gy: The input gpu array, with size=(M,)
+        :type: reikna gpu array with dtype =numpy.complex64
+        :return: gx: The output gpu array, with size=Nd
+        :rtype: reikna gpu array with dtype =numpy.complex64
+        """        
+        try:
+            self.thr._context.push()
+        except:
+            pass            
+        try:
+            k = self.y2k(gy)
+        except: # gx is not a gpu array 
             try:
-                k = self.y2k(gy)
-            except: # gx is not a gpu array 
-                try:
-                    print('The input array may not be a GPUarray.')
-                    print('Automatically moving the input array to gpu, which is throttled by PCI bus.')
-                    print('You have been warned!')
-                    py = self.thr.to_device(numpy.asarray(gy.astype(self.dtype),  order = 'C' ))
-                    k = self.y2k(py)
-                except:
-                    print('Failed at self.adjont! Please check the gy shape, type, stride.')
-                    raise
-                            
+                print('The input array may not be a GPUarray.')
+                print('Automatically moving the input array to gpu, which is throttled by PCI bus.')
+                print('You have been warned!')
+                py = self.thr.to_device(numpy.asarray(gy.astype(self.dtype),  order = 'C' ))
+                k = self.y2k(py)
+            except:
+                print('Failed at self.adjont! Please check the gy shape, type, stride.')
+                raise
+                        
 #             k = self.y2k(gy)
-            xx = self.k2xx(k)
-            del k
-            gx = self.xx2z(xx)
-            del xx
-            return gx
+        xx = self.k2xx(k)
+        del k
+        gx = self.xx2z(xx)
+        del xx
+        return gx
     def release(self):
+        try:
+            self.thr._context.push()
+        except:
+            pass        
         del self.volume
         del self.prg
         del self.pELL
+        self.thr.release()
         del self.thr
     def solve(self,gy, solver=None, *args, **kwargs):
         """
@@ -1732,7 +1650,10 @@ class NUFFT_hsa(NUFFT_cpu):
         :return: reikna array with size Nd
         """
         from .linalg.solve_hsa import solve
-        
+        try:
+            self.thr._context.push()
+        except:
+            pass        
             
         try:
             return solve(self,  gy,  solver, *args, **kwargs)
