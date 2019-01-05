@@ -2,9 +2,9 @@
 cSparseMatVec
 ==============================================
 KERNEL void cCSR_spmv(    
-      const    uint    numRow,
-      GLOBAL_MEM const uint *rowDelimiters, 
-      GLOBAL_MEM const uint *cols,
+      const    unsigned int    numRow,
+      GLOBAL_MEM const unsigned int *rowDelimiters, 
+      GLOBAL_MEM const unsigned int *cols,
       GLOBAL_MEM const float2 *val,
       GLOBAL_MEM const float2 *vec, 
       GLOBAL_MEM float2 *out)
@@ -17,20 +17,20 @@ R="""
 
 
 KERNEL void cCSR_spmv_vector(    
-      const    uint    numRow,
-      GLOBAL_MEM const uint *rowDelimiters, 
-      GLOBAL_MEM const uint *cols,
+      const    unsigned int    numRow,
+      GLOBAL_MEM const unsigned int *rowDelimiters, 
+      GLOBAL_MEM const unsigned int *cols,
       GLOBAL_MEM const float2 *val,
       GLOBAL_MEM const float2 *vec, 
       GLOBAL_MEM float2 *out)
 {   
-    const uint t = get_local_id(0);
-    const uint vecWidth=${LL};
+    const unsigned int t = get_local_id(0);
+    const unsigned int vecWidth=${LL};
     // Thread ID within wavefront
-    const uint id = t & (vecWidth-1);
+    const unsigned int id = t & (vecWidth-1);
     // One row per wavefront
-    uint vecsPerBlock=get_local_size(0)/vecWidth;
-    uint myRow=(get_group_id(0)*vecsPerBlock) + (t/ vecWidth);
+    unsigned int vecsPerBlock=get_local_size(0)/vecWidth;
+    unsigned int myRow=(get_group_id(0)*vecsPerBlock) + (t/ vecWidth);
     LOCAL_MEM float2 partialSums[${LL}];
     float2 zero;
     zero.x = 0.0;
@@ -40,11 +40,11 @@ KERNEL void cCSR_spmv_vector(
     float2  y= zero;
     if (myRow < numRow)
     {
-     const uint vecStart = rowDelimiters[myRow];
-     const uint vecEnd = rowDelimiters[myRow+1];            
-     for (uint j = vecStart+id;  j<vecEnd; j += vecWidth)
+     const unsigned int vecStart = rowDelimiters[myRow];
+     const unsigned int vecEnd = rowDelimiters[myRow+1];            
+     for (unsigned int j = vecStart+id;  j<vecEnd; j += vecWidth)
      {
-          const uint col = cols[j];
+          const unsigned int col = cols[j];
           const float2 spdata=val[j];
           const float2 vecdata=vec[col];                        
           y.x=spdata.x*vecdata.x - spdata.y*vecdata.y;
@@ -56,7 +56,7 @@ KERNEL void cCSR_spmv_vector(
       //__syncthreads();
       //barrier(CLK_LOCAL_MEM_FENCE);
       // Reduce partial sums
-      uint bar = vecWidth / 2;
+      unsigned int bar = vecWidth / 2;
       while(bar > 0)
       {
            if (id < bar)
@@ -76,36 +76,36 @@ KERNEL void cCSR_spmv_vector(
 };    // End of cCSR_spmv_vector
  
 KERNEL void pELL_spmv_scalar(    
-      const    uint    nRow,        // number of rows
-      const    uint    prodJd,     // product of Jd
-      const    uint    sumJd,     // sum of Jd
-      const    uint    dim,           // dimensionality
-      GLOBAL_MEM const uint *Jd,    // Jd
-      // GLOBAL_MEM const uint *curr_sumJd,    // 
-      GLOBAL_MEM const uint *meshindex,    // meshindex, prodJd * dim
-      GLOBAL_MEM const uint *kindx,    // unmixed column indexes of all dimensions
+      const    unsigned int    nRow,        // number of rows
+      const    unsigned int    prodJd,     // product of Jd
+      const    unsigned int    sumJd,     // sum of Jd
+      const    unsigned int    dim,           // dimensionality
+      GLOBAL_MEM const unsigned int *Jd,    // Jd
+      // GLOBAL_MEM const unsigned int *curr_sumJd,    // 
+      GLOBAL_MEM const unsigned int *meshindex,    // meshindex, prodJd * dim
+      GLOBAL_MEM const unsigned int *kindx,    // unmixed column indexes of all dimensions
       GLOBAL_MEM const float2 *udata,    // interpolation data before Kronecker product
       GLOBAL_MEM const float2 *vec,     // kspace data
       GLOBAL_MEM float2 *out)   // output
 {      
-    uint myRow= get_global_id(0);
+    unsigned int myRow= get_global_id(0);
     float2 zero;
     zero.x = 0.0;
     zero.y = 0.0;
     if (myRow < nRow)
     {
          float2 y = zero;
-         for (uint j = 0;  j  <  prodJd; j ++)
+         for (unsigned int j = 0;  j  <  prodJd; j ++)
          {    
             // now doing the first dimension
-            uint index_shift = myRow * sumJd;
-            // uint tmp_sumJd = 0;
-            uint J = Jd[0];
-            uint index =    index_shift +  meshindex[dim*j + 0];
-            uint col = kindx[index] ;
+            unsigned int index_shift = myRow * sumJd;
+            // unsigned int tmp_sumJd = 0;
+            unsigned int J = Jd[0];
+            unsigned int index =    index_shift +  meshindex[dim*j + 0];
+            unsigned int col = kindx[index] ;
             float2 spdata = udata[index];
             index_shift += J; 
-            for (uint dimid = 1; dimid < dim; dimid ++ )
+            for (unsigned int dimid = 1; dimid < dim; dimid ++ )
             {
                 J = Jd[dimid];
                 index =   index_shift + meshindex[dim*j + dimid];   // the index of the partial ELL arrays *kindx and *udata
@@ -119,32 +119,32 @@ KERNEL void pELL_spmv_scalar(
             float2 vecdata=vec[col ];
             y.x +=  spdata.x*vecdata.x - spdata.y*vecdata.y;
             y.y +=  spdata.y*vecdata.x + spdata.x*vecdata.y;
-        }; // Iterate for (uint j = 0;  j  <  prodJd; j ++)
+        }; // Iterate for (unsigned int j = 0;  j  <  prodJd; j ++)
         out[myRow]= y;
     };  // if (myRow < nRow)
 };    // End of pELL_spmv_scalar
     
 KERNEL void pELL_spmv_vector(    
-      const    uint    nRow,        // number of rows
-      const    uint    prodJd,     // product of Jd
-      const    uint    sumJd,     // sum of Jd
-      const    uint    dim,           // dimensionality
-      GLOBAL_MEM const uint *Jd,            // Jd
-      //GLOBAL_MEM const uint *curr_sumJd,            // 
-      GLOBAL_MEM const uint *meshindex,            // meshindex, prodJd * dim
-      GLOBAL_MEM const uint *kindx,    // unmixed column indexes of all dimensions
+      const    unsigned int    nRow,        // number of rows
+      const    unsigned int    prodJd,     // product of Jd
+      const    unsigned int    sumJd,     // sum of Jd
+      const    unsigned int    dim,           // dimensionality
+      GLOBAL_MEM const unsigned int *Jd,            // Jd
+      //GLOBAL_MEM const unsigned int *curr_sumJd,            // 
+      GLOBAL_MEM const unsigned int *meshindex,            // meshindex, prodJd * dim
+      GLOBAL_MEM const unsigned int *kindx,    // unmixed column indexes of all dimensions
       GLOBAL_MEM const float2 *udata,// interpolation data before Kronecker product
       GLOBAL_MEM const float2 *vec,     // kspace data
       GLOBAL_MEM float2 *out)   // output
 {   
-    const uint t = get_local_id(0);
-    const uint vecWidth=${LL};
+    const unsigned int t = get_local_id(0);
+    const unsigned int vecWidth=${LL};
     // Thread ID within wavefront
-    const uint id = t & (vecWidth-1);
+    const unsigned int id = t & (vecWidth-1);
     
     // One row per wavefront
-    uint vecsPerBlock=get_local_size(0)/vecWidth;
-    uint myRow=(get_group_id(0)*vecsPerBlock) + (t/ vecWidth);
+    unsigned int vecsPerBlock=get_local_size(0)/vecWidth;
+    unsigned int myRow=(get_group_id(0)*vecsPerBlock) + (t/ vecWidth);
     LOCAL_MEM float2 partialSums[${LL}];
     float2 zero;
     zero.x = 0.0;
@@ -153,24 +153,24 @@ KERNEL void pELL_spmv_vector(
     
     if (myRow < nRow)
     {
-     const uint vecStart = 0; 
-     const uint vecEnd =prodJd;             
+     const unsigned int vecStart = 0; 
+     const unsigned int vecEnd =prodJd;             
      float2  y;//=zero;
      
-     for (uint j = vecStart+id;  j<vecEnd; j += vecWidth)
+     for (unsigned int j = vecStart+id;  j<vecEnd; j += vecWidth)
      {    // now doing the first dimension
-        uint J = Jd[0];
-        uint index_shift = myRow * sumJd ;
-        uint index =    index_shift +  meshindex[dim*j + 0];
-        uint col = kindx[index] ;
+        unsigned int J = Jd[0];
+        unsigned int index_shift = myRow * sumJd ;
+        unsigned int index =    index_shift +  meshindex[dim*j + 0];
+        unsigned int col = kindx[index] ;
         float2 spdata = udata[index];
         
         index_shift += J; 
         
-        for (uint dimid = 1; dimid < dim; dimid ++ )
+        for (unsigned int dimid = 1; dimid < dim; dimid ++ )
         {
-            uint J = Jd[dimid];
-            uint index =  index_shift + meshindex[dim*j + dimid];   // the index of the partial ELL arrays *kindx and *udata
+            unsigned int J = Jd[dimid];
+            unsigned int index =  index_shift + meshindex[dim*j + dimid];   // the index of the partial ELL arrays *kindx and *udata
             col += kindx[index] + 1;                                            // the column index of the current j
             float tmp_x= spdata.x;
             float2 tmp_udata = udata[index];
@@ -188,7 +188,7 @@ KERNEL void pELL_spmv_vector(
       LOCAL_BARRIER; 
 
       // Reduce partial sums
-      uint bar = vecWidth / 2;
+      unsigned int bar = vecWidth / 2;
       while(bar > 0)
       {
            if (id < bar)
@@ -209,29 +209,29 @@ KERNEL void pELL_spmv_vector(
     
 
 KERNEL void pELL_spmv_mCoil(    
-     const     uint   Reps,            // Number of coils
-      const    uint    nRow,        // number of rows
-      const    uint    prodJd,     // product of Jd
-      const    uint    sumJd,     // sum of Jd
-      const    uint    dim,           // dimensionality
-      GLOBAL_MEM const uint *Jd,            // Jd, length = dim
-      //GLOBAL_MEM const uint *curr_sumJd,            // summation of Jd[0:dimid] 
-      GLOBAL_MEM const uint *meshindex,            // meshindex, prodJd * dim
-      GLOBAL_MEM const uint *kindx,    // unmixed column indexes of all dimensions
+     const     unsigned int   Reps,            // Number of coils
+      const    unsigned int    nRow,        // number of rows
+      const    unsigned int    prodJd,     // product of Jd
+      const    unsigned int    sumJd,     // sum of Jd
+      const    unsigned int    dim,           // dimensionality
+      GLOBAL_MEM const unsigned int *Jd,            // Jd, length = dim
+      //GLOBAL_MEM const unsigned int *curr_sumJd,            // summation of Jd[0:dimid] 
+      GLOBAL_MEM const unsigned int *meshindex,            // meshindex, prodJd * dim
+      GLOBAL_MEM const unsigned int *kindx,    // unmixed column indexes of all dimensions
       GLOBAL_MEM const float2 *udata,// interpolation data before Kronecker product
       GLOBAL_MEM const float2 *vec,     // multi-channel kspace data, prodKd * Reps
       GLOBAL_MEM float2 *out)   // multi-channel output, nRow * Reps
 {   
-    const uint t = get_local_id(0);
-    const uint vecWidth=${LL};
+    const unsigned int t = get_local_id(0);
+    const unsigned int vecWidth=${LL};
     // Thread ID within wavefront
-    const uint id = t & (vecWidth-1);
+    const unsigned int id = t & (vecWidth-1);
     
     // One row per wavefront
-    uint vecsPerBlock=get_local_size(0)/vecWidth;
-    uint myRow=(get_group_id(0)*vecsPerBlock) + (t/ vecWidth); // the myRow-th non-Cartesian sample
-    uint m = myRow / Reps;
-    uint nc = myRow - m * Reps;
+    unsigned int vecsPerBlock=get_local_size(0)/vecWidth;
+    unsigned int myRow=(get_group_id(0)*vecsPerBlock) + (t/ vecWidth); // the myRow-th non-Cartesian sample
+    unsigned int m = myRow / Reps;
+    unsigned int nc = myRow - m * Reps;
     LOCAL_MEM float2 partialSums[${LL}];
     float2 zero;
     zero.x = 0.0;
@@ -240,24 +240,24 @@ KERNEL void pELL_spmv_mCoil(
     
     if (myRow < nRow * Reps)
     {
-     const uint vecStart = 0; 
-     const uint vecEnd =prodJd;             
+     const unsigned int vecStart = 0; 
+     const unsigned int vecEnd =prodJd;             
      float2  y;//=zero;
      
-     for (uint j = vecStart+id;  j<vecEnd; j += vecWidth)
+     for (unsigned int j = vecStart+id;  j<vecEnd; j += vecWidth)
      {    // now doing the first dimension
-        uint J = Jd[0];
-        uint index_shift = m * sumJd ;
-        uint index =    index_shift +  meshindex[dim*j + 0];
-        uint col = kindx[index] ;
+        unsigned int J = Jd[0];
+        unsigned int index_shift = m * sumJd ;
+        unsigned int index =    index_shift +  meshindex[dim*j + 0];
+        unsigned int col = kindx[index] ;
         float2 spdata = udata[index];
         
         index_shift += J; 
         
-        for (uint dimid = 1; dimid < dim; dimid ++ )
+        for (unsigned int dimid = 1; dimid < dim; dimid ++ )
         {
-            uint J = Jd[dimid];
-            uint index =  index_shift + meshindex[dim*j + dimid];   // the index of the partial ELL arrays *kindx and *udata
+            unsigned int J = Jd[dimid];
+            unsigned int index =  index_shift + meshindex[dim*j + dimid];   // the index of the partial ELL arrays *kindx and *udata
             col += kindx[index] + 1;                                            // the column index of the current j
             float tmp_x= spdata.x;
             float2 tmp_udata = udata[index];
@@ -275,7 +275,7 @@ KERNEL void pELL_spmv_mCoil(
       LOCAL_BARRIER; 
 
       // Reduce partial sums
-      uint bar = vecWidth / 2;
+      unsigned int bar = vecWidth / 2;
       while(bar > 0)
       {
            if (id < bar)
@@ -295,20 +295,20 @@ KERNEL void pELL_spmv_mCoil(
 };  // End of pELL_spmv_mCoil
 
 KERNEL void cELL_spmv_vector(    
-            const    uint    numRow,
-            const    uint    prodJd,
-            GLOBAL_MEM const uint *cols,
+            const    unsigned int    numRow,
+            const    unsigned int    prodJd,
+            GLOBAL_MEM const unsigned int *cols,
             GLOBAL_MEM const float2 *val,
             GLOBAL_MEM const float2 *vec, 
             GLOBAL_MEM float2 *out)
 {   
-    const uint t = get_local_id(0);
-    const uint vecWidth=${LL};
+    const unsigned int t = get_local_id(0);
+    const unsigned int vecWidth=${LL};
     // Thread ID within wavefront
-    const uint id = t & (vecWidth-1);
+    const unsigned int id = t & (vecWidth-1);
     // One row per wavefront
-    uint vecsPerBlock=get_local_size(0)/vecWidth;
-    uint myRow=(get_group_id(0)*vecsPerBlock) + (t/ vecWidth);
+    unsigned int vecsPerBlock=get_local_size(0)/vecWidth;
+    unsigned int myRow=(get_group_id(0)*vecsPerBlock) + (t/ vecWidth);
     LOCAL_MEM float2 partialSums[${LL}];
     float2 zero;
     zero.x = 0.0;
@@ -318,11 +318,11 @@ KERNEL void cELL_spmv_vector(
     float2  y= zero;
     if (myRow < numRow)
     {
-        const uint vecStart = myRow*prodJd; 
-        const uint vecEnd = (myRow + 1)*prodJd;             
-        for (uint j = vecStart+id;  j<vecEnd; j += vecWidth)
+        const unsigned int vecStart = myRow*prodJd; 
+        const unsigned int vecEnd = (myRow + 1)*prodJd;             
+        for (unsigned int j = vecStart+id;  j<vecEnd; j += vecWidth)
         {
-            const uint col    =    cols[j];
+            const unsigned int col    =    cols[j];
             const float2 spdata    =    val[j];
             const float2 vecdata    =    vec[col];                        
             y.x=spdata.x*vecdata.x - spdata.y*vecdata.y;
@@ -331,7 +331,7 @@ KERNEL void cELL_spmv_vector(
         }
         LOCAL_BARRIER; 
         // Reduce partial sums
-        uint bar = vecWidth / 2;
+        unsigned int bar = vecWidth / 2;
         while(bar > 0)
         {
              if (id < bar)
@@ -350,14 +350,14 @@ KERNEL void cELL_spmv_vector(
 };    // End of cELL_spmv_vector
 
 KERNEL void cELL_spmv_scalar(    
-      const    uint    nRow,
-      const    uint    prodJd, 
-      GLOBAL_MEM const uint *cols,
+      const    unsigned int    nRow,
+      const    unsigned int    prodJd, 
+      GLOBAL_MEM const unsigned int *cols,
       GLOBAL_MEM const float2 *data,
       GLOBAL_MEM const float2 *vec, 
       GLOBAL_MEM float2 *out)
 {   
-    uint myRow= get_global_id(0);
+    unsigned int myRow= get_global_id(0);
     float2 zero;
     zero.x = 0.0;
     zero.y = 0.0;
@@ -365,9 +365,9 @@ KERNEL void cELL_spmv_scalar(
     {      
          float2  y= zero;
          out[myRow] =zero; 
-         for (uint j = myRow *  prodJd;  j< (myRow + 1) *  prodJd; j ++)
+         for (unsigned int j = myRow *  prodJd;  j< (myRow + 1) *  prodJd; j ++)
          {
-              uint col = cols[j];
+              unsigned int col = cols[j];
               float2 spdata=data[j];
               float2 vecdata=vec[col];                        
               y.x +=spdata.x*vecdata.x - spdata.y*vecdata.y;
@@ -380,5 +380,5 @@ KERNEL void cELL_spmv_scalar(
       
     
 """
-from numpy import uint32
-scalar_arg_dtypes=[uint32, None, None, None, None, None]        
+# from numpy import uint32
+# scalar_arg_dtypes=[uint32, None, None, None, None, None]        

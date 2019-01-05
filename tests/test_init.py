@@ -1,13 +1,10 @@
-from .. import NUFFT_cpu, NUFFT_hsa, NUFFT_hsa_legacy
+from pynufft import NUFFT_cpu, NUFFT_hsa, NUFFT_hsa_legacy
 
 import numpy
 dtype = numpy.complex64
 
 def test_init():
-    import cProfile
-    import numpy
-#     import matplotlib.pyplot
-    import copy
+    
 
 #     cm = matplotlib.cm.gray
     # load example image
@@ -37,14 +34,15 @@ def test_init():
     
     nfft.plan(om, Nd, Kd, Jd)
 
-    NufftObj = NUFFT_hsa()
-    NufftObj2 = NUFFT_hsa()
+    NufftObj = NUFFT_hsa('cuda',0,0)
+    NufftObj2 = NUFFT_hsa('cuda',0,0)
     NufftObj.debug = 1
     NufftObj.plan(om, Nd, Kd, Jd)
     NufftObj2.plan(om, Nd, Kd, Jd)
     
-    NufftObj.offload(API = 'cuda',   platform_number = 0, device_number = 0)
-#     NufftObj2.offload(API = 'ocl',   platform_number = 1, device_number = 0)
+#     NufftObj.offload(API = 'cuda',   platform_number = 0, device_number = 0)
+#     NufftObj2.offload(API = 'cuda',   platform_number = 0, device_number = 0)
+#     NufftObj2.offload('cuda')
 #     NufftObj.offload(API = 'cuda',   platform_number = 0, device_number = 0)
 #     print('api=', NufftObj.thr.api_name())
 #     NufftObj.offload(API = 'ocl',   platform_number = 0, device_number = 0)
@@ -112,15 +110,15 @@ def test_init():
     maxiter =100
     import time
     t0= time.time()
-    x2 =  nfft.solve(y2, 'cg',maxiter=maxiter)
-#     x2 =  nfft.solve(y2, 'L1TVOLS',maxiter=maxiter, rho = 2)
+#     x2 =  nfft.solve(y2, 'cg',maxiter=maxiter)
+    x2 =  nfft.solve(y2, 'L1TVOLS',maxiter=maxiter, rho = 2)
     t1 = time.time()-t0 
 #     gy=NufftObj.thr.copy_array(NufftObj.thr.to_device(y2))
     
     t0= time.time()
 
-    x = NufftObj.solve(gy,'cg', maxiter=maxiter)
-#     x = NufftObj.solve(gy,'L1TVOLS', maxiter=maxiter, rho=2)
+#     x = NufftObj.solve(gy,'cg', maxiter=maxiter)
+    x = NufftObj.solve(gy,'L1TVOLS', maxiter=maxiter, rho=2)
     
     t2 = time.time() - t0
     print(t1, t2)
@@ -131,15 +129,15 @@ def test_init():
     try:
         import matplotlib.pyplot
         matplotlib.pyplot.subplot(1, 2, 1)
-        matplotlib.pyplot.imshow( x.get().real, cmap= matplotlib.cm.gray)
-        matplotlib.pyplot.title("CPU reconstruction")
+        matplotlib.pyplot.imshow( x.get().real, cmap= matplotlib.cm.gray, vmin = 0, vmax = 1)
+        matplotlib.pyplot.title("HSA reconstruction")
         matplotlib.pyplot.subplot(1, 2,2)
         matplotlib.pyplot.imshow(x2.real, cmap= matplotlib.cm.gray)
-        matplotlib.pyplot.title("HSA reconstruction")
+        matplotlib.pyplot.title("CPU reconstruction")
         matplotlib.pyplot.show()
         del NufftObj.thr
         del NufftObj
     except:
         print("no graphics")
-# if __name__ == '__main__':
-#     test_init()    
+if __name__ == '__main__':
+    test_init()    

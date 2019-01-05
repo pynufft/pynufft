@@ -42,7 +42,7 @@ def indxmap_diff(Nd):
                             
     :param Nd: the dimension of the image
     :type Nd: tuple with integers
-    :returns d_indx: iamge gradient
+    :returns d_indx: image gradient
     :returns  dt_indx:  the transpose of the image gradient 
     :rtype: d_indx: lists with numpy ndarray
     :rtype: dt_indx: lists with numpy ndarray
@@ -219,182 +219,7 @@ def GBPDNA_old(nufft, gy, maxiter):
         z_k = z_kp1
     return numpy.reshape(u_bar_kp1, Nd)
 
-# def GBPDNA(nufft, gy, maxiter):
-#     """
-#     GBPDNA: test 3D total variation
-#     """
-#     Nd = nufft.st['Nd']
-#     ndims = len(Nd)
-# #     Gx = gradient_class(Nd, 0)
-# #     Gy = gradient_class(Nd, 1)
-# #     Gz = gradient_class(Nd, 2)
-#     M = nufft.st['M']    
-#     import pynufft.src._helper.helper as helper
-#     d_indx, dt_indx = helper.indxmap_diff(Nd)
-#     for jj in range(    0,  ndims): # n_dims + 1 for wavelets
-#         d_indx[jj] = nufft.thr.to_device(d_indx[jj])
-#         dt_indx[jj] = nufft.thr.to_device(dt_indx[jj])    
-#     
-#     Nd_cpu = numpy.zeros(Nd, dtype = numpy.complex64, order='C')
-#     Nd_gpu = nufft.thr.to_device(Nd_cpu) # zero array on GPU
-#     M_cpu = numpy.zeros((M,),   dtype = numpy.complex64,   order='C')
-#     M_gpu = nufft.thr.to_device(M_cpu) # zero array on GPU
-#     
-#     print('I am here')
-#     gf = gy
-#     def A(input_x):
-#         output_y = nufft.forward(input_x) 
-#         return output_y
-#     
-#     def AH(input_y):
-#         output_x = nufft.adjoint(input_y)
-#         return output_x    
-#     
-#     def GH(input_x, pp):
-#         output_x = nufft.thr.copy_array(Nd_gpu) 
-#         nufft.cDiff(dt_indx[pp], input_x, output_x, local_size=None, global_size=int(nufft.Ndprod))
-#         return output_x
-#     
-#     def G(input_x, pp):
-#         output_x = nufft.thr.copy_array(Nd_gpu) 
-#         nufft.cDiff(d_indx[pp], input_x, output_x, local_size=None, global_size=int(nufft.Ndprod))
-#         return output_x
-# 
-#     def get_tau1():
-# 
-#         v_cpu = numpy.ones(M, dtype = numpy.complex64, order='C')
-#         v_gpu = nufft.thr.to_device(v_cpu)
-#     
-#         for pp in range(0,10):
-#             
-#             w = A(AH((v_gpu)))
-#             v_new = w.get()
-#             v_old = v_gpu.get()
-#             lab = numpy.inner(v_new,numpy.conj(v_old))/numpy.inner(v_old,numpy.conj(v_old))
-#             tau_1 = 0.999/(lab.real)**0.5
-#             print(pp,'tau_1', tau_1)
-#         #     print(lab, tau_1)
-#     #         w = w/numpy.linalg.norm(w)
-#             v_new = v_new/numpy.linalg.norm(v_new)
-#             v_gpu = nufft.thr.to_device(v_new)
-#         return tau_1
-#     def get_tau2():
-#         v = numpy.random.randn(numpy.prod(Nd))
-#         v = v.reshape(Nd, order='C').astype(numpy.complex64)
-# #         v= numpy.ones(Nd, dtype = numpy.complex64, order='C')
-#     #     v= numpy.random.rand
-#         v_gpu = nufft.thr.to_device(v)
-#         for pp in range(0,10):
-#     #         w = Gx.getH().dot(Gx.dot(v))
-#             w = GH(G(v_gpu, 0), 0)
-#             v_old = v_gpu.get().ravel()
-#             v_new = w.get().ravel()
-#             lab = numpy.inner(v_new,numpy.conj(v_old))/numpy.inner(v_old,numpy.conj(v_old))
-#             tau_2 = 0.999/(lab.real)**0.5
-#             print(pp,'tau_2', tau_2)
-#     #         w = w/numpy.linalg.norm(w)
-#             v_new = v_new/numpy.linalg.norm(v_new)
-#             v_gpu = nufft.thr.to_device(v_new)
-#         return tau_2
-#     tau_1 = get_tau1()
-#     tau_2 = get_tau2()
-# 
-#     tau_2 /= 3**0.5
-#     R21 = tau_2 / tau_1
-#     print("tau_1 = ", tau_1)   
-#     print("tau_2 = ", tau_2)
-#     print("R21 = ", R21)
-#     delta = 1.0
-#     mu = 0.001*numpy.max(numpy.abs(AH(gf).get())[...])
-#     print("mu=",mu)
-#     print('End here')
-#     def P_lambda(w_i, mu, tau_1):
-#         w_i = numpy.nan_to_num(w_i.astype(numpy.complex128))
-#         w_abs = numpy.abs(w_i)
-#     #     print(w_abs.shape)
-#     #     print(w_iw_abs.shape)
-#         out = ((w_i+1e-7)/(w_abs+1e-7))
-#         out *= mu/tau_1
-#         
-#         indx= w_abs <= (mu/tau_1)
-#         out[indx] =w_i[indx]
-#         return out
-#     def Q_f_eps(v, f, eps):
-#         v = numpy.nan_to_num(v.astype(numpy.complex128))
-#         v_f = v-f
-#         v_f_abs = numpy.abs(v_f)
-#         out = f + eps* ( v_f + 1e-7)/(v_f_abs+1e-7)
-#         indx = (v_f_abs <= eps)
-#         out[indx] = v[indx]
-#         return out
-#     
-# #     N = numpy.prod(Nd)
-#     
-# #     u_bold_k = numpy.zeros(N,)
-# #     v_k = numpy.zeros(M,)
-# #     z_k = numpy.zeros(M,)
-# #     w_kx = numpy.zeros(N,)
-# #     w_ky = numpy.zeros(N,)
-# #     w_kz = numpy.zeros(N,)
-# #     
-# #     hx = numpy.zeros(N,)
-# #     hy = numpy.zeros(N,)
-# #     hz = numpy.zeros(N,)
-# #     
-# #     tmp_f=numpy.zeros(M,)
-#     u_bold_k = nufft.thr.copy_array(Nd_gpu)
-#     v_k = nufft.thr.copy_array(M_gpu)
-#     z_k = nufft.thr.copy_array(M_gpu)
-#     w_kx = nufft.thr.copy_array(Nd_gpu)
-#     w_ky = nufft.thr.copy_array(Nd_gpu)
-#     w_kz = nufft.thr.copy_array(Nd_gpu)
-#     
-#     hx = nufft.thr.copy_array(Nd_gpu)
-#     hy = nufft.thr.copy_array(Nd_gpu)
-#     hz = nufft.thr.copy_array(Nd_gpu)
-#     
-#     tmp_f = nufft.thr.copy_array(M_gpu)    
-#     eps = 1e-16
-#     for iter in range(0, maxiter):
-#         
-#         print(iter, 'R21', R21)
-#         tmp_u= u_bold_k - tau_1 * AH(v_k +  tau_1 *tmp_f - z_k)
-#         
-#         u_bar_kp1 = tmp_u.get()   -    tau_1 *( GH(w_kx, 0) + GH(w_ky, 1) + GH(w_kz, 2)).get()
-#         u_bar_kp1 = nufft.thr.to_device(u_bar_kp1.astype(numpy.complex64))
-#     #     sx = Gx.dot(u_bar_kp1)
-#     #     sy = Gy.dot(u_bar_kp1)
-#     #     s = (sx**2 + sy**2)**0.5
-#         
-#         w_kp1x = P_lambda(w_kx.get() + R21*G(u_bar_kp1, 0).get(), mu, tau_1).astype(numpy.complex64)
-#         w_kp1y = P_lambda(w_ky.get() + R21*G(u_bar_kp1, 1).get(), mu, tau_1).astype(numpy.complex64)
-#         w_kp1z = P_lambda(w_kz.get() + R21*G(u_bar_kp1, 2).get(), mu, tau_1).astype(numpy.complex64)
-#         
-#         w_kp1x = nufft.thr.to_device(w_kp1x)
-#         w_kp1y = nufft.thr.to_device(w_kp1y)
-#         w_kp1z = nufft.thr.to_device(w_kp1z)
-#     #     hx = (sx+eps)/(s+eps)*Gx.getH().dot(w_kp1)
-#     #     hy = (sy+eps)/(s+eps)*Gy.getH().dot(w_kp1)
-#         
-#         u_bold_kp1 = tmp_u.get()   -   tau_1 *( GH(w_kp1x, 0) +  GH(w_kp1y, 1) +  GH(w_kp1z, 2)).get() 
-# #         u_bold_kp1 = ( GH(w_kp1x, 0) +  GH(w_kp1y, 1) +  GH(w_kp1z, 2)).get()
-# #         u_bold_kp1 = tmp_u  - tau_1 *u_bold_kp1
-#         u_bold_kp1 = nufft.thr.to_device(u_bold_kp1.astype(numpy.complex64))
-#         print(u_bold_kp1.get().shape,u_bold_kp1.get().dtype)
-#         
-#         tmp_f=A( u_bold_kp1)
-#         z_kp1 = Q_f_eps( (tmp_f.get() + v_k.get()), gf.get(), eps).astype(numpy.complex64)
-# #         z_kp1 = nufft.thr.to_device(z_kp1)
-#         v_kp1 = v_k.get() + delta * (tmp_f.get()    -   z_kp1)
-#         v_kp1 = nufft.thr.to_device(v_kp1.astype(numpy.complex64))
-#         w_kx = w_kp1x
-#         w_ky = w_kp1y
-#         w_kz = w_kp1z
-#         u_bold_k = u_bold_kp1
-#         v_k = v_kp1
-#         z_k = nufft.thr.to_device(z_kp1.astype(numpy.complex))
-#     return u_bar_kp1.get()
-        
+
         
 import pkg_resources
 DATA_PATH = pkg_resources.resource_filename('pynufft', './src/data/')   
@@ -416,22 +241,22 @@ Jd = (6,6,6) # interpolator
 mid_slice = int(Nd[2]/2)
 #     om=       numpy.load(DATA_PATH+'om3D.npz')['arr_0']
 numpy.random.seed(0)
-om = numpy.random.randn(int(5e+4),3)
+om = numpy.random.randn(int(5e+5),3)
 print(om.shape)
-from pynufft import NUFFT_cpu, NUFFT_memsave, NUFFT_hsa
-NufftObj = NUFFT_memsave()
+from pynufft import NUFFT_cpu, NUFFT_hsa, NUFFT_hsa_legacy
+NufftObj = NUFFT_hsa(API = 'ocl',   platform_number = 1, device_number = 0)
 
 NufftObj.plan(om, Nd, Kd, Jd)
 
-NufftObj.offload(API = 'ocl',   platform_number = 1, device_number = 0)
+
 # NufftObj.offload(API = 'cuda',   platform_number = 0, device_number = 0)
 gx = NufftObj.thr.to_device(image.astype(numpy.complex64))
 gy =NufftObj.forward(gx) 
 import time
 t0 = time.time()
-restore_x2 = GBPDNA_old(NufftObj, gy, maxiter=500)
+restore_x2 = GBPDNA_old(NufftObj, gy, maxiter=5)
 t1 = time.time()
-# restore_x = NufftObj.solve(gy,'cg', maxiter=50)
+restore_x = NufftObj.solve(gy,'cg', maxiter=50)
 t2 = time.time()
 print("GBPDNA time = ", t1 - t0)
 print("CG time = ", t2 - t1)
@@ -454,13 +279,6 @@ pyplot.subplot(1,2,2)
 pyplot.imshow(numpy.abs(restore_x2[:,:,mid_slice]), label='L1TVOLS',cmap=gray)
 pyplot.title('GBPDNA (500 iterations)')
     
-
-
-# pyplot.subplot(2,2,4)
-# pyplot.imshow(numpy.real(restore_x.get()[:,:,mid_slice]), label='CG',cmap=gray)
-# pyplot.title('CG')?
-#     pyplot.legend([im1, im im4])
-
 
 pyplot.show()
 

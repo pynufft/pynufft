@@ -5,33 +5,33 @@ cHadamard
 R="""
 
 KERNEL void cSelect2(
-    const uint Reps, 
-    GLOBAL_MEM const  uint *order1,
-    GLOBAL_MEM const  uint *order2,
+    const unsigned int Reps, 
+    GLOBAL_MEM const  unsigned int *order1,
+    GLOBAL_MEM const  unsigned int *order2,
     GLOBAL_MEM const float2 *indata,
     GLOBAL_MEM       float2 *outdata)
 {
-const uint gid=get_global_id(0); 
-const uint t = ((float)gid / (float)Reps); // indptr 
-const uint r = gid - t*Reps; // residue
+const unsigned int gid=get_global_id(0); 
+const unsigned int t = ((float)gid / (float)Reps); // indptr 
+const unsigned int r = gid - t*Reps; // residue
 
-const uint index2 = order2[t]*Reps + r;
-const uint index1 = order1[t]*Reps + r;
+const unsigned int index2 = order2[t]*Reps + r;
+const unsigned int index1 = order1[t]*Reps + r;
  
 outdata[index2]=indata[index1];
 };
 
 KERNEL void cDistribute(    
-      const    uint    Reps,
-      const    uint    prodNd, 
+      const    unsigned int    Reps,
+      const    unsigned int    prodNd, 
       GLOBAL_MEM const float2 *arr_large, // sensitivity and scaling array, prodNd*Reps
       GLOBAL_MEM const float2 *arr_image, // image array, prodNd
       GLOBAL_MEM float2 *arr_out // output array, prodNd * Reps
       ) 
 {  
-    const uint t = get_global_id(0);
-    //const uint nd = t/Reps;
-    const uint nd = ((float)t / (float)Reps);
+    const unsigned int t = get_global_id(0);
+    //const unsigned int nd = t/Reps;
+    const unsigned int nd = ((float)t / (float)Reps);
     if (nd < prodNd){
     const float2 u = arr_large[t]; 
     const float2 v = arr_image[nd];
@@ -45,21 +45,21 @@ KERNEL void cDistribute(
 
 
 KERNEL void cMerge(
-    const    uint    Reps,
-    const    uint    prodNd, 
+    const    unsigned int    Reps,
+    const    unsigned int    prodNd, 
     GLOBAL_MEM const float2 *arr_large, // sensitivity and scaling array, prodNd*Reps
     GLOBAL_MEM const float2 *arr_image, // image array, prodNd*Reps
     GLOBAL_MEM float2 *arr_out // reduced output array, prodNd 
     )
 {   
-    const uint t = get_local_id(0);
+    const unsigned int t = get_local_id(0);
     //const float float_reps = (float)Reps;
-    const uint vecWidth=${LL};
+    const unsigned int vecWidth=${LL};
     // Thread ID within wavefront
-    const uint id = t & (vecWidth-1);
+    const unsigned int id = t & (vecWidth-1);
     // One row per wavefront
-    uint vecsPerBlock=get_local_size(0)/vecWidth;
-    uint myRow=(get_group_id(0)*vecsPerBlock) + (t/ vecWidth);
+    unsigned int vecsPerBlock=get_local_size(0)/vecWidth;
+    unsigned int myRow=(get_group_id(0)*vecsPerBlock) + (t/ vecWidth);
     LOCAL_MEM float2 partialSums[${LL}];
     float2 zero;
     zero.x = 0.0;
@@ -69,9 +69,9 @@ KERNEL void cMerge(
     // float2  y= zero;
     if (myRow < prodNd)
     {
-     const uint vecStart = myRow * Reps;
-     const uint vecEnd = vecStart + Reps;            
-     for (uint j = vecStart+id;  j<vecEnd; j += vecWidth)
+     const unsigned int vecStart = myRow * Reps;
+     const unsigned int vecEnd = vecStart + Reps;            
+     for (unsigned int j = vecStart+id;  j<vecEnd; j += vecWidth)
      {
           
             const float2 u = arr_large[j]; // sensitivities and scaling, complex 
@@ -88,7 +88,7 @@ KERNEL void cMerge(
       //__syncthreads();
       //barrier(CLK_LOCAL_MEM_FENCE);
       // Reduce partial sums
-      uint bar = vecWidth / 2;
+      unsigned int bar = vecWidth / 2;
       while(bar > 0)
       {
            if (id < bar)
@@ -108,20 +108,20 @@ KERNEL void cMerge(
 };    // End of cMerge
   
 KERNEL void cAggregate(
-    const    uint    Reps,
-    const    uint    prodNd, 
+    const    unsigned int    Reps,
+    const    unsigned int    prodNd, 
     GLOBAL_MEM const float2 *arr_image, // image array, prodNd*Reps
     GLOBAL_MEM float2 *arr_out // reduced output array, prodNd 
     )
 {   
-    const uint t = get_local_id(0);
+    const unsigned int t = get_local_id(0);
     //const float float_reps = (float)Reps;
-    const uint vecWidth=${LL};
+    const unsigned int vecWidth=${LL};
     // Thread ID within wavefront
-    const uint id = t & (vecWidth-1);
+    const unsigned int id = t & (vecWidth-1);
     // One row per wavefront
-    uint vecsPerBlock=get_local_size(0)/vecWidth;
-    uint myRow=(get_group_id(0)*vecsPerBlock) + (t/ vecWidth);
+    unsigned int vecsPerBlock=get_local_size(0)/vecWidth;
+    unsigned int myRow=(get_group_id(0)*vecsPerBlock) + (t/ vecWidth);
     LOCAL_MEM float2 partialSums[${LL}];
     float2 zero;
     zero.x = 0.0;
@@ -131,9 +131,9 @@ KERNEL void cAggregate(
     // float2  y= zero;
     if (myRow < prodNd)
     {
-     const uint vecStart = myRow * Reps;
-     const uint vecEnd = vecStart + Reps;            
-     for (uint j = vecStart+id;  j<vecEnd; j += vecWidth)
+     const unsigned int vecStart = myRow * Reps;
+     const unsigned int vecEnd = vecStart + Reps;            
+     for (unsigned int j = vecStart+id;  j<vecEnd; j += vecWidth)
      {
         float2 v = arr_image[j];
         v.x = v.x/(float)Reps;
@@ -145,7 +145,7 @@ KERNEL void cAggregate(
       //__syncthreads();
       //barrier(CLK_LOCAL_MEM_FENCE);
       // Reduce partial sums
-      uint bar = vecWidth / 2;
+      unsigned int bar = vecWidth / 2;
       while(bar > 0)
       {
            if (id < bar)
@@ -165,15 +165,15 @@ KERNEL void cAggregate(
 };    // End of cAggregate
     
 KERNEL void cPopulate(    
-      const    uint    Reps,
-      const    uint   prodNd, 
+      const    unsigned int    Reps,
+      const    unsigned int   prodNd, 
       GLOBAL_MEM const float2 *arr_image, // image array, prodNd
       GLOBAL_MEM float2 *arr_out // output array, prodNd * Reps
       ) 
 {  
-    const uint t = get_global_id(0);
-    //const uint nd = t/Reps;
-    const uint nd = ((float)t / (float)Reps);
+    const unsigned int t = get_global_id(0);
+    //const unsigned int nd = t/Reps;
+    const unsigned int nd = ((float)t / (float)Reps);
     if (nd < prodNd){
     const float2 v = arr_image[nd];
     arr_out[t] = v;
@@ -181,5 +181,5 @@ KERNEL void cPopulate(
 };  // End of cPopulate    
     
 """
-from numpy import uint32
-scalar_arg_dtypes=[uint32, None, None, None, None, None]        
+# from numpy import unsigned int32
+# scalar_arg_dtypes=[unsigned int32, None, None, None, None, None]        

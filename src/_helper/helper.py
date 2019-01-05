@@ -2,9 +2,11 @@
 Helper functions
 =======================================
 
-bugfix: mm = numpy.tile(mm, [numpy.prod(Jd).astype(int), 1])  to fix wrong type when numpy.prod(Jd) is not casted as int
-bugfix: fix rcond=None error in Anaconda 3.6.5 and Numpy 1.13.1 (the recommended None in Numpy 1.14 is backward incompatible with 1.13)
-bugfix:  indx1 = indx.copy() was replaced by indx1 = list(indx) for Python2 compatibility
+-bugfix: mm = numpy.tile(mm, [numpy.prod(Jd).astype(int), 1])  to fix wrong type when numpy.prod(Jd) is not casted as int
+
+-bugfix: fix rcond=None error in Anaconda 3.6.5 and Numpy 1.13.1 (the recommended None in Numpy 1.14 is backward incompatible with 1.13)
+
+-bugfix:  indx1 = indx.copy() was replaced by indx1 = list(indx) for Python2 compatibility
 """
 
 
@@ -17,7 +19,7 @@ def create_laplacian_kernel(nufft):
     Create the multi-dimensional laplacian kernel in k-space
     
     :param nufft: the NUFFT object
-    :returns: uker: the multi-dimensional laplacian kernel in k-space (no fft shift used)
+    :return: uker: the multi-dimensional laplacian kernel in k-space (no fft shift used)
     :rtype: numpy ndarray
     """
 #===============================================================================
@@ -49,14 +51,14 @@ def create_laplacian_kernel(nufft):
     return uker  
 def indxmap_diff(Nd):
     """
-    Preindixing for rapid image gradient ()
+    Preindixing for rapid image gradient.
     Diff(x) = x.flat[d_indx[0]] - x.flat
     Diff_t(x) =  x.flat[dt_indx[0]] - x.flat
-
+    
     :param Nd: the dimension of the image
     :type Nd: tuple with integers
-    :returns d_indx: iamge gradient
-    :returns  dt_indx:  the transpose of the image gradient 
+    :return: d_indx: image gradient
+    :return:  dt_indx:  the transpose of the image gradient 
     :rtype: d_indx: lists with numpy ndarray
     :rtype: dt_indx: lists with numpy ndarray
     """    
@@ -74,6 +76,20 @@ def indxmap_diff(Nd):
     return d_indx,  dt_indx  
 
 def QR_process(om, N, J, K, sn):
+    """
+    1D QR method for generating min-max interpolator
+    
+    :param om: non-Cartesian coordinate. shape = (M, dims)
+    :param N: length
+    :param J: size of interpolator
+    :param K: size of oversampled grid
+    :param sn:  scaling factor as a length-N vector
+    :type om: numpy.float32
+    :type N: int
+    :type J: int
+    :type K: int
+    :type sn: numpy.float32 shape = (N,)
+    """
 
     M = numpy.size(om)  # 1D size
     gam = 2.0 * numpy.pi / (K * 1.0)
@@ -112,6 +128,18 @@ def QR2(om, N, J, K, sn, ft_flag):
 
 
 def get_sn(J, K, N):
+    """
+    Compute the 1D scaling factor for the given J, K, N
+    
+    :param J: size of interpolator
+    :param K: size of oversampled grid
+    :param N: length
+    :type J: int
+    :type N: int
+    :type K: int
+    :return: sn:  scaling factor as a length-N vector
+    :rtype sn: numpy.float32 shape = (N,)
+    """
     
     Nmid = (N - 1.0) / 2.0
     nlist = numpy.arange(0, N) * 1.0 - Nmid    
@@ -187,8 +215,36 @@ def OMEGA_k(J,K, omd, Kd, dimid, dd, ft_flag):
     return k_indx
 
 class pELL:
+    """
+    class pELL: partial ELL format
+    """
     def __init__(self, M,  Jd, curr_sumJd, meshindex, kindx, udata):
+        """
+        Constructor
         
+        :param M: Number of samples
+        :type M: int
+        :param Jd: Interpolator size
+        :type Jd: tuple of int
+        :param curr_sumJd: Summation of Jd[0:d-1], for fast shift computing
+        :type curr_sumJd: tuple of int
+        :param meshindex: The tensor indeces to all interpolation points
+        :type meshindex: numpy.uint32, shape =  (numpy.prod(Jd),  dd)
+        :param kindx: Premixed k-indeces to be combined 
+        :type kindx: numpy.uint32, shape = (M, numpy.sum(Jd))
+        :param udata: Premixed interpolation data values
+        :type udata: numpy.complex64, shape = (M, numpy.sum(Jd))
+        :returns: pELL: partial ELLpack class with the given values
+        :rtype: pELL: partial ELLpack class
+        
+        curr_sumJd: summation of curr_sumJd[dimid] = numpy.sum(Jd[0:dimid - 1])
+        
+        meshindex: For prodJd hypercubic interpolators, find the indices of tensor, shape = (prodJd, dd)
+        
+        kindx: column indeces, shape = (M, sumJd)
+        
+        udata: interpolators, shape = (M, sumJd)
+        """
         self.nRow = M
         self.prodJd = numpy.prod(Jd)
         self.dim = len(Jd)
@@ -264,20 +320,17 @@ def create_ell(uu, kk):
     return ell
 def create_partialELL(ud, kd, Jd, M):
     """
-    Input:
-    ud (the struct of all 1D interpolators), kd (the struct of all 1D indeces of 1D interpolators), 
-    Jd: tuple of interpolation sizes
-    dd: the number of dimensions
-    M: the number of samples
     
-    output:
-    M: number of non-uniform locations 
-    Jd: tuple,  (Jd[0], Jd[1], Jd[2],    ...,    Jd[dd -1]
-    curr_sumJd: summation of curr_sumJd[dimid] = numpy.sum(Jd[0:dimid - 1])
-    meshindex: For prodJd hypercubic interpolators, find the indices of tensor, shape = (prodJd, dd)
-    kindx: column indeces, shape = (M, sumJd)
-    udata: interpolators, shape = (M, sumJd)
-    
+    :param ud: tuple of all 1D interpolators
+    :param kd: tuple of all 1D indices
+    :param Jd: tuple of interpolation sizes
+    :param M: the number of samples
+    :type ud: tuple of numpy.complex64 arrays
+    :type kd: tuple of numpy.int32 arrays
+    :type Jd: tuple of int32
+    :type M: int
+    :return: partialELL:
+    :rtype: partialELL: pELL instance   
     """
     dd = len(Jd)
     curr_sumJd = numpy.zeros( ( dd, ), dtype = numpy.uint32)
@@ -308,41 +361,41 @@ def create_partialELL(ud, kd, Jd, M):
     partialELL = pELL(M, Jd, curr_sumJd, meshindex, kindx, udata)
     return partialELL
 
-def partial_combination(ud, kd, Jd):
-    """
-    Input:
-    ud (the struct of all 1D interpolators), kd (the struct of all 1D indeces of 1D interpolators), 
-    Jd: tuple of interpolation sizes
-    dd: the number of dimensions
-    M: the number of samples
-    
-    output:
-    M: number of non-uniform locations 
-    Jd: tuple,  (Jd[0], Jd[1], Jd[2],    ...,    Jd[dd -1]
-    curr_sumJd: summation of curr_sumJd[dimid] = numpy.sum(Jd[0:dimid - 1])
-    meshindex: For prodJd hypercubic interpolators, find the indices of tensor, shape = (prodJd, dd)
-    kindx: column indeces, shape = (M, sumJd)
-    udata: interpolators, shape = (M, sumJd)
-    
-    """
-
-    dd = len(Jd)
-    
-    kk = kd[0]  # [M, J1] # pointers to indices
-    M = kd[0].shape[0]
-    uu = ud[0]  # [M, J1]
-    Jprod = Jd[0]
-    for dimid in range(1, dd):
-        Jprod *= Jd[dimid]#numpy.prod(Jd[:dimid + 1])
-
-        kk = block_outer_sum(kk, kd[dimid]) + 1  # outer sum of indices
-        kk = kk.reshape((M, Jprod), order='C')
-        uu = numpy.einsum('ij,ik->ijk', uu, ud[dimid])
-        uu = uu.reshape((M, Jprod), order='C')
-    kd2 = (kk, )
-    ud2 = (uu, )
-    Jd2 = (Jprod, )
-    return ud2, kd2, Jd2
+# def partial_combination(ud, kd, Jd):
+#     """
+#     Input:
+#     ud (the struct of all 1D interpolators), kd (the struct of all 1D indeces of 1D interpolators), 
+#     Jd: tuple of interpolation sizes
+#     dd: the number of dimensions
+#     M: the number of samples
+#     
+#     output:
+#     M: number of non-uniform locations 
+#     Jd: tuple,  (Jd[0], Jd[1], Jd[2],    ...,    Jd[dd -1])
+#     curr_sumJd: summation of curr_sumJd[dimid] = numpy.sum(Jd[0:dimid - 1])
+#     meshindex: For prodJd hypercubic interpolators, find the indices of tensor, shape = (prodJd, dd)
+#     kindx: column indeces, shape = (M, sumJd)
+#     udata: interpolators, shape = (M, sumJd)
+#     
+#     """
+# 
+#     dd = len(Jd)
+#     
+#     kk = kd[0]  # [M, J1] # pointers to indices
+#     M = kd[0].shape[0]
+#     uu = ud[0]  # [M, J1]
+#     Jprod = Jd[0]
+#     for dimid in range(1, dd):
+#         Jprod *= Jd[dimid]#numpy.prod(Jd[:dimid + 1])
+# 
+#         kk = block_outer_sum(kk, kd[dimid]) + 1  # outer sum of indices
+#         kk = kk.reshape((M, Jprod), order='C')
+#         uu = numpy.einsum('ij,ik->ijk', uu, ud[dimid])
+#         uu = uu.reshape((M, Jprod), order='C')
+#     kd2 = (kk, )
+#     ud2 = (uu, )
+#     Jd2 = (Jprod, )
+#     return ud2, kd2, Jd2
 
 def full_kron(ud, kd, Jd, Kd, M):
 #     (udata, kindx)=khatri_rao(ud, kd, Jd)
@@ -404,26 +457,74 @@ def khatri_rao_u( ud):
 #         uu = uu.reshape((M, Jprod), order='C')
 #      
 #     return uu, kk
-def rdx_kron(ud, kd, Jd, M):
+def rdx_kron(ud, kd, Jd, radix=None):
     """
     Radix-n Kronecker product of multi-dimensional array
+    :param ud: 1D interpolators
+    :type ud: tuple of (M, Jd[d]) numpy.complex64 arrays
+    :param kd: 1D indices to interpolators
+    :type kd: tuple of (M, Jd[d]) numpy.uint arrays
+    :param Jd: 1D interpolator sizes
+    :type Jd: tuple of int
+    :param radix: radix of Kronecker product
+    :type radix: int
+    :returns: uu: 1D interpolators
+    :type uu: tuple of (M, Jd[d]) numpy.complex64 arrays
+    :param kk: 1D indices to interpolators
+    :type kk: tuple of (M, Jd[d]) numpy.uint arrays
+    :param JJ: 1D interpolator sizes
+    :type JJ: tuple of int
+    
     """
+    M = ud[0].shape[0]
     dd = len(Jd)
-    kk = kd[0]  # [J1 M] # pointers to indices
-    uu = ud[0]  # [J1 M]
-    Jprod = Jd[0]
-    for dimid in range(1, dd):
-        Jprod *= Jd[dimid]#numpy.prod(Jd[:dimid + 1])
+    if radix is None:
+        radix = dd
+    if radix > dd:
+        radix = dd
+        
+    ud2 = ()
+    kd2 = ()
+    Jd2 = ()
+#     kk = kd[0]  # [J1 M] # pointers to indices
+#     uu = ud[0]  # [J1 M]
+#     Jprod = Jd[0]
+    for count in range(0, int(numpy.ceil(dd/radix)), radix):
+        if count ==0:
+            kk = numpy.zeros((M,1)) - 1
+        else:
+            kk = numpy.zeros((M,1)) 
+        uu = numpy.ones((M, 1), dtype = numpy.complex64)
+        Jprod = 1
+        d_start = count
+        d_end = count + radix
+        if d_end > dd:
+            d_end = dd
+        
+        for dimid in range(d_start, d_end):
+            Jprod *= Jd[dimid]#numpy.prod(Jd[:dimid + 1])
+    
+            kk = block_outer_sum(kk, kd[dimid]) + 1  # outer sum of indices
+            kk = kk.reshape((M, Jprod), order='C')
+            uu = numpy.einsum('ij,ik->ijk', uu, ud[dimid])
+            uu = uu.reshape((M, Jprod), order='C')
+        
+        
+        ud2 += (uu, )
+        kd2 += (kk, )
+        Jd2 += (Jprod, )
+    return ud2, kd2, Jd2 #(uu, ), (kk, ), (Jprod, )#, Jprod
 
-        kk = block_outer_sum(kk, kd[dimid]) + 1  # outer sum of indices
-        kk = kk.reshape((M, Jprod), order='C')
-        uu = numpy.einsum('ij,ik->ijk', uu, ud[dimid])
-        uu = uu.reshape((M, Jprod), order='C')
-     
-    return uu, kk#, Jprod
-def Kronector_snd(snd, dd):
+def kronecker_scale(snd, dd):
     """
-    Compute the Kronecker product of scaling factor
+    Compute the Kronecker product of scaling factor.
+    
+    :param snd: Tuple of 1D scaling factors
+    :param dd: Number of dimensions
+    :type snd: tuple of 1D numpy.array
+    :return: sn: The multi-dimensional Kronecker of the scaling factors
+    :rtype: Nd array
+    
     """
     shape_broadcasting = ()
     for dimid in range(0, dd):
@@ -456,6 +557,27 @@ def min_max(N, J, K, alpha, beta, om, ft_flag):
     return u2
 
 def plan(om, Nd, Kd, Jd, ft_axes = None, format='CSR'):
+    """
+    Plan for the NUFFT object.
+    
+    :param om: Coordinate
+    :param Nd: Image shape
+    :param Kd: Oversampled grid shape
+    :param Jd: Interpolator size
+    :param ft_axes: Axes where FFT takes place
+    :param format: Output format of the interpolator. 
+                    'CSR': the precomputed Compressed Sparse Row (CSR) matrix. 
+                    'pELL': partial ELLPACK which precomputes the concatenated 1D interpolators.
+    :type om: numpy.float
+    :type Nd: tuple of int
+    :type Kd: tuple of int
+    :type Jd: tuple of int
+    :type ft_axes: tuple of int
+    :type format: string, 'CSR' or 'pELL'
+    :return st: dictionary for NUFFT
+    
+    """
+    
 #         self.debug = 0  # debug
 
     if type(Nd) != tuple:
@@ -535,7 +657,6 @@ def plan(om, Nd, Kd, Jd, ft_axes = None, format='CSR'):
     """
      higher-order Kronecker product of all dimensions
     """      
-    st['sn'] = Kronector_snd(snd, dd).real # only real scaling is relevant
     
     # [J? M] interpolation coefficient vectors.
     # Iterate over all dimensions and
@@ -595,134 +716,22 @@ def plan(om, Nd, Kd, Jd, ft_axes = None, format='CSR'):
         CSR = full_kron(ud, kd, Jd, Kd, M)
         st['p'] = CSR
 #     st['ell'] = ELL
-
+        st['sn'] = kronecker_scale(snd, dd).real # only real scaling is relevant
+    
 #     ud2, kd2, Jd2 = partial_combination(ud, kd, Jd)
     elif format is 'pELL':
-        st['pELL'] = create_partialELL(ud, kd, Jd, M) 
-    
+        ud2, kd2, Jd2 = ud, kd, Jd#rdx_kron(ud, kd, Jd, radix=2)
+        st['pELL'] = create_partialELL(ud2, kd2, Jd2, M) 
+        st['tensor_sn'] = snd
     # no dimension-reduction Nd -> Nd
     # Tuple (Nd) -> array (shape = M*sumJd)
 
     return st #new
 
-# def plan1(om, Nd, Kd, Jd, ft_axes = None):
-#     """
-#     Compute the coil sensitivity aware interpolator
-#     """
-# #         self.debug = 0  # debug
-# 
-#     if type(Nd) != tuple:
-#         raise TypeError('Nd must be tuple, e.g. (256, 256)')
-# 
-#     if type(Kd) != tuple:
-#         raise TypeError('Kd must be tuple, e.g. (512, 512)')
-# 
-#     if type(Jd) != tuple:
-#         raise TypeError('Jd must be tuple, e.g. (6, 6)')
-# 
-#     if (len(Nd) != len(Kd)) | (len(Nd) != len(Jd))  | len(Kd) != len(Jd):
-#         raise KeyError('Nd, Kd, Jd must be in the same length, e.g. Nd=(256,256),Kd=(512,512),Jd=(6,6)')
-# 
-#     dd = numpy.size(Nd)
-# 
-#     if ft_axes is None:
-#         ft_axes = tuple(xx for xx in range(0, dd))
-# 
-# #     print('ft_axes = ', ft_axes)
-#     ft_flag = () # tensor
-#     
-#     for pp in range(0, dd):
-#         if pp in ft_axes:
-#             ft_flag += (True, )
-#         else:
-#             ft_flag += (False, )
-# 
-#     st = {}
-#     
-# 
-#     st['tol'] = 0
-#     st['Jd'] = Jd
-#     st['Nd'] = Nd
-#     st['Kd'] = Kd
-#     M = om.shape[0]
-#     st['M'] = numpy.int32(M)
-#     st['om'] = om
-#     
-#     
-#     for dimid in range(0, dd):
-# 
-#         (tmp_alpha, tmp_beta) = nufft_alpha_kb_fit(
-#             Nd[dimid], Jd[dimid], Kd[dimid])
-#         st.setdefault('alpha', []).append(tmp_alpha)
-#         st.setdefault('beta', []).append(tmp_beta)
-#         
-#     snd = ()
-#     list_C = []
-#     list_arg = []
-#     list_bn = []
-#     for dimid in range(0, dd):        
-#         snd += (nufft_scale(
-#             Nd[dimid],
-#             Kd[dimid],
-#             st['alpha'][dimid],
-#             st['beta'][dimid]), )
-#         C, arg, bn = QR_process(om[:, dimid], Nd[dimid], Jd[dimid], Kd[dimid], snd[dimid]) 
-#         """
-#         Save the C matrix, arg and bn. They will be reused.
-#         """
-#         list_C += [C, ]
-#         list_arg += [arg, ]
-#         list_bn += [bn, ]
-#     st['sn'] = Kronector_snd(snd, dd).real # only real scaling is relevant
-# 
-#     # [J? M] interpolation coefficient vectors.
-#     # Iterate over all dimensions and
-#     # multiply the coefficients of all dimensions
-# 
-#     ud = []
-#     for dimid in range(0, dd):  # iterate through all dimensions
-#         N = Nd[dimid]
-#         J = Jd[dimid]
-#         K = Kd[dimid]
-#         alpha = st['alpha'][dimid]
-#         beta = st['beta'][dimid]
-# 
-#         """
-#         Compute the coil sensitivity aware interpolator
-#         """
-# 
-#         if ft_flag[dimid] is True:
-# 
-#             c = solve_c( list_C[dimid],  list_bn[dimid]) 
-#             # C: NxJ, 
-#             # bn: NxM (xr)
-#             # c: J x M    (x    r)
-# 
-#             u2 = OMEGA_u( c, N, K, om[:, dimid], list_arg[dimid], ft_flag[dimid]).T.conj()
-#             # u2: J x M    (x    r)
-# 
-#             ud += [u2,]
-# 
-#         else:
-#             ud += (numpy.ones((1, M), dtype = dtype).T, )
-# 
-#     """
-#     Now compute the column indeces for 1D interpolators
-#     Each length-Jd interpolator includes Jd points, which are linked to Jd k-space locations
-#     kd is a tuple storing the 1D interpolators. 
-#     A following Kronecker product will be needed.
-#     """
-#     
-#     kd = []
-#     for dimid in range(0, dd):  # iterate over all dimensions
-#         kd += (OMEGA_k(J,K, om[:,dimid], Kd, dimid, dd, ft_flag[dimid]).T, )
-# 
-#     CSR, ELL = full_kron(ud, kd, Jd, Kd, M)
-#     st['p'] = CSR
-# 
-#     return st #new
-
-def plan0(om, Nd, Kd, Jd):
+def plan1(om, Nd, Kd, Jd, ft_axes = None):
+    """
+    Compute the coil sensitivity aware interpolator
+    """
 #         self.debug = 0  # debug
  
     if type(Nd) != tuple:
@@ -739,13 +748,127 @@ def plan0(om, Nd, Kd, Jd):
  
     dd = numpy.size(Nd)
  
+    if ft_axes is None:
+        ft_axes = tuple(xx for xx in range(0, dd))
+ 
+#     print('ft_axes = ', ft_axes)
+    ft_flag = () # tensor
+     
+    for pp in range(0, dd):
+        if pp in ft_axes:
+            ft_flag += (True, )
+        else:
+            ft_flag += (False, )
+ 
+    st = {}
+     
+ 
+    st['tol'] = 0
+    st['Jd'] = Jd
+    st['Nd'] = Nd
+    st['Kd'] = Kd
+    M = om.shape[0]
+    st['M'] = numpy.int32(M)
+    st['om'] = om
+     
+     
+    for dimid in range(0, dd):
+ 
+        (tmp_alpha, tmp_beta) = nufft_alpha_kb_fit(
+            Nd[dimid], Jd[dimid], Kd[dimid])
+        st.setdefault('alpha', []).append(tmp_alpha)
+        st.setdefault('beta', []).append(tmp_beta)
+         
+    snd = ()
+    list_C = []
+    list_arg = []
+    list_bn = []
+    for dimid in range(0, dd):        
+        snd += (nufft_scale(
+            Nd[dimid],
+            Kd[dimid],
+            st['alpha'][dimid],
+            st['beta'][dimid]), )
+        C, arg, bn = QR_process(om[:, dimid], Nd[dimid], Jd[dimid], Kd[dimid], snd[dimid]) 
+        """
+        Save the C matrix, arg and bn. They will be reused.
+        """
+        list_C += [C, ]
+        list_arg += [arg, ]
+        list_bn += [bn, ]
+    st['sn'] = kronecker_scale(snd, dd).real # only real scaling is relevant
+ 
+    # [J? M] interpolation coefficient vectors.
+    # Iterate over all dimensions and
+    # multiply the coefficients of all dimensions
+ 
+    ud = []
+    for dimid in range(0, dd):  # iterate through all dimensions
+        N = Nd[dimid]
+        J = Jd[dimid]
+        K = Kd[dimid]
+        alpha = st['alpha'][dimid]
+        beta = st['beta'][dimid]
+ 
+        """
+        Compute the coil sensitivity aware interpolator
+        """
+ 
+        if ft_flag[dimid] is True:
+ 
+            c = solve_c( list_C[dimid],  list_bn[dimid]) 
+            # C: NxJ, 
+            # bn: NxM (xr)
+            # c: J x M    (x    r)
+ 
+            u2 = OMEGA_u( c, N, K, om[:, dimid], list_arg[dimid], ft_flag[dimid]).T.conj()
+            # u2: J x M    (x    r)
+ 
+            ud += [u2,]
+ 
+        else:
+            ud += (numpy.ones((1, M), dtype = dtype).T, )
+ 
+    """
+    Now compute the column indeces for 1D interpolators
+    Each length-Jd interpolator includes Jd points, which are linked to Jd k-space locations
+    kd is a tuple storing the 1D interpolators. 
+    A following Kronecker product will be needed.
+    """
+     
+    kd = []
+    for dimid in range(0, dd):  # iterate over all dimensions
+        kd += (OMEGA_k(J,K, om[:,dimid], Kd, dimid, dd, ft_flag[dimid]).T, )
+ 
+    CSR, ELL = full_kron(ud, kd, Jd, Kd, M)
+    st['p'] = CSR
+ 
+    return st #new
+
+def plan0(om, Nd, Kd, Jd):
+#         self.debug = 0  # debug
+  
+    if type(Nd) != tuple:
+        raise TypeError('Nd must be tuple, e.g. (256, 256)')
+  
+    if type(Kd) != tuple:
+        raise TypeError('Kd must be tuple, e.g. (512, 512)')
+  
+    if type(Jd) != tuple:
+        raise TypeError('Jd must be tuple, e.g. (6, 6)')
+  
+    if (len(Nd) != len(Kd)) | (len(Nd) != len(Jd))  | len(Kd) != len(Jd):
+        raise KeyError('Nd, Kd, Jd must be in the same length, e.g. Nd=(256,256),Kd=(512,512),Jd=(6,6)')
+  
+    dd = numpy.size(Nd)
+  
 ###############################################################
 # check input errors
 ###############################################################
     st = {}
     ud = {}
     kd = {}
- 
+  
 ###############################################################
 # First, get alpha and beta: the weighting and freq
 # of formula (28) in Fessler's paper
@@ -782,16 +905,16 @@ def plan0(om, Nd, Kd, Jd):
         st['sn'] = numpy.dot(st['sn'], tmp.T)
         st['sn'] = numpy.reshape(st['sn'], (dimid_cnt, 1), order='C')
         # JML do not apply scaling
- 
+  
     # order = 'F' is for fortran order
     st['sn'] = st['sn'].reshape(Nd, order='C')  # [(Nd)]
     ###############################################################
     # else:
     #     st['sn'] = numpy.array(st['sn'],order='F')
     ###############################################################
- 
+  
     st['sn'] = numpy.real(st['sn'])  # only real scaling is relevant
- 
+  
     # [J? M] interpolation coefficient vectors.
     # Iterate over all dimensions and
     # multiply the coefficients of all dimensions
@@ -804,26 +927,26 @@ def plan0(om, Nd, Kd, Jd):
         ###############################################################
         # formula 29 , 26 of Fessler's paper
         ###############################################################
- 
+  
         # pseudo-inverse of CSSC using large N approx [J? J?]
         T = nufft_T(N, J, K, alpha, beta)
         ###############################################################
         # formula 30  of Fessler's paper
         ###############################################################
- 
+  
         (r, arg) = nufft_r(om[:, dimid], N, J,
                            K, alpha, beta)  # large N approx [J? M]
- 
+  
         ###############################################################
         # formula 25  of Fessler's paper
         ###############################################################
         c = numpy.dot(T, r)
- 
+  
         ###############################################################
         # grid intervals in radius
         ###############################################################
         gam = 2.0 * numpy.pi / (K * 1.0)
- 
+  
         phase_scale = 1.0j * gam * (N - 1.0) / 2.0
         phase = numpy.exp(phase_scale * arg)  # [J? M] linear phase
         ud[dimid] = phase * c
@@ -838,13 +961,13 @@ def plan0(om, Nd, Kd, Jd):
                     J + 1) * 1.0,
                 koff),
             K)
- 
+  
         """
             JML: For GPU computing, indexing must be C-order (row-major)
             Multi-dimensional cuda or opencl arrays are row-major (order="C"), which  starts from the higher dimension.
             Note: This is different from the MATLAB indexing(for fortran order, colum major, low-dimension first 
         """
- 
+  
         if dimid < dd - 1:  # trick: pre-convert these indices into offsets!
             #            ('trick: pre-convert these indices into offsets!')
             kd[dimid] = kd[dimid] * numpy.prod(Kd[dimid+1:dd]) - 1 
@@ -852,12 +975,12 @@ def plan0(om, Nd, Kd, Jd):
         Note: F-order matrices must be reshaped into an 1D array before sparse matrix-vector multiplication.
         The original F-order (in Fessler and Sutton 2003) is not suitable for GPU array (C-order).
         Currently, in-place reshaping in F-order only works in numpy.
-         
+          
         """
 #             if dimid > 0:  # trick: pre-convert these indices into offsets!
 #                 #            ('trick: pre-convert these indices into offsets!')
 #                 kd[dimid] = kd[dimid] * numpy.prod(Kd[0:dimid]) - 1           
- 
+  
     kk = kd[0]  # [J1 M] # pointers to indices
     uu = ud[0]  # [J1 M]
     Jprod = Jd[0]
@@ -877,36 +1000,36 @@ def plan0(om, Nd, Kd, Jd):
     mm = numpy.arange(0, M)  # indices from 0 to M-1
     mm = numpy.tile(mm, [numpy.prod(Jd).astype(int), 1])  # product(Jd)xM 
     # Now build sparse matrix from uu, mm, kk
- 
+  
     # convert array to list
     csrdata = numpy.reshape(uu.T, (Jprod * M, ), order='C')
- 
+  
     # row indices, from 1 to M convert array to list
     rowindx = numpy.reshape(mm.T, (Jprod * M, ), order='C')
- 
+  
     # colume indices, from 1 to prod(Kd), convert array to list
     colindx = numpy.reshape(kk.T, (Jprod * M, ), order='C')
- 
+  
     # The shape of sparse matrix
     csrshape = (M, numpy.prod(Kd))
- 
+  
     # Build sparse matrix (interpolator)
     st['p'] = scipy.sparse.csr_matrix((csrdata, (rowindx, colindx)),
                                        shape=csrshape)
     # Note: the sparse matrix requires the following linear phase,
     #       which moves the image to the center of the image
-     
+      
     om = st['om']
     M = st['M']
-     
+      
     n_shift = tuple(0*x for x in st['Nd'])
-     
+      
     final_shifts = tuple(
         numpy.array(n_shift) +
         numpy.array(
             st['Nd']) /
         2)
-     
+      
     phase = numpy.exp(
         1.0j *
         numpy.sum(
@@ -917,14 +1040,40 @@ def plan0(om, Nd, Kd, Jd):
                  1)),
             1))
     # add-up all the linear phasees in all axes,
- 
+  
     st['p'] = scipy.sparse.diags(phase, 0).dot(st['p'])
- 
-     
+  
+      
 #     st['p0'].prune() # Scipy sparse: removing empty space after all non-zero elements.
-     
+      
     return st # plan0()
 
+def strides_divide_itemsize(Nd):
+    """
+    strides_divide_itemsize function computes the step_size (strides/itemsize) along different axes, and its inverse as float32.
+    For fast GPU computing, preindexing allows for fast Hadamard product and copy. 
+    However preindexing costs some memory. 
+    strides_divide_itemsize aims to replace preindexing by run-time calculation of the index, given the invNd_elements.
+     
+    :param Nd: Input shape
+    :type Nd: tuple of int
+    :return: Nd_elements: strides/itemsize of the Nd. 
+    :return:  invNd_elements: (float32)(1/Nd_elements). Division on GPU is slow but multiply is fast. Thus we can precompute the inverse then multiply the inverse on GPU.
+    :rtype: Nd_elements: tuple of int
+    :rtype: invNd_elements: tuple of float32 
+    
+    .. seealso:: :class:`pynufft.NUFFT_hsa`
+    
+    """
+    
+    Nd_elements = tuple(numpy.prod(Nd[dd+1:]) for dd in range(0,len(Nd)))
+#     Kd_elements = tuple(numpy.prod(Kd[dd+1:]) for dd in range(0,len(Kd)))
+    invNd_elements = 1/numpy.array(Nd_elements, dtype = numpy.float32)
+
+    return Nd_elements, invNd_elements
+
+        
+    
 def preindex_copy(Nd, Kd):
     """
     Building the array index for copying two arrays of sizes Nd and Kd
@@ -939,9 +1088,9 @@ def preindex_copy(Nd, Kd):
     :param Kd: tuple, the dimensions of array2
     :type Nd: tuple with integer elements
     :type Kd: tuple with integer elements
-    :returns: inlist: the index of the input array
-    :returns: outlist: the index of the output array
-    :returns: nelem: the length of the inlist and outlist (equal length)
+    :return: inlist: the index of the input array
+    :return: outlist: the index of the output array
+    :return: nelem: the length of the inlist and outlist (equal length)
     :rtype: inlist: list with integer elements
     :rtype: outlist: list with integer elements
     :rtype: nelem: int
@@ -967,8 +1116,12 @@ def preindex_copy(Nd, Kd):
              b = mylist%min_dim[pp]
              mylist = a
              BB=(b,) + BB
+             
+        if ndim == 1:
+            mylist =  numpy.arange(0, nelem).astype(numpy.int32)
+        else:
+            mylist = numpy.floor( numpy.arange(0, nelem).astype(numpy.int32)/ numpy.prod(min_dim[1:]))
             
-        
         inlist = mylist
         outlist = mylist
         for pp in range(0, ndim-1):
@@ -1008,14 +1161,19 @@ def nufft_alpha_kb_fit(N, J, K):
     """
     Find parameters alpha and beta for scaling factor st['sn']
     The alpha is hardwired as [1,0,0...] when J = 1 (uniform scaling factor)
-    
-    :param int N: the size of image
-    :param int J:the size of interpolator
-    :param int K: the size of oversampled k-space
-    
-    
-    
-    """
+   
+    :param N: The size of image
+    :param J: The size of interpolator
+    :param K: The size of oversampled k-space
+    :type N: int
+    :type J: int
+    :type K: int    
+    :returns: alphas:
+    :returns: beta:
+    :rtype: alphas: list of float
+    :rtype: beta: 
+    """    
+        
     beta = 1
     Nmid = (N - 1.0) / 2.0
     if N > 40:
@@ -1248,10 +1406,7 @@ def block_outer_sum(x1, x2):
     (M, J1) = x1.shape
     (M, J2) = x2.shape
     xx1 = x1.reshape((M, J1, 1), order='C')  # [J1 1 M] from [J1 M]
-#     xx1 = numpy.tile(xx1, (1, J2, 1))  # [J1 J2 M], emulating ndgrid
     xx2 = x2.reshape((M, 1, J2), order='C')  # [1 J2 M] from [J2 M]
-#     xx2 = numpy.tile(xx2, (J1, 1, 1))  # [J1 J2 M], emulating ndgrid
-#     print('xx1, xx2 shape = ', xx1.shape, xx2.shape)
     y = xx1 + xx2
     return y  # [J1 J2 M]
 
@@ -1295,4 +1450,5 @@ def diagnose():
     except:
         print('ocl interface is not available')
         ocl_flag = 0
+    return cuda_flag, ocl_flag
         

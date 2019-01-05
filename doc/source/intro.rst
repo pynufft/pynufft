@@ -19,7 +19,7 @@ Pynufft reimplements the MATLAB version of min-max NUFFT_, with the following fe
 
 If you find pynufft useful, please cite:
 
-*Jyh-Miin Lin, Hsiao-Wen Chung, Pynufft: python non-uniform fast Fourier transform for MRI. Building Bridges in Medical Sciences Conference 2017 (BBMS17), Mar, 2017, St John's College, Cambridge, UK*
+*Lin, Jyh-Miin. "Python Non-Uniform Fast Fourier Transform (PyNUFFT): An Accelerated Non-Cartesian MRI Package on a Heterogeneous Platform (CPU/GPU)." Journal of Imaging 4.3 (2018): 51.*
 
 Users of pynufft should be familiar with discrete Fourier transform (DFT). 
 

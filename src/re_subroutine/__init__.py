@@ -1,14 +1,19 @@
+"""
+Metaprogramming subroutines (using reikna, pyopencl, pycuda)
+========================================================
+"""
+
 from __future__ import absolute_import # Python2 compatibility
-from . import cMultiplyScalar, cCopy, cAddScalar,cAddVec,  cSelect, cMultiplyVec, cMultiplyConjVecInplace, cMultiplyVecInplace, cMultiplyConjVec, cDiff, cSqrt, cAnisoShrink, cHypot, cSpmv, cSpmvh, atomic_add, cHadamard
+from . import cMultiplyScalar, cCopy, cTensorMultiply, cTensorCopy, cAddScalar, cAddVec,  cSelect, cMultiplyVec, cMultiplyConjVecInplace, cMultiplyVecInplace, cMultiplyRealInplace, cMultiplyConjVec, cDiff, cSqrt, cAnisoShrink, cHypot, cSpmv, cSpmvh, atomic_add, cHadamard
 
 def create_kernel_sets(API):
     kernel_sets = ( cMultiplyScalar.R + 
-                        cCopy.R + cHypot.R +
+                        cCopy.R + cTensorCopy.R + cHypot.R +cTensorMultiply.R + 
                         cAddScalar.R + 
                         cSelect.R + 
                         cMultiplyConjVec.R + 
                         cAddVec.R+  
-                        cMultiplyVecInplace.R + cMultiplyConjVecInplace.R + 
+                        cMultiplyVecInplace.R + cMultiplyConjVecInplace.R +cMultiplyRealInplace.R + 
                         cDiff.R+ cSqrt.R+ cAnisoShrink.R+ cMultiplyVec.R + cSpmv.R + cSpmvh.R + cHadamard.R)
     if 'cuda' is API:
         print('Select cuda interface')
@@ -17,10 +22,8 @@ def create_kernel_sets(API):
         print("Selecting opencl interface")
         kernel_sets =  atomic_add.ocl_add + kernel_sets
     return kernel_sets
-"""
 
-Metaprogramming subroutines (using reikna, pyopencl, pycuda)
-========================================================
+"""
 
 - KERNEL void cAbsVec( GLOBAL_MEM const float2 *indata,  GLOBAL_MEM  float2 *outdata)
 

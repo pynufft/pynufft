@@ -7,8 +7,9 @@ Welcome to pynufft's Documentation
 .. toctree::
    :maxdepth: 2
    
-   whatnew
+   
    intro
+   installation
    getstart
    misc
    eg

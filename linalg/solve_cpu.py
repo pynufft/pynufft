@@ -6,184 +6,33 @@ CPU solvers
 import scipy
 import numpy
 from ..src._helper import helper
-# def indxmap_diff(Nd):
-#         """
-#         Build indexes for image gradient
-#         input: 
-#                 Nd: tuple, the size of image
-#         output: 
-#                 d_indx: tuple
-#                         Diff(x) = x.flat[d_indx[0]] - x.flat
-#                 dt_indx: tuple,  index of the adjoint Diff
-#                     Diff_t(x) =  x.flat[dt_indx[0]] - x.flat
-#         """
-#         
-#         ndims = len(Nd)
-#         Ndprod = numpy.prod(Nd)
-#         mylist = numpy.arange(0, Ndprod).astype(numpy.int32)
-#         mylist = numpy.reshape(mylist, Nd)
-#         d_indx = ()
-#         dt_indx = ()
-#         for pp in range(0, ndims):
-#             d_indx = d_indx + ( numpy.reshape(   numpy.roll(  mylist, +1 , pp  ), (Ndprod,)  ,order='C').astype(numpy.int32) ,)
-#             dt_indx = dt_indx + ( numpy.reshape(   numpy.roll(  mylist, -1 , pp  ) , (Ndprod,) ,order='C').astype(numpy.int32) ,)
-# 
-#         return d_indx,  dt_indx  
+
 def cDiff(x, d_indx):
         """
-        Compute image gradient
-        Work with indxmap_diff(Nd)
+        Compute image gradient. Needing the results of indxmap_diff(Nd)
+        :param x: The image array
+        :param d_indx: The index of the shifted image
+        :type x: numpy.float array, matrix size = Nd
+        :type d_indx: int32
+        :returns: x_diff: Image gradient determined by d_indx
+        :rtype: x_diff: numpy.complex64      
         """
-        a2=numpy.asarray(x.copy(),order='C')
-        a2.flat =   a2 .flat[d_indx] - a2 .flat
-        return a2
+        x_diff=numpy.asarray(x.copy(),order='C')
+        x_diff.flat =   x_diff.ravel()[d_indx] - x.ravel()
+        return x_diff
+    
 def _create_kspace_sampling_density(nufft):
         """
-        Compute kspace sampling density from the nufft object
+        Compute k-space sampling density
         """    
         y = numpy.ones((nufft.st['M'],),dtype = numpy.complex64)
+#         w = numpy.abs(nufft.xx2k(nufft.adjoint(y)))
         w =  numpy.abs( nufft.y2k(y))#**2) ))
     
         nufft.st['w'] = w#self.nufftobj.vec2k(w)
         RTR=nufft.st['w'] # see __init__() in class "nufft"
         return RTR
-# def _create_laplacian_kernel(nufft):    
-#         """
-#         Compute Laplacian kernel for inner loop
-#         """        
-# #===============================================================================
-# # #        # Laplacian oeprator, convolution kernel in spatial domain
-# #         # related to constraint
-# #===============================================================================
-#         uker = numpy.zeros(nufft.st['Kd'][:],dtype=numpy.complex64,order='C')
-#         n_dims= numpy.size(nufft.st['Nd'])
-#     
-#         if n_dims == 1:
-#             uker[0] = -2.0
-#             uker[1] = 1.0
-#             uker[-1] = 1.0
-#         elif n_dims == 2:
-#             uker[0,0] = -4.0
-#             uker[1,0] = 1.0
-#             uker[-1,0] = 1.0
-#             uker[0,1] = 1.0
-#             uker[0,-1] = 1.0
-#         elif n_dims == 3:  
-#             uker[0,0,0] = -6.0
-#             uker[1,0,0] = 1.0
-#             uker[-1,0,0] = 1.0
-#             uker[0,1,0] = 1.0
-#             uker[0,-1,0] = 1.0
-#             uker[0,0,1] = 1.0
-#             uker[0,0,-1] = 1.0                      
-#     
-#         uker =numpy.fft.fftn(uker) #, self.nufftobj.st['Kd'], range(0,numpy.ndim(uker)))
-#         return uker  
-#  
-def L1TVLAD(nufft, y, maxiter, rho  ): # main function of solver
-    """
-    L1-total variation regularized least absolute deviation 
-    """
-    mu = 1.0
-    LMBD = rho*mu
-
-    def AHA(x):
-        x2 = nufft.selfadjoint(x)
-        return x2
-    def AH(y):
-        x2 = nufft.adjoint(y)
-        return x2
-    
-    uker = mu*_create_kspace_sampling_density(nufft)   - LMBD* helper.create_laplacian_kernel(nufft)
-    
-    AHy = AH(y)
-    
-    xkp1 = numpy.zeros_like(AHy)
-    AHyk = numpy.zeros_like(AHy)
-           
-#         self._allo_split_variables()        
-    zz= []
-    bb = []
-    dd = []
-    d_indx, dt_indx = helper.indxmap_diff(nufft.st['Nd'])
-    z=numpy.zeros(nufft.st['Nd'], dtype = nufft.dtype, order='C')
-    
-    ndims = len(nufft.st['Nd'])
-    s_tmp = []
-    for pp in range(0,ndims):
-            s_tmp += [0, ]
-            
-            
-    for jj in range(    0,  ndims): # n_dims + 1 for wavelets
-        
-        zz += [z.copy(),]
-        bb += [z.copy(),]
-        dd +=  [z.copy(),]
-    zf = z.copy()
-    bf = z.copy()
-    df = z.copy()
-
-    n_dims = len(nufft.st['Nd'])#numpy.size(uf.shape)
-    
-    for outer in numpy.arange(0, maxiter):
-#             for inner in numpy.arange(0,nInner):
-            
-        # solve Ku = rhs
-        
-        rhs = mu*(AHyk + df - bf)   # right hand side
-        
-        for pp in range(0,ndims):
-            
-            rhs += LMBD*(cDiff(dd[pp] - bb[pp],  dt_indx[pp]))  
-#                 LMBD*(cDiff(dd[1] - bb[1],  dt_indx[1]))  )          
-        # Note K = F' uker F
-        # so K-1 ~ F
-        xkp1 = nufft.k2xx( (nufft.xx2k(rhs)+1e-7) / (uker+1e-7)) 
-#                 self._update_d(xkp1)
-        for pp in range(0,ndims):
-            zz[pp] = cDiff(xkp1, d_indx[pp])
-#         zz[0] = cDiff(xkp1,  d_indx[0])
-#         zz[1] = cDiff(xkp1,  d_indx[1])
-        zf = AHA(xkp1)  -AHy 
-
-        '''
-        soft-thresholding the edges
-        '''
-        s = numpy.zeros_like(zz[pp])
-        for pp in range(0,ndims):
-            s_tmp[pp] = zz[pp] + bb[pp]
-            s_r = numpy.hypot(s_tmp[pp].real, s_tmp[pp].imag)
-            s = numpy.hypot(s_r, s.real)
-#             s = numpy.hypot(numpy.abs(s), numpy.abs(s_tmp[pp]))
-        s += 1e-5
-
-        threshold_value = 1/LMBD
-        r =(s > threshold_value)*(s-threshold_value)/s#numpy.maximum(s - threshold_value ,  0.0)/s
-        for pp in range(0,ndims):
-            dd[pp] = s_tmp[pp]*r
-#         dd[0] = s1*r
-#         dd[1] = s2*r
-        df = zf+bf
-        
-        threshold_value=1.0/mu
-    
-        df.real =0.0+ (df.real>threshold_value)*(df.real - threshold_value) +(df.real<= - threshold_value)*(df.real+threshold_value)
-        df.imag = 0.0+(df.imag>threshold_value)*(df.imag - threshold_value) +(df.imag<= - threshold_value)*(df.imag+threshold_value) 
-#                 df =     sy
-        # end of shrinkage
-        for pp in range(0,ndims):
-            bb[pp] += zz[pp] - dd[pp]
-#         bb[0] += zz[0] - dd[0] 
-#         bb[1] += zz[1] - dd[1] 
-        bf += zf - df 
-#                 self._update_b() # update b based on the current u
-
-        AHyk = AHyk - zf # Linearized Bregman iteration f^k+1 = f^k + f - Au
-#             print(outer)
-
-    return xkp1 #(u,u_stack)
-
-    
+   
     
 def L1TVOLS(nufft, y, maxiter, rho ): # main function of solver
     """
@@ -386,10 +235,11 @@ def solve(nufft,   y,  solver=None, *args, **kwargs):
             """
 #             A = nufft.spHsp#nufft.st['p'].getH().dot(nufft.st['p'])
             def spHsp(x):
-                return nufft.k2y2k(x)
+                k = x.reshape(nufft.multi_Kd, order='C')
+                return nufft.k2y2k(k).ravel()
 #                 return nufft.spH.dot(nufft.sp.dot(x))
             
-            A = scipy.sparse.linalg.LinearOperator((nufft.Kdprod, nufft.Kdprod), matvec = spHsp, rmatvec = spHsp, )
+            A = scipy.sparse.linalg.LinearOperator((nufft.Kdprod*nufft.batch, nufft.Kdprod*nufft.batch), matvec = spHsp, rmatvec = spHsp, )
 
             
             methods={'cg':scipy.sparse.linalg.cg,   
@@ -401,9 +251,9 @@ def solve(nufft,   y,  solver=None, *args, **kwargs):
     #                                  'minres':scipy.sparse.linalg.minres, 
     #                                  'qmr':scipy.sparse.linalg.qmr, 
                                  }
-            k2 = methods[solver](A,  nufft.spH.dot(y), *args, **kwargs)#,show=True)
+            k2 = methods[solver](A,  nufft.y2k(y).ravel(), *args, **kwargs)#,show=True)
     
     
-            xx = nufft.k2xx(nufft.vec2k(k2[0]))
+            xx = nufft.k2xx(k2[0].reshape(nufft.multi_Kd))
             x= xx/nufft.sn
             return x#     , k2[1:]       

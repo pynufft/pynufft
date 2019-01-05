@@ -2,9 +2,9 @@
 cSparseMatVec
 ==============================================
 KERNEL void cCSR_spmv(    
-      const    uint    numRow,
-      GLOBAL_MEM const uint *rowDelimiters, 
-      GLOBAL_MEM const uint *cols,
+      const    unsigned int    numRow,
+      GLOBAL_MEM const unsigned int *rowDelimiters, 
+      GLOBAL_MEM const unsigned int *cols,
       GLOBAL_MEM const float2 *val,
       GLOBAL_MEM const float2 *vec, 
       GLOBAL_MEM float2 *out)
@@ -15,20 +15,20 @@ Note: In CUDA, += operator can cause problems. Here we use explicit add operator
 
 R="""
 KERNEL void cCSR_spmv(    
-      const    uint    numRow,
-      GLOBAL_MEM const uint *rowDelimiters, 
-      GLOBAL_MEM const uint *cols,
+      const    unsigned int    numRow,
+      GLOBAL_MEM const unsigned int *rowDelimiters, 
+      GLOBAL_MEM const unsigned int *cols,
       GLOBAL_MEM const float2 *val,
       GLOBAL_MEM const float2 *vec, 
       GLOBAL_MEM float2 *out)
 {   
-    const uint t = get_local_id(0);
-    const uint vecWidth=${LL};
+    const unsigned int t = get_local_id(0);
+    const unsigned int vecWidth=${LL};
     // Thread ID within wavefront
-    const uint id = t & (vecWidth-1);
+    const unsigned int id = t & (vecWidth-1);
     // One row per wavefront
-    uint vecsPerBlock=get_local_size(0)/vecWidth;
-    uint myRow=(get_group_id(0)*vecsPerBlock) + (t/ vecWidth);
+    unsigned int vecsPerBlock=get_local_size(0)/vecWidth;
+    unsigned int myRow=(get_group_id(0)*vecsPerBlock) + (t/ vecWidth);
     LOCAL_MEM float2 partialSums[${LL}];
     float2 zero;
     zero.x = 0.0;
@@ -38,11 +38,11 @@ KERNEL void cCSR_spmv(
     float2  y= zero;
     if (myRow < numRow)
     {
-     const uint vecStart = rowDelimiters[myRow];
-     const uint vecEnd = rowDelimiters[myRow+1];            
-     for (uint j = vecStart+id;  j<vecEnd; j += vecWidth)
+     const unsigned int vecStart = rowDelimiters[myRow];
+     const unsigned int vecEnd = rowDelimiters[myRow+1];            
+     for (unsigned int j = vecStart+id;  j<vecEnd; j += vecWidth)
      {
-          const uint col = cols[j];
+          const unsigned int col = cols[j];
           const float2 spdata=val[j];
           const float2 vecdata=vec[col];                        
           y.x=spdata.x*vecdata.x - spdata.y*vecdata.y;
@@ -54,7 +54,7 @@ KERNEL void cCSR_spmv(
       //__syncthreads();
       //barrier(CLK_LOCAL_MEM_FENCE);
       // Reduce partial sums
-      uint bar = vecWidth / 2;
+      unsigned int bar = vecWidth / 2;
       while(bar > 0)
       {
            if (id < bar)
@@ -98,9 +98,9 @@ KERNEL void cCSR_spmv(
               
 
         
-            KERNEL void cCSR_spmvh(    const    uint    n_row,
-                                    GLOBAL_MEM const uint *indptr, 
-                                    GLOBAL_MEM  const uint *indices,
+            KERNEL void cCSR_spmvh(    const    unsigned int    n_row,
+                                    GLOBAL_MEM const unsigned int *indptr, 
+                                    GLOBAL_MEM  const unsigned int *indices,
                                     GLOBAL_MEM  const float2 *data,
                                     // GLOBAL_MEM  float2 *Xx,
                                     GLOBAL_MEM float *kx, 
@@ -108,7 +108,7 @@ KERNEL void cCSR_spmv(
                                     GLOBAL_MEM   const float2 *Yx)
                 {   
 
-                        uint myRow = get_global_id(0);
+                        unsigned int myRow = get_global_id(0);
                        
                             float2 zero;
                             zero.x=0.0;
@@ -118,12 +118,12 @@ KERNEL void cCSR_spmv(
                             
                      if (myRow < n_row)
                        {   
-                            uint vecStart = indptr[myRow];
-                            uint vecEnd = indptr[myRow+1];
+                            unsigned int vecStart = indptr[myRow];
+                            unsigned int vecEnd = indptr[myRow+1];
                            float2 y =  Yx[myRow];
-                            for (uint j= vecStart + 0; j < vecEnd;  j+= 1) //vecWidth)
+                            for (unsigned int j= vecStart + 0; j < vecEnd;  j+= 1) //vecWidth)
                             {
-                                       const uint col = indices[j];
+                                       const unsigned int col = indices[j];
                                         
                                        const float2 spdata =  data[j]; // row
 
@@ -139,14 +139,14 @@ KERNEL void cCSR_spmv(
                 
 
 KERNEL void cELL_spmvh_scalar(    
-      const    uint    nRow,
-      const    uint    colWidth, 
-      GLOBAL_MEM const uint *cols,
+      const    unsigned int    nRow,
+      const    unsigned int    colWidth, 
+      GLOBAL_MEM const unsigned int *cols,
       GLOBAL_MEM const float2 *data,
       GLOBAL_MEM float *kx,
       GLOBAL_MEM float *ky, 
       GLOBAL_MEM const float2 *out)
-{      uint myRow= get_global_id(0);
+{      unsigned int myRow= get_global_id(0);
     float2 zero;
     zero.x = 0.0;
     zero.y = 0.0;
@@ -155,9 +155,9 @@ KERNEL void cELL_spmvh_scalar(
      float2  u= zero;
      // out[myRow] =zero; 
      const float2 vecdata=out[myRow];
-     for (uint j = myRow *  colWidth;  j< (myRow + 1) *  colWidth; j ++)
+     for (unsigned int j = myRow *  colWidth;  j< (myRow + 1) *  colWidth; j ++)
      {
-          uint col = cols[j];
+          unsigned int col = cols[j];
           float2 spdata=data[j];
                    
           u.x =spdata.x*vecdata.x + spdata.y*vecdata.y;
@@ -173,5 +173,5 @@ KERNEL void cELL_spmvh_scalar(
     };                        
     
 """
-from numpy import uint32
-scalar_arg_dtypes=[uint32, None, None, None, None, None]        
+# from numpy import unsigned int32
+# scalar_arg_dtypes=[unsigned int32, None, None, None, None, None]        

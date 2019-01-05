@@ -11,7 +11,7 @@ def test_2D():
 #     PHANTOM_FILE = pkg_resources.resource_filename('pynufft', 'data/phantom_256_256.txt')
     import numpy
     import matplotlib.pyplot
-    from .. import NUFFT_cpu
+    from pynufft import NUFFT_cpu
     # load example image
 #     image = numpy.loadtxt(DATA_PATH +'phantom_256_256.txt')
     image = scipy.misc.ascent()
@@ -59,14 +59,17 @@ def test_2D():
     matplotlib.pyplot.title('shifted k-space spectrum')
     matplotlib.pyplot.show()
     image2 = NufftObj.solve(y, 'dc', maxiter = 25)
-    image3 = NufftObj.solve(y, 'L1TVLAD',maxiter=100, rho= 1)
+    image3 = NufftObj.solve(y, 'cg', maxiter = 25)
     image4 = NufftObj.solve(   y,'L1TVOLS',maxiter=100, rho= 1)
     matplotlib.pyplot.subplot(1,3,1)
-    matplotlib.pyplot.imshow(image, cmap=matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1))
+    matplotlib.pyplot.imshow(image2.real, cmap=matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1))
+    matplotlib.pyplot.title('dc')
     matplotlib.pyplot.subplot(1,3,2)
     matplotlib.pyplot.imshow(image3.real, cmap=matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1))
-    matplotlib.pyplot.subplot(1,3,3)
+    matplotlib.pyplot.title('cg')
+    matplotlib.pyplot.subplot(1,3, 3)
     matplotlib.pyplot.imshow(image4.real, cmap=matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1))
+    matplotlib.pyplot.title('L1TVOLS')
     matplotlib.pyplot.show()  
   
 #     matplotlib.pyplot.imshow(image2.real, cmap=matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1))

@@ -4,7 +4,7 @@ HSA solvers
 """
 
 """
-Bugfix: fix the cg unstability due to alpha and beta must be fetched from the device
+- Bugfix: fix the instability of cg due to alpha and beta which must be fetched from the device
 """
 import numpy, scipy
 dtype = numpy.complex64
@@ -661,7 +661,20 @@ def solve(nufft,gy, solver=None,  maxiter=30, *args, **kwargs):
         x2 = nufft.k2xx(x) # x is the solved k space
          
         # rescale the SnGPUArray
-        x2 /= nufft.volume['gpu_sense2']
+        # x2 /= nufft.volume['gpu_sense2']
         x3 = nufft.z2x(x2)
+        try:
+            x3 /= nufft.volume['SnGPUArray']
+        except:
+            
+            nufft.prg.cTensorMultiply(numpy.uint32(nufft.batch), 
+                                    numpy.uint32(nufft.ndims),
+                                    nufft.volume['Nd'],
+                                    nufft.volume['Nd_elements'],
+                                    nufft.volume['invNd_elements'],
+                                    nufft.volume['tensor_sn'], 
+                                    x3, 
+                                    numpy.uint32(1),
+                                    local_size = None, global_size = int(nufft.batch*nufft.Ndprod))
          
         return x3
