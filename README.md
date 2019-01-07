@@ -9,14 +9,18 @@ A minimal "getting start" tutorial is available at http://jyhmiinlin.github.io/p
 
 Please use Python3. PyNUFFT has been tested with Python3.4. However, it should work with Python3.5-3.6.
 
-### New in version 0.3.4
+### New in version 0.4.0-rc1
 
-Version 0.3.4 is a new version. 
+Version 0.4.0-rc1 is a beta version. 
+
+Installation in Windows 10 has been tested. 
+
+Improved NUFFT_hsa with lower memory. 
 
 
 ### Summary
 
-Pynufft implements Fessler's min-max NUFFT, with the following features:
+PyNUFFT implements the min-max NUFFT of Fessler and Sutton, with the following features:
 
 - Written in pure Python.
 - Based on numerical libraries, such as Numpy, Scipy (matplotlib for displaying examples).
