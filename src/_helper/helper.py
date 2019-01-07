@@ -460,6 +460,7 @@ def khatri_rao_u( ud):
 def rdx_kron(ud, kd, Jd, radix=None):
     """
     Radix-n Kronecker product of multi-dimensional array
+    
     :param ud: 1D interpolators
     :type ud: tuple of (M, Jd[d]) numpy.complex64 arrays
     :param kd: 1D indices to interpolators
@@ -490,18 +491,17 @@ def rdx_kron(ud, kd, Jd, radix=None):
 #     uu = ud[0]  # [J1 M]
 #     Jprod = Jd[0]
     for count in range(0, int(numpy.ceil(dd/radix)), radix):
-        if count ==0:
-            kk = numpy.zeros((M,1)) - 1
-        else:
-            kk = numpy.zeros((M,1)) 
-        uu = numpy.ones((M, 1), dtype = numpy.complex64)
-        Jprod = 1
+        kk = kd[count]  # [J1 M] # pointers to indices
+        uu = ud[count]  # [J1 M]
+        Jprod = Jd[count]
+#         uu = numpy.ones((M, 1), dtype = numpy.complex64)
+#         Jprod = 1
         d_start = count
         d_end = count + radix
         if d_end > dd:
             d_end = dd
         
-        for dimid in range(d_start, d_end):
+        for dimid in range(d_start + 1, d_end):
             Jprod *= Jd[dimid]#numpy.prod(Jd[:dimid + 1])
     
             kk = block_outer_sum(kk, kd[dimid]) + 1  # outer sum of indices
@@ -515,7 +515,7 @@ def rdx_kron(ud, kd, Jd, radix=None):
         Jd2 += (Jprod, )
     return ud2, kd2, Jd2 #(uu, ), (kk, ), (Jprod, )#, Jprod
 
-def kronecker_scale(snd, dd):
+def kronecker_scale(snd):
     """
     Compute the Kronecker product of scaling factor.
     
@@ -526,6 +526,7 @@ def kronecker_scale(snd, dd):
     :rtype: Nd array
     
     """
+    dd = len(snd)
     shape_broadcasting = ()
     for dimid in range(0, dd):
         shape_broadcasting += (1, )
@@ -541,7 +542,19 @@ def kronecker_scale(snd, dd):
         ###############################################################        
         sn = sn  * tmp # multiply using broadcasting    
     return sn
+def cat_snd(snd):
+    Nd = ()
+    dd = len(snd)
+    for dimid in range(0, dd):
+        Nd += (snd[dimid].shape[0],)
+    tensor_sn = numpy.empty((numpy.sum(Nd), ), dtype=numpy.float32)
+        
+    shift = 0
+    for dimid in range(0, len(Nd)):
 
+        tensor_sn[shift :shift + Nd[dimid]] = snd[dimid][:,0].real
+        shift = shift + Nd[dimid]       
+    return tensor_sn
 def min_max(N, J, K, alpha, beta, om, ft_flag):
     T = nufft_T(    N,  J,  K,  alpha,  beta)
     ###############################################################
@@ -556,7 +569,7 @@ def min_max(N, J, K, alpha, beta, om, ft_flag):
     u2 = OMEGA_u(c, N, K, om, arg, ft_flag).T.conj()
     return u2
 
-def plan(om, Nd, Kd, Jd, ft_axes = None, format='CSR'):
+def plan(om, Nd, Kd, Jd, ft_axes = None, format='CSR', radix = None):
     """
     Plan for the NUFFT object.
     
@@ -716,13 +729,23 @@ def plan(om, Nd, Kd, Jd, ft_axes = None, format='CSR'):
         CSR = full_kron(ud, kd, Jd, Kd, M)
         st['p'] = CSR
 #     st['ell'] = ELL
-        st['sn'] = kronecker_scale(snd, dd).real # only real scaling is relevant
+        st['sn'] = kronecker_scale(snd).real # only real scaling is relevant
     
 #     ud2, kd2, Jd2 = partial_combination(ud, kd, Jd)
     elif format is 'pELL':
-        ud2, kd2, Jd2 = ud, kd, Jd#rdx_kron(ud, kd, Jd, radix=2)
+        if radix is None:
+            radix = 1
+        ud2, kd2, Jd2 = rdx_kron(ud, kd, Jd, radix=radix)
         st['pELL'] = create_partialELL(ud2, kd2, Jd2, M) 
-        st['tensor_sn'] = snd
+#         st['tensor_sn'] = snd
+        st['tensor_sn'] = cat_snd(snd)
+#         numpy.empty((numpy.sum(Nd), ), dtype=numpy.float32)
+#         
+#         shift = 0
+#         for dimid in range(0, len(Nd)):
+# 
+#             st['tensor_sn'][shift :shift + Nd[dimid]] = snd[dimid][:,0].real
+#             shift = shift + Nd[dimid]        
     # no dimension-reduction Nd -> Nd
     # Tuple (Nd) -> array (shape = M*sumJd)
 
@@ -796,7 +819,7 @@ def plan1(om, Nd, Kd, Jd, ft_axes = None):
         list_C += [C, ]
         list_arg += [arg, ]
         list_bn += [bn, ]
-    st['sn'] = kronecker_scale(snd, dd).real # only real scaling is relevant
+    st['sn'] = kronecker_scale(snd).real # only real scaling is relevant
  
     # [J? M] interpolation coefficient vectors.
     # Iterate over all dimensions and

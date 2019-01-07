@@ -662,7 +662,7 @@ def solve(nufft,gy, solver=None,  maxiter=30, *args, **kwargs):
          
         # rescale the SnGPUArray
         # x2 /= nufft.volume['gpu_sense2']
-        x3 = nufft.z2x(x2)
+        x3 = nufft.x2s(x2) # combine multi-coil to single-coil
         try:
             x3 /= nufft.volume['SnGPUArray']
         except:

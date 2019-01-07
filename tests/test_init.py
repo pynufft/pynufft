@@ -5,7 +5,6 @@ dtype = numpy.complex64
 
 def test_init():
     
-
 #     cm = matplotlib.cm.gray
     # load example image
     import pkg_resources
@@ -33,12 +32,14 @@ def test_init():
     nfft = NUFFT_cpu()  # CPU
     
     nfft.plan(om, Nd, Kd, Jd)
-
-    NufftObj = NUFFT_hsa('cuda',0,0)
-    NufftObj2 = NUFFT_hsa('cuda',0,0)
+    try:
+        NufftObj = NUFFT_hsa('cuda',0,0)
+    except:
+        NufftObj = NUFFT_hsa('ocl',0,0)
+#     NufftObj2 = NUFFT_hsa('cuda',0,0)
     NufftObj.debug = 1
-    NufftObj.plan(om, Nd, Kd, Jd)
-    NufftObj2.plan(om, Nd, Kd, Jd)
+    NufftObj.plan(om, Nd, Kd, Jd, radix=2)
+#     NufftObj2.plan(om, Nd, Kd, Jd)
     
 #     NufftObj.offload(API = 'cuda',   platform_number = 0, device_number = 0)
 #     NufftObj2.offload(API = 'cuda',   platform_number = 0, device_number = 0)

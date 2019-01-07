@@ -1,6 +1,31 @@
 Version history
 ===============
 
+**v0.4.0.0**
+
+- 0.4.0.0 is a beta version.
+
+- Major updates for the NUFFT_hsa class, including memory reduction and radix. 
+
+- Tested in Windows 10 with PyCUDA 2018.1.1, nvidia-driver 417.35, CUDA 9.2, Visual Studio 2015 Community, and Anaconda Python 3.7 64-bit. PyOpenCL remains untested. 
+
+- Add batch mode however not recommended. 
+  
+ 
+**v0.3.3.12** 
+
+- 0.3.3.12 is a bug-fixed version.
+
+- Removal of the keyword async for compatibility reasons because Reikna has changed the keyword to async_.
+
+**v0.3.3.8**
+ 
+Bugfix in 0.3.3.8 rcond = -1 in numpy.linalg.lstsq to be backward compatible with numpy-1.13.1 in Anaconda 3.6.5
+
+**v0.3.3.7**
+
+- Bugfix in 0.3.3.7 Toeplitz is removed from the NUFFT_cpu and NUFFT_gpu to avoid the MemoryError.
+
 **v0.3.3.6**
 
 - Bugfix: correct the error of import. Now import NUFFT_cpu, NUFFT_hsa at the top level.
