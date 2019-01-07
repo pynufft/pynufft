@@ -112,6 +112,7 @@ class NUFFT_cpu:
 #             print('self.Reps = ', self.Reps ,'self.parallel_flag=', self.parallel_flag)
         if self.parallel_flag is 1:
             self.multi_Nd =   self.Nd + (self.batch, )
+            self.uni_Nd = self.Nd + (1, )
             self.multi_Kd =   self.Kd + (self.batch, )
             self.multi_M =   (self.st['M'], )+ (self.batch, )
             self.multi_prodKd = (numpy.prod(self.Kd), self.batch)
@@ -119,6 +120,7 @@ class NUFFT_cpu:
 
         elif self.parallel_flag is 0:
             self.multi_Nd =   self.Nd# + (self.Reps, )
+            self.uni_Nd = self.Nd
             self.multi_Kd =   self.Kd #+ (self.Reps, )
             self.multi_M =   (self.st['M'], )
             self.multi_prodKd = (numpy.prod(self.Kd), )
@@ -132,7 +134,8 @@ class NUFFT_cpu:
 #         self._precompute_sp()        
 #         del self.st['p0'] 
         self.NdCPUorder, self.KdCPUorder, self.nelem =     helper.preindex_copy(self.st['Nd'], self.st['Kd'])
-
+        self.volume = {}
+        self.volume['cpu_coil_profile'] = numpy.ones(self.multi_Nd)
         
         return 0
         
@@ -158,8 +161,61 @@ class NUFFT_cpu:
         except:
             print("errors occur in self.precompute_sp()")
             raise
-
-
+    def set_sense(self, coil_profile):
+        
+        self.volume = {}
+        
+        if coil_profile.shape == self.Nd + (self.batch, ):        
+            self.volume['cpu_coil_profile'] = coil_profile
+        else:
+            print('The shape of coil_profile might be wrong')
+            print('coil_profile.shape = ', coil_profile.shape)
+            print('shape of Nd + (batch, ) = ', self.Nd + ( self.batch, ))   
+    
+    def forward_single(self, x):
+        """
+        Assume x.shape = self.Nd
+        
+        """
+        
+#         try:
+        x2 = x.reshape(self.uni_Nd, order='C')*self.volume['cpu_coil_profile']
+#         except:
+#         x2 = x
+            
+        
+        y2 = self.forward(x2)
+        
+        return y2
+    
+    def adjoint_single(self, y):
+#         raise NotImplementedError
+        """
+        Assume y.shape = self.multi_M
+        """
+        try:
+            x2 = self.adjoint(y)
+        except:
+            print('y.shape = ', y.shape)
+            print('but self.multi_M = ', self.multi_M)
+            
+        try:
+            x = x2*self.volume['cpu_coil_profile'].conj()
+        except:
+            x = x2
+#             pass # assume ones
+#             raise NotImplementedError
+#         print('in self.adjoint_single = ', x.shape, x2.shape)
+        try:
+#             print('Here1', self.ndims, x.shape)
+            x3 = numpy.mean(x, axis = self.ndims)
+            
+        except:
+#             print('Here2', self.ndims, x.shape)
+            x3 = x
+        return x3
+    
+    
     def solve(self,y, solver=None, *args, **kwargs):
         """
         Solve NUFFT_cpu
@@ -206,7 +262,12 @@ class NUFFT_cpu:
         x = self.xx2x(self.k2xx(self.y2k(y)))
 
         return x
-
+    def selfadjoint_single(self, x):
+        y2 = self.forward_single(x)
+        x2 = self.adjoint_single(y2)
+        del y2
+        return x2
+    
     def selfadjoint(self, x):
         """
         selfadjoint NUFFT (Teplitz) on CPU
@@ -257,7 +318,24 @@ class NUFFT_cpu:
         k = numpy.fft.fftn(output_x, axes = self.ft_axes)
 #         k = numpy.fft.fftn(a=xx, s=tuple(self.Kd[ax] for ax in self.ft_axes), axes = self.ft_axes)
         return k
-    
+    def xx2k_single(self, xx):
+        """
+        Private: oversampled FFT on CPU
+        
+        Firstly, zeroing the self.k_Kd array
+        Second, copy self.x_Nd array to self.k_Kd array by cSelect
+        Third: inplace FFT
+        """
+#         dd = numpy.size(self.Kd)      
+#         output_x = numpy.zeros(self.Kd, dtype=self.dtype,order='C')
+        output_x = numpy.zeros(self.st['Kd'], dtype=self.dtype,order='C')
+        
+#         for bat in range(0, self.batch):
+        output_x.ravel()[self.KdCPUorder]=xx.ravel()[self.NdCPUorder]
+        
+        k = numpy.fft.fftn(output_x, axes = self.ft_axes)
+#         k = numpy.fft.fftn(a=xx, s=tuple(self.Kd[ax] for ax in self.ft_axes), axes = self.ft_axes)
+        return k    
     def k2vec(self,k):
         k_vec = numpy.reshape(k, self.multi_prodKd, order='C')
         return k_vec
@@ -314,7 +392,18 @@ class NUFFT_cpu:
             xx.ravel()[self.NdCPUorder*self.batch + bat]=k.ravel()[self.KdCPUorder*self.batch + bat]
 #         xx = xx[crop_slice_ind(self.Nd)]
         return xx
-
+    def k2xx_single(self, k):
+        """
+        Private: the inverse FFT and image cropping (which is the reverse of _xx2k() method)
+        """
+#         dd = numpy.size(self.Kd)
+        
+        k = numpy.fft.ifftn(k, axes = self.ft_axes)
+        xx= numpy.zeros(self.st['Nd'],dtype=self.dtype, order='C')
+#         for bat in range(0, self.batch):
+        xx.ravel()[self.NdCPUorder]=k.ravel()[self.KdCPUorder]
+#         xx = xx[crop_slice_ind(self.Nd)]
+        return xx
     def xx2x(self, xx):
         """
         Private: rescaling, which is identical to the  _x2xx() method
@@ -322,20 +411,20 @@ class NUFFT_cpu:
         x = self.x2xx(xx)
         return x
     
-    def k2y2k_single(self, k):
-        """
-        Private: the integrated interpolation-gridding by the Sparse Matrix-Vector Multiplication
-        """
-
-#         Xk = self.k2vec(k)
-        y = self.sp.dot(k.ravel())
-        k2 = self.spH.dot(y)
-        k2 = numpy.reshape(k2, self.Kd, order='C')
-#         k = self.spHsp.dot(Xk)
-#         k = self.spH.dot(self.sp.dot(Xk))
-#         k = self.y2vec(self.vec2y(Xk))
-#         k = self.vec2k(k)
-        return k2
+#     def k2y2k_single(self, k):
+#         """
+#         Private: the integrated interpolation-gridding by the Sparse Matrix-Vector Multiplication
+#         """
+# 
+# #         Xk = self.k2vec(k)
+#         y = self.sp.dot(k.ravel())
+#         k2 = self.spH.dot(y)
+#         k2 = numpy.reshape(k2, self.Kd, order='C')
+# #         k = self.spHsp.dot(Xk)
+# #         k = self.spH.dot(self.sp.dot(Xk))
+# #         k = self.y2vec(self.vec2y(Xk))
+# #         k = self.vec2k(k)
+#         return k2
     
     def k2y2k(self, k):
         """

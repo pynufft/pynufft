@@ -25,12 +25,16 @@ def _create_kspace_sampling_density(nufft):
         """
         Compute k-space sampling density
         """    
-        y = numpy.ones((nufft.st['M'],),dtype = numpy.complex64)
+        y = numpy.ones(nufft.multi_M,dtype = numpy.complex64)
 #         w = numpy.abs(nufft.xx2k(nufft.adjoint(y)))
-        w =  numpy.abs( nufft.y2k(y))#**2) ))
-    
+        
+        if nufft.parallel_flag is 1:
+            w =  numpy.abs( nufft.xx2k(nufft.adjoint(y)))[..., 0]#**2) ))
+        else:
+            w =  numpy.abs( nufft.xx2k(nufft.adjoint(y)))#**2) ))
         nufft.st['w'] = w#self.nufftobj.vec2k(w)
         RTR=nufft.st['w'] # see __init__() in class "nufft"
+        print('RTR.shape = ', RTR.shape)
         return RTR
    
     
@@ -42,17 +46,25 @@ def L1TVOLS(nufft, y, maxiter, rho ): # main function of solver
     LMBD = rho*mu
 
     def AHA(x):
-        x2 = nufft.selfadjoint(x)
+        x2 = nufft.selfadjoint_single(x)
         return x2
     def AH(y):
-        x2 = nufft.adjoint(y)
+        
+        x2 = nufft.adjoint_single(y.reshape(nufft.multi_M, order='C'))
         return x2
     
         
     
-    uker = mu*_create_kspace_sampling_density(nufft)   - LMBD* helper.create_laplacian_kernel(nufft)
-    
+    uker = mu*_create_kspace_sampling_density(nufft)
+    print('uker.shape', uker.shape) 
+    uker = uker - LMBD* helper.create_laplacian_kernel(nufft)
+    print('uker.shape', uker.shape)
+    import matplotlib.pyplot
+    matplotlib.pyplot.imshow(abs(uker))
+    matplotlib.pyplot.show()
+    print('y.shape=', y.shape)
     AHy = AH(y)
+    print('AHy.shape = ', AHy.shape)
     
     xkp1 = numpy.zeros_like(AHy)
     AHyk = numpy.zeros_like(AHy)
@@ -88,13 +100,18 @@ def L1TVOLS(nufft, y, maxiter, rho ): # main function of solver
             
         rhs = mu*AHyk# + df - bf)   # right hand side
         for pp in range(0,ndims):
-            rhs += LMBD*(cDiff(dd[pp] - bb[pp],  dt_indx[pp]))  
+#             diff1 =  dd[pp] - bb[pp]
+#             diff1 = numpy.roll( diff1, 1, axis = pp) - diff1
+            rhs += LMBD*(cDiff(dd[pp] - bb[pp], dt_indx[pp]))
+#             del diff1
 #                 LMBD*(cDiff(dd[1] - bb[1],  dt_indx[1]))  )          
         # Note K = F' uker F
         # so K-1 ~ F
-        xkp1 = nufft.k2xx( (nufft.xx2k(rhs)+1e-7) / (uker+1e-7)) 
+        xkp1 = nufft.k2xx_single( (nufft.xx2k_single(rhs)+1e-7) / (uker+1e-7)) 
 #                 self._update_d(xkp1)
         for pp in range(0,ndims):
+            
+#             zz[pp] = numpy.roll( xkp1, -1, axis = pp) - xkp1            
             zz[pp] = cDiff(xkp1, d_indx[pp])
 #         zz[0] = cDiff(xkp1,  d_indx[0])
 #         zz[1] = cDiff(xkp1,  d_indx[1])
@@ -152,7 +169,7 @@ def _pipe_density(nufft, maxiter):
 #         W = pipe_density(self.st['p'])
     # sampling density function
               
-    W = numpy.ones((nufft.st['M'],),dtype=nufft.dtype)
+    W = numpy.ones(nufft.multi_M,dtype=nufft.dtype)
 #         V1= self.st['p'].getH()
     #     VVH = V.dot(V.getH()) 
          
@@ -211,10 +228,21 @@ def solve(nufft,   y,  solver=None, *args, **kwargs):
                 Minimize L2 norm of |y-Ax|_2 or |y-Ax|_2+|x|_2
                 Very stable 
                 """
-                A = nufft.sp
+#                 A = nufft.sp
+                def sp(k):
+                    k2 = k.reshape(nufft.multi_Kd, order='C')
+                    return nufft.k2y(k2).ravel()
+                def spH(y):
+                    y2 = y.reshape(nufft.multi_M, order='C')
+                    return nufft.y2k(y2).ravel()                
+#                 return nufft.spH.dot(nufft.sp.dot(x))
+#                 print('shape', (nufft.st['M']*nufft.batch, nufft.Kdprod*nufft.batch))
+#                 print('spH ')
+                A = scipy.sparse.linalg.LinearOperator((nufft.st['M']*nufft.batch, nufft.Kdprod*nufft.batch), matvec = sp, rmatvec = spH, )
+                
                 methods={'lsqr':scipy.sparse.linalg.lsqr,
                                     'lsmr':scipy.sparse.linalg.lsmr,}
-                k2 = methods[solver](A,  y, *args, **kwargs)#,show=True)
+                k2 = methods[solver](A,  y.flatten(), *args, **kwargs)#,show=True)
     
      
                 xx = nufft.k2xx(nufft.vec2k(k2[0]))

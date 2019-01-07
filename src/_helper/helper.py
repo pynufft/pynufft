@@ -48,7 +48,7 @@ def create_laplacian_kernel(nufft):
     #    FFT of the multi-dimensional laplacian kernel
     ################################        
     uker =numpy.fft.fftn(uker) #, self.nufftobj.st['Kd'], range(0,numpy.ndim(uker)))
-    return uker  
+    return uker
 def indxmap_diff(Nd):
     """
     Preindixing for rapid image gradient.

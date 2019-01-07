@@ -1,10 +1,9 @@
-    
 import os
 import sys
 # sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
 import scipy
 
-def test_2D():
+def test_2D_batch():
     import pkg_resources
     
     DATA_PATH = pkg_resources.resource_filename('pynufft', 'src/data/')
@@ -18,9 +17,12 @@ def test_2D():
     
     image = scipy.misc.imresize(image, (256,256))
     
-    image=image.astype(numpy.float)/numpy.max(image[...])
+    x=image.astype(numpy.float)/numpy.max(image[...])
     #numpy.save('phantom_256_256',image)
-    matplotlib.pyplot.imshow(image, cmap=matplotlib.cm.gray)
+    x = numpy.reshape(x, (256,256,1))
+    batch = 3
+    image = numpy.broadcast_to(x, (256,256,batch)).copy()
+    matplotlib.pyplot.imshow(image[..., 0], cmap=matplotlib.cm.gray)
     matplotlib.pyplot.show()
     print('loading image...')
 
@@ -43,7 +45,7 @@ def test_2D():
     matplotlib.pyplot.show()
 
     NufftObj = NUFFT_cpu()
-    NufftObj.plan(om, Nd, Kd, Jd)
+    NufftObj.plan(om, Nd, Kd, Jd, batch = batch)
     
     y = NufftObj.forward(image)
     print('setting non-uniform data')
@@ -51,22 +53,22 @@ def test_2D():
     
 #     kspectrum = NufftObj.xx2k( NufftObj.solve(y,solver='bicgstab',maxiter = 100))
     image_restore = NufftObj.solve(y, solver='cg',maxiter=10)
-    shifted_kspectrum = numpy.fft.fftshift( numpy.fft.fftn( numpy.fft.fftshift(image_restore)))
+    shifted_kspectrum = numpy.fft.fftshift( numpy.fft.fftn( numpy.fft.fftshift(image_restore, axes = (0,1)), axes = (0,1)), axes = (0,1))
     print('getting the k-space spectrum, shape =',shifted_kspectrum.shape)
     print('Showing the shifted k-space spectrum')
     
-    matplotlib.pyplot.imshow( shifted_kspectrum.real, cmap = matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=-100, vmax=100))
+    matplotlib.pyplot.imshow( shifted_kspectrum[...,0].real, cmap = matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=-100, vmax=100))
     matplotlib.pyplot.title('shifted k-space spectrum')
     matplotlib.pyplot.show()
-    
     image4 = NufftObj.solve(y,'L1TVOLS',maxiter=100, rho= 1)
     image2 = NufftObj.solve(y, 'dc', maxiter = 25)
-    image3 = NufftObj.solve(y, 'cg', maxiter = 25)    
+    image3 = NufftObj.solve(y, 'cg', maxiter = 25)
+    
     matplotlib.pyplot.subplot(1,3,1)
-    matplotlib.pyplot.imshow(image2.real, cmap=matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1))
+    matplotlib.pyplot.imshow(image2[...,0].real, cmap=matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1))
     matplotlib.pyplot.title('dc')
     matplotlib.pyplot.subplot(1,3,2)
-    matplotlib.pyplot.imshow(image3.real, cmap=matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1))
+    matplotlib.pyplot.imshow(image3[...,0].real, cmap=matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1))
     matplotlib.pyplot.title('cg')
     matplotlib.pyplot.subplot(1,3, 3)
     matplotlib.pyplot.imshow(image4.real, cmap=matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1))
@@ -77,7 +79,7 @@ def test_2D():
 #     matplotlib.pyplot.show()
     maxiter =25
     counter = 1
-    for solver in ('dc','bicg','bicgstab','cg', 'gmres','lgmres',  'lsmr', 'lsqr'):
+    for solver in ('lsmr', 'lsqr', 'dc','bicg','bicgstab','cg', 'gmres','lgmres',  ):
         print(counter, solver)
         if 'lsqr' == solver:
             image2 = NufftObj.solve(y, solver,iter_lim=maxiter)
@@ -85,7 +87,7 @@ def test_2D():
             image2 = NufftObj.solve(y, solver,maxiter=maxiter)
 #     image2 = NufftObj.solve(y, solver='bicgstab',maxiter=30)
         matplotlib.pyplot.subplot(2,4,counter)
-        matplotlib.pyplot.imshow(image2.real, cmap=matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1))
+        matplotlib.pyplot.imshow(image2[...,0].real, cmap=matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1))
         matplotlib.pyplot.title(solver)
 #         print(counter, solver)
         counter += 1
@@ -171,6 +173,6 @@ if __name__ == '__main__':
     """
     Test the module pynufft
     """
-    test_2D()
+    test_2D_batch()
 #     test_asoperator()
 #     test_installation()
