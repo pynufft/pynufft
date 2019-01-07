@@ -14,6 +14,8 @@ from pynufft import NUFFT_cpu
 import pkg_resources
 DATA_PATH = pkg_resources.resource_filename('pynufft', './src/data/')
 om = numpy.load(DATA_PATH+'om2D.npz')['arr_0']
+
+# om = numpy.random.randn(120000, 2)
 print(om)
 print('setting non-uniform coordinates...')
 matplotlib.pyplot.plot(om[::10,0],om[::10,1],'o')
@@ -79,3 +81,39 @@ print('Showing the shifted k-space spectrum')
 matplotlib.pyplot.imshow( shifted_kspectrum.real, cmap = matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=-100, vmax=100))
 matplotlib.pyplot.title('shifted k-space spectrum')
 matplotlib.pyplot.show()
+
+
+W0 = numpy.ones((NufftObj.st['M'], ))
+
+
+# W_x = NufftObj.xx2k( NufftObj.adjoint(NufftObj.forward(NufftObj.k2xx(W0))))
+# W_y =  NufftObj.xx2k(NufftObj.x2xx(NufftObj.adjoint(NufftObj.k2y(W0))))
+W =  NufftObj.xx2k(NufftObj.adjoint(W0))
+
+# W =   NufftObj.y2k(W0)
+# matplotlib.pyplot.subplot(1,)
+matplotlib.pyplot.imshow(numpy.real((W*W.conj())**0.5))
+matplotlib.pyplot.title('Ueckers inverse function (real)')
+# matplotlib.pyplot.subplot(1,2,2)
+# matplotlib.pyplot.imshow(W.imag)
+# matplotlib.pyplot.title('Ueckers inverse function (imaginary)')
+matplotlib.pyplot.show()
+
+
+p0 = NufftObj.adjoint(NufftObj.forward(image))
+p1 = NufftObj.k2xx((W.conj()*W)**0.5*NufftObj.xx2k(image))
+
+print('error between Toeplitz and Inverse reconstruction', numpy.linalg.norm( p1 - p0)/ numpy.linalg.norm(p0))
+
+
+matplotlib.pyplot.subplot(1,3,1)
+matplotlib.pyplot.imshow(numpy.real(p0 ))
+matplotlib.pyplot.title('Toeplitz')
+matplotlib.pyplot.subplot(1,3,2)
+matplotlib.pyplot.imshow(numpy.real(p1))
+matplotlib.pyplot.title('Ueckers inverse function')
+matplotlib.pyplot.subplot(1,3,3)
+matplotlib.pyplot.imshow(numpy.abs(p0 - p1)/ numpy.abs(p1))
+matplotlib.pyplot.title('Difference')
+matplotlib.pyplot.show()
+

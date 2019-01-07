@@ -13,7 +13,7 @@ KERNEL void cAnisoShrink(const  float2 threshold,
                                 GLOBAL_MEM const float2 *indata,
                                 GLOBAL_MEM  float2 *outdata)
 {
-const uint gid =  get_global_id(0); 
+const unsigned int gid =  get_global_id(0); 
 float2 tmp; // temporay register
 tmp = indata[gid];
 //float zero = 0.0;

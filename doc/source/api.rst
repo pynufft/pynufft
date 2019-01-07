@@ -1,25 +1,55 @@
 API documentaiton
 =================
 
+.. automodule:: pynufft.linalg
+
+.. automodule:: pynufft.linalg.nufft_cpu
+    :members:
+    :private-members:
+    :special-members:
+        
+.. automodule:: pynufft.linalg.nufft_hsa
+    :members:
+    :private-members:
+    :special-members:
+.. automodule:: pynufft.linalg.solve_cpu
+    :members:
+    :private-members:
+    :special-members:
+
+.. automodule:: pynufft.linalg.solve_hsa
+    :members:
+    :private-members:
+    :special-members:        
+    
+
+.. automodule:: pynufft.src._helper.helper    
+    :members:
+    :private-members:
+    :special-members:
+    
+.. automodule:: pynufft.src.re_subroutine.__init__
+    :members:
+    :private-members:
+    :special-members:    
+    
+
+    
+    
+    
+    
+
+    
 
 
     
-.. automodule:: nufft
-   :members:  
-
-.. automodule:: src._helper
-    :members:
-.. automodule:: src._helper.helper
-    :members:
 
     
-.. automodule:: src._nonlin
-    :members:
-.. automodule:: src._nonlin.solve_cpu
-    :members:
-.. automodule:: src._nonlin.solve_hsa
-    :members:
+    
+    
+    
 
-.. automodule:: src.re_subroutine
-    :members:
+
+    
+
 

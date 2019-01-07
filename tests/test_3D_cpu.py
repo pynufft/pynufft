@@ -24,7 +24,7 @@ def example_3D():
 #     om=       numpy.load(DATA_PATH+'om3D.npz')['arr_0']
     om = numpy.random.randn(15120,3)
     print(om.shape)
-    from .. import NUFFT_cpu, NUFFT_hsa
+    from pynufft import NUFFT_cpu, NUFFT_hsa
     NufftObj = NUFFT_cpu()
     
     
@@ -34,15 +34,15 @@ def example_3D():
     
     restore_image = NufftObj.solve(kspace,'cg', maxiter=200)
     
-    restore_image1 = NufftObj.solve(kspace,'L1TVLAD', maxiter=200,rho=0.1)
+#     restore_image1 = NufftObj.solve(kspace,'L1TVLAD', maxiter=200,rho=0.1)
 # 
     restore_image2 = NufftObj.solve(kspace,'L1TVOLS', maxiter=200,rho=0.1)
     pyplot.subplot(2,2,1)
     pyplot.imshow(numpy.abs(image[:,:,32]), label='original signal',cmap=gray)
     pyplot.title('original')    
-    pyplot.subplot(2,2,2)
-    pyplot.imshow(numpy.abs(restore_image1[:,:,32]), label='L1TVLAD',cmap=gray)
-    pyplot.title('L1TVLAD')
+#     pyplot.subplot(2,2,2)
+#     pyplot.imshow(numpy.abs(restore_image1[:,:,32]), label='L1TVLAD',cmap=gray)
+#     pyplot.title('L1TVLAD')
     
     pyplot.subplot(2,2,3)
     pyplot.imshow(numpy.abs(restore_image2[:,:,32]), label='L1TVOLS',cmap=gray)
@@ -58,4 +58,6 @@ def example_3D():
     
     pyplot.show()
 
-
+if __name__ == '__main__':
+    example_3D()
+    

@@ -5,7 +5,10 @@ Quick start
 .. toctree::
    :maxdepth: 2
    
-   quickstart/installation
+
+
+   introduction/basic_use
+   introduction/realistic_om   
    quickstart/example
    quickstart/more2D
    quickstart/more3D

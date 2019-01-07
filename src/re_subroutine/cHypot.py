@@ -9,7 +9,7 @@ R="""
 KERNEL void cHypot(GLOBAL_MEM float2 *x,
                                 GLOBAL_MEM const float2 *y)
 {
-const uint gid =  get_global_id(0); 
+const unsigned int gid =  get_global_id(0); 
 float2 tmp_x;
 float2 tmp_y;
 tmp_x = x[gid];

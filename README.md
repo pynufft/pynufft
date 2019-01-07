@@ -11,15 +11,18 @@ A minimal "getting start" tutorial is available at http://jyhmiinlin.github.io/p
 Please use Python3. PyNUFFT has been tested with Python 3.4 and 3.6. However, it should work with Python 3.5. 
 
 
-### New in version 0.3.3.12
+### New in version 0.4.0-rc1
 
-Version 0.3.3.12 is a bug-fixed version. 
+Version 0.4.0-rc1 is a beta version. 
 
-Remove the keyword async for compatibility reasons because Reikna has changed the keyword to async_.
+Installation in Windows 10 has been tested. 
+
+Improved NUFFT_hsa with lower memory. 
+
 
 ### Summary
 
-PyNUFFT implements NUFFT, with the following features:
+PyNUFFT implements the min-max NUFFT of Fessler and Sutton, with the following features:
 
 - Written in pure Python.
 - Based on Python numerical libraries, such as Numpy, Scipy (matplotlib for displaying examples).
@@ -56,9 +59,7 @@ Reconstruction Toolbox (MIRT) for releasing the original min-max interpolator co
 jyhmiinlin@gmail.com or open an issue. 
 
 
-### Cite PyNUFFT
-
-Note the kernel is based on the Fessler and Sutton's min-max NUFFT algorithm. Please cite their work as follows:
+The interpolator is designed using the Fessler and Sutton's min-max NUFFT algorithm:
 Fessler JA, Sutton BP. Nonuniform fast Fourier transforms using min-max interpolation. IEEE Trans Signal Process 2003;51(2):560-574.
 
 If you find PyNUFFT useful, please cite:
@@ -66,7 +67,7 @@ If you find PyNUFFT useful, please cite:
 Lin, Jyh-Miin. "Python Non-Uniform Fast Fourier Transform (PyNUFFT): An Accelerated Non-Cartesian MRI Package on a Heterogeneous Platform (CPU/GPU)." Journal of Imaging 4.3 (2018): 51.
 
 @article{lin2018python,
-  title={Python Non-Uniform Fast Fourier Transform (PyNUFFT): An Accelerated Non-Cartesian MRI Package on a Heterogeneous Platform (CPU/GPU)},
+  title={Python Non-Uniform Fast {F}ourier Transform ({PyNUFFT}): An Accelerated Non-{C}artesian {MRI} Package on a Heterogeneous Platform ({CPU/GPU})},
   author={Lin, Jyh-Miin},
   journal={Journal of Imaging},
   volume={4},

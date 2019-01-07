@@ -101,5 +101,5 @@ The image can be restored from non-Cartesian samples y::
 
    
    
-.. literalinclude::  ../../../example/script_3D.py
+#.. literalinclude::  ../../../example/script_3D.py
    
