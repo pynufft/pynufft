@@ -1,12 +1,6 @@
 """
 Helper functions
 =======================================
-
--bugfix: mm = numpy.tile(mm, [numpy.prod(Jd).astype(int), 1])  to fix wrong type when numpy.prod(Jd) is not casted as int
-
--bugfix: fix rcond=None error in Anaconda 3.6.5 and Numpy 1.13.1 (the recommended None in Numpy 1.14 is backward incompatible with 1.13)
-
--bugfix:  indx1 = indx.copy() was replaced by indx1 = list(indx) for Python2 compatibility
 """
 
 
@@ -237,13 +231,6 @@ class pELL:
         :returns: pELL: partial ELLpack class with the given values
         :rtype: pELL: partial ELLpack class
         
-        curr_sumJd: summation of curr_sumJd[dimid] = numpy.sum(Jd[0:dimid - 1])
-        
-        meshindex: For prodJd hypercubic interpolators, find the indices of tensor, shape = (prodJd, dd)
-        
-        kindx: column indeces, shape = (M, sumJd)
-        
-        udata: interpolators, shape = (M, sumJd)
         """
         self.nRow = M
         self.prodJd = numpy.prod(Jd)
@@ -255,7 +242,38 @@ class pELL:
         self.kindx = numpy.array(kindx, order='C')
         self.udata = udata.astype(numpy.complex64)
         
-        
+class Tensor_sn:
+    '''
+    Not implemented:
+    '''     
+    def __init__(self, snd, radix):
+        raise NotImplementedError
+        self.radix = radix
+        Tdims = len(snd2)
+        self.Td = Td
+        self.Td_elements = Td_elements
+        self.invTd_elements = invTd_elements
+        self.snd2 = snd2
+        self.Tdims = numpy.uint32(Tdims) 
+    def cat_snd(self, snd):
+        """
+        :param snd:  tuple of input 1D vectors
+        :type snd: tuple
+        :return:  tensor_sn: vector of concatenated scaling factor, shape = (numpy.sum(Nd), )
+        :rtype: tensor_sn: numpy.float32 
+        """
+        Nd = ()
+        dd = len(snd)
+        for dimid in range(0, dd):
+            Nd += (snd[dimid].shape[0],)
+        tensor_sn = numpy.empty((numpy.sum(Nd), ), dtype=numpy.float32)
+            
+        shift = 0
+        for dimid in range(0, len(Nd)):
+    
+            tensor_sn[shift :shift + Nd[dimid]] = snd[dimid][:,0].real
+            shift = shift + Nd[dimid]       
+        return tensor_sn
     
 def create_csr(uu, kk, Kd, Jd, M):
 #     Jprod = numpy.prod(Jd)
@@ -358,6 +376,12 @@ def create_partialELL(ud, kd, Jd, M):
         meshindex[:, dimid] = xx.astype(numpy.uint32)
 #         else: 
 #             meshindex[:, dimid] = yy.astype(numpy.uint32)
+#     print('dd=', dd)
+#     print('Jd=', Jd)
+#     print('curr_sumJd', curr_sumJd)
+#     print('meshindex,', meshindex)
+#     print('kindx.shape = ', kindx.shape)
+#     print('udata.shape = ', udata.shape)
     partialELL = pELL(M, Jd, curr_sumJd, meshindex, kindx, udata)
     return partialELL
 
@@ -396,13 +420,19 @@ def create_partialELL(ud, kd, Jd, M):
 #     ud2 = (uu, )
 #     Jd2 = (Jprod, )
 #     return ud2, kd2, Jd2
-
+def rdx_N(ud, kd, Jd):
+    ud2 = (khatri_rao_u(ud), )
+    kd2 = (khatri_rao_k(kd), )
+    Jd2 = (numpy.prod(Jd), )
+        
+    return ud2, kd2, Jd2
 def full_kron(ud, kd, Jd, Kd, M):
 #     (udata, kindx)=khatri_rao(ud, kd, Jd)
     
-    udata = khatri_rao_u(ud)
-    kindx = khatri_rao_k(kd)
-    CSR  = create_csr(udata, kindx, Kd, Jd, M) # must have 
+#     udata = khatri_rao_u(ud)
+#     kindx = khatri_rao_k(kd)
+    ud2, kd2, Jd2 = rdx_N(ud, kd, Jd)
+    CSR  = create_csr(ud2[0], kd2[0], Kd, Jd, M) # must have 
     # Dimension reduction: Nd -> 1 
     # Tuple (Nd) -> array (shape = M*prodJd)
     
@@ -490,29 +520,32 @@ def rdx_kron(ud, kd, Jd, radix=None):
 #     kk = kd[0]  # [J1 M] # pointers to indices
 #     uu = ud[0]  # [J1 M]
 #     Jprod = Jd[0]
-    for count in range(0, int(numpy.ceil(dd/radix)), radix):
-        kk = kd[count]  # [J1 M] # pointers to indices
-        uu = ud[count]  # [J1 M]
-        Jprod = Jd[count]
+    for count in range(0, int(numpy.ceil(dd/radix)), ):
+#         kk = kd[count]  # [J1 M] # pointers to indices
+#         uu = ud[count]  # [J1 M]
+#         Jprod = Jd[count]
 #         uu = numpy.ones((M, 1), dtype = numpy.complex64)
 #         Jprod = 1
-        d_start = count
-        d_end = count + radix
+        d_start = count*radix
+        d_end = (count + 1)*radix
         if d_end > dd:
             d_end = dd
+        ud3, kd3, Jd3 = rdx_N(ud[d_start:d_end], kd[d_start:d_end], Jd[d_start:d_end])
+        ud2 += ud3
+        kd2 += kd3
+        Jd2 += Jd3
+#         for dimid in range(d_start + 1, d_end):
+#             Jprod *= Jd[dimid]#numpy.prod(Jd[:dimid + 1])
+#     
+#             kk = block_outer_sum(kk, kd[dimid]) + 1  # outer sum of indices
+#             kk = kk.reshape((M, Jprod), order='C')
+#             uu = numpy.einsum('ij,ik->ijk', uu, ud[dimid])
+#             uu = uu.reshape((M, Jprod), order='C')
         
-        for dimid in range(d_start + 1, d_end):
-            Jprod *= Jd[dimid]#numpy.prod(Jd[:dimid + 1])
-    
-            kk = block_outer_sum(kk, kd[dimid]) + 1  # outer sum of indices
-            kk = kk.reshape((M, Jprod), order='C')
-            uu = numpy.einsum('ij,ik->ijk', uu, ud[dimid])
-            uu = uu.reshape((M, Jprod), order='C')
         
-        
-        ud2 += (uu, )
-        kd2 += (kk, )
-        Jd2 += (Jprod, )
+#         ud2 += (uu, )
+#         kd2 += (kk, )
+#         Jd2 += (Jprod, )
     return ud2, kd2, Jd2 #(uu, ), (kk, ), (Jprod, )#, Jprod
 
 def kronecker_scale(snd):
@@ -542,19 +575,27 @@ def kronecker_scale(snd):
         ###############################################################        
         sn = sn  * tmp # multiply using broadcasting    
     return sn
+
 def cat_snd(snd):
+    """
+    :param snd:  tuple of input 1D vectors
+    :type snd: tuple
+    :return:  tensor_sn: vector of concatenated scaling factor, shape = (numpy.sum(Nd), )
+    :rtype: tensor_sn: numpy.float32 
+    """
     Nd = ()
     dd = len(snd)
     for dimid in range(0, dd):
         Nd += (snd[dimid].shape[0],)
     tensor_sn = numpy.empty((numpy.sum(Nd), ), dtype=numpy.float32)
-        
+         
     shift = 0
     for dimid in range(0, len(Nd)):
-
+ 
         tensor_sn[shift :shift + Nd[dimid]] = snd[dimid][:,0].real
         shift = shift + Nd[dimid]       
     return tensor_sn
+
 def min_max(N, J, K, alpha, beta, om, ft_flag):
     T = nufft_T(    N,  J,  K,  alpha,  beta)
     ###############################################################
@@ -736,6 +777,7 @@ def plan(om, Nd, Kd, Jd, ft_axes = None, format='CSR', radix = None):
         if radix is None:
             radix = 1
         ud2, kd2, Jd2 = rdx_kron(ud, kd, Jd, radix=radix)
+#         print(ud2[0].shape, ud2[1].shape, kd2[0].shape, kd2[1].shape, Jd2)
         st['pELL'] = create_partialELL(ud2, kd2, Jd2, M) 
 #         st['tensor_sn'] = snd
         st['tensor_sn'] = cat_snd(snd)

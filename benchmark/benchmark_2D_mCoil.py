@@ -39,23 +39,25 @@ def test_mCoil(sense_number):
     image = scipy.misc.imresize(image, Nd)*(1.0 + 0.0j)
     Kd = (512,512) # frequency grid, tuple
     Jd = (6,6) # interpolator 
-    om=       numpy.load(DATA_PATH+'om3D.npz')['arr_0']
+#     om=       numpy.load(DATA_PATH+'om3D.npz')['arr_0']
     # om = numpy.random.randn(10000,3)*2
     # om = numpy.load('/home/sram/Cambridge_2012/DATA_MATLAB/Ciuciu/Trajectories_and_data_sparkling_radial/radial/')['arr_0']
-    #om = scipy.io.loadmat('/home/sram/Cambridge_2012/DATA_MATLAB/Ciuciu/Trajectories_and_data_sparkling_radial/sparkling/samples_sparkling_x8_64x3072.mat')['samples_sparkling']
+    om = scipy.io.loadmat('/home/sram/Cambridge_2012/DATA_MATLAB/Ciuciu/Trajectories_and_data_sparkling_radial/sparkling/samples_sparkling_x8_64x3072.mat')['samples_sparkling']
     # om = scipy.io.loadmat('/home/sram/Cambridge_2012/DATA_MATLAB/Ciuciu/Trajectories_and_data_sparkling_radial/radial/samples_radial_x8_64x3072.mat')['samples_radial']
     om = om/numpy.max(om.real.ravel()) * numpy.pi
+    print('om.shape, ', om.shape)
 #     sense_number = 16
-    sense = numpy.ones(Nd + (sense_number,), dtype=numpy.complex64)
+#     sense = numpy.ones(Nd + (sense_number,), dtype=numpy.complex64)
     m = om.shape[0]
     print(om.shape)
     from pynufft import NUFFT_cpu, NUFFT_hsa, NUFFT_hsa_legacy
         # from pynufft import NUFFT_memsave
     NufftObj_cpu = NUFFT_cpu()
+    api = 'cuda'
     proc = 0
-    NufftObj_hsa = NUFFT_hsa_legacy('ocl', proc, 0)
-    NufftObj_memsave = NUFFT_hsa('ocl', proc, 0)
-    NufftObj_mCoil = NUFFT_hsa('ocl', proc, 0)
+    NufftObj_hsa = NUFFT_hsa_legacy(api, proc, 0)
+    NufftObj_memsave = NUFFT_hsa(api, proc, 0)
+    NufftObj_mCoil = NUFFT_hsa(api, proc, 0)
         
     import time
     t0=time.time()
@@ -63,9 +65,9 @@ def test_mCoil(sense_number):
     t1 = time.time()
     NufftObj_hsa.plan(om, Nd, Kd, Jd)
     t12 = time.time()
-    NufftObj_memsave.plan(om, Nd, Kd, Jd)
+    NufftObj_memsave.plan(om, Nd, Kd, Jd, radix = 1)
     t2 = time.time()
-    NufftObj_mCoil.plan(om, Nd, Kd, Jd, batch = sense_number)
+    NufftObj_mCoil.plan(om, Nd, Kd, Jd, batch = sense_number, radix = 1)
     tc = time.time()
 #     proc = 0 # GPU
 #     proc = 1 # gpu
@@ -95,10 +97,10 @@ def test_mCoil(sense_number):
     gx_memsave = NufftObj_memsave.thr.to_device(image.astype(numpy.complex64))
     gx_mCoil = NufftObj_mCoil.thr.to_device(image.astype(numpy.complex64))    
     
-    maxiter = 10
+    maxiter = 2
     tcpu_forward, tcpu_adjoint, ycpu, xcpu = benchmark(NufftObj_cpu, image, maxiter, sense_number)
     print('CPU', int(m), tcpu_forward, tcpu_adjoint)
-    maxiter = 50
+    maxiter = 2
     thsa_forward, thsa_adjoint, yhsa, xhsa = benchmark(NufftObj_hsa, gx_hsa, maxiter, sense_number)
     print('HSA', int(m), thsa_forward, thsa_adjoint, )#numpy.linalg.norm(yhsa.get() - ycpu)/  numpy.linalg.norm( ycpu))
     tmem_forward, tmem_adjoint, ymem, xmem = benchmark(NufftObj_memsave, gx_memsave, maxiter, sense_number)
@@ -108,9 +110,9 @@ def test_mCoil(sense_number):
     print('mCoil' , int(m), tmCoil_forward, tmCoil_adjoint)    
     
     print(numpy.linalg.norm(ymCoil.get()[:,0] - ycpu)/ numpy.linalg.norm( ycpu))
-    NufftObj_memsave.release()
-    NufftObj_mCoil.release()
-    NufftObj_hsa.release()
+#     NufftObj_memsave.release()
+#     NufftObj_mCoil.release()
+#     NufftObj_hsa.release()
     
     return tcpu_forward, tcpu_adjoint,  thsa_forward, thsa_adjoint, tmem_forward, tmem_adjoint,  tmCoil_forward, tmCoil_adjoint
 
@@ -125,7 +127,7 @@ MEM_adjoint = ()
 mCoil_adjoint = ()
 SENSE_NUM = ()
 
-for sense_number in (1, 2, 4, 6, 8, 12, 16, 32, 64):
+for sense_number in (4,5):#6, 8, 12, 16, 32, 64):
     print('SENSE = ', sense_number)
     t = test_mCoil(sense_number)
     CPU_forward += (t[0], )

@@ -1,32 +1,54 @@
 """
-NUFFT CPU classes
+NUFFT CPU class
 =======================================
+
+The NUFFT_cpu depends on Numpy/Scipy, which support Windows, Mac, and Linux.
+
+Defining the equispaced to non-Cartesian transform as  operator :math:`A`, the NUFFT_cpu class provides methods as follows: 
+
+- forward() method computes the single-coil to single-coil, or multi-coil to multi-coil (batch mode) forward operation :math:`A`. 
+
+- adjoint() method computes the single-coil to single-coil, or multi-coil to multi-coil  (batch mode) adjoint operation  :math:`A^H`. 
+
+- selfadjoint() method computes the single-coil to single-coil, or multi-coil to multi-coil (batch mode) selfadjoint operation :math:`A^H A`. 
+
+- forward_single() method computes the single-coil to multi-coil forward operation :math:`A` in batch mode. The single-coil image is copied to multi-coil images before transform. If set_sense() is called first, multi-coil images will be implicitly multiplied by the coil sensitivities before transform. If set_sense() is never called, multi-coil images will not be changed by the coil sensitivities before transform.
+
+- adjoint_single() method computes the multi-coil to single-coil adjoint operation  :math:`A^H` in batch mode. The final reduction will divide the summed image by the number of coils.  If set_sense() is called first, multi-coil images will be implicitly multiplied by the conjugate of coil sensitivities before reduction. If set_sense() is never called, multi-coil images will not be changed by the coil sensitivities before reduction.
+
+- selfadjoint_single () method computes the single-coil to single-coil selfadjoint operation :math:`A^H A` in batch mode. It connects forward_single() and adjoint_single() methods.  If set_sense() is called first, coil sensitivities and the conjugate are used during forward_single() and adjoint_single().
+
+- solve() method link many solvers in pynufft.linalg.solver_cpu, which is based on the solvers of scipy.sparse.linalg.cg, scipy.sparse.linalg.'lsmr', 'lsqr', 'dc','bicg','bicgstab','cg', 'gmres','lgmres'  
+
+------------------
+Attributes
+------------------
+
+- NUFFT_cpu.ndims: the dimension
+
+- NUFFT_cpu.ft_axes: the axes where the FFT take place
+
+- NUFFT_cpu.parallel_flag: 1 for parallel transform. 0 for single channel. If 1, the additional axis is batch. 
+
+- NUFFT_cpu.batch: internal attribute saving the number of channels. If parallel_flag is 0, the batch is 1. Otherwise, batch must be given explictly during planning. 
+
+- NUFFT_cpu.Nd: Tuple, the dimensions
+
+- NUFFT_cpu.Nd: Tuple, the dimensions
+
 """
 
 from __future__ import absolute_import
 import numpy
 import scipy.sparse
 import numpy.fft
-import scipy.signal
+# import scipy.signal
 import scipy.linalg
 import scipy.special
 
 from ..src._helper import helper, helper1
 
 
-def push_cuda_context(hsa_method):
-    """
-    Decorator: Push cude context to the top of the stack for current use
-    Add @push_cuda_context before the methods of NUFFT_hsa()
-    """
-    
-    def wrapper(*args, **kwargs):
-        try:
-            args[0].thr._context.push()
-        except:
-            pass     
-        return hsa_method(*args, **kwargs)
-    return wrapper
 
 class NUFFT_cpu:
     """
@@ -45,8 +67,14 @@ class NUFFT_cpu:
         >>> import pynufft
         >>> NufftObj = pynufft.NUFFT_cpu()
         """        
-        self.dtype=numpy.complex64
-        self.debug = 0  # debug
+        self.dtype=numpy.complex64 #: initial value: numpy.complex64 
+        self.debug = 0  #: initial value: 0
+        self.Nd = () #: initial value: ()
+        self.Kd = () #: initial value: ()
+        self.Jd = ()  #: initial value: ()
+        self.ndims = 0 #: initial value: 0
+        self.ft_axes = () #: initial value: ()
+        self.batch = None #: initial value: None
         pass
 
     def plan(self, om, Nd, Kd, Jd, ft_axes = None, batch = None):
@@ -67,6 +95,13 @@ class NUFFT_cpu:
         :type batch: None, or integer
         :returns: 0
         :rtype: int, float
+        
+        :ivar Nd: initial value: Nd
+        :ivar Kd: initial value: Kd
+        :ivar Jd: initial value: Jd
+        :ivar ft_axes: initial value: None
+        :ivar batch: initial value: None 
+        
         :Example:
 
         >>> import pynufft
@@ -78,13 +113,11 @@ class NUFFT_cpu:
         >>> NufftObj.plan(om, Nd, Kd, Jd, ft_axes, batch)
         
         """         
-        
 
-#         n_shift = tuple(0*x for x in Nd)
-        self.ndims = len(Nd) # dimension
+        self.ndims = len(Nd) #: initial value: len(Nd)
         if ft_axes is None:
             ft_axes = range(0, self.ndims)
-        self.ft_axes = ft_axes
+        self.ft_axes = ft_axes #: initial value: all axes (range(0, self.ndims)
 #     
         self.st = helper.plan(om, Nd, Kd, Jd, ft_axes = ft_axes, format = 'CSR')
 #         st_tmp = helper.plan0(om, Nd, Kd, Jd)
@@ -218,15 +251,16 @@ class NUFFT_cpu:
     
     def solve(self,y, solver=None, *args, **kwargs):
         """
-        Solve NUFFT_cpu
+        Solve NUFFT_cpu.
         
-        :param y: data, numpy array, (M,) size
-        :param solver: could be 'cg', 'L1TVOLS', 'L1TVLAD' 
+        
+        :param y: data, numpy.complex64. The shape = (M,) or (M, batch) 
+        :param solver: 'cg', 'L1TVOLS', 'lsmr', 'lsqr', 'dc','bicg','bicgstab','cg', 'gmres','lgmres'
         :param maxiter: the number of iterations
         :type y: numpy array, dtype = numpy.complex64
         :type solver: string
         :type maxiter: int
-        :return: numpy array with size Nd
+        :return: numpy array with size  The shape = Nd ('L1TVOLS') or  Nd + (batch,) ('lsmr', 'lsqr', 'dc','bicg','bicgstab','cg', 'gmres','lgmres') 
         """        
         from ..linalg.solve_cpu import solve
 #         if self.parallel_flag is 1:
@@ -458,7 +492,7 @@ class NUFFT_excalibur(NUFFT_cpu):
         >>> import pynufft
         >>> NufftObj = pynufft.NUFFT_hsa()
         """
-        
+        raise NotImplementedError
         pass
         NUFFT_cpu.__init__(self)
 

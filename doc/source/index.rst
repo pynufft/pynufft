@@ -11,10 +11,10 @@ Welcome to pynufft's Documentation
    intro
    installation
    getstart
+   api
    misc
    eg
    versionhistory
-   api
 
 
 Indices and tables

@@ -9,7 +9,7 @@ Version history
 
 - Tested in Windows 10 with PyCUDA 2018.1.1, nvidia-driver 417.35, CUDA 9.2, Visual Studio 2015 Community, and Anaconda Python 3.7 64-bit. PyOpenCL remains untested. 
 
-- Add batch mode however not recommended. 
+- Add batch mode.  
   
  
 **v0.3.3.12** 
@@ -20,7 +20,11 @@ Version history
 
 **v0.3.3.8**
  
-Bugfix in 0.3.3.8 rcond = -1 in numpy.linalg.lstsq to be backward compatible with numpy-1.13.1 in Anaconda 3.6.5
+- Bugfix: mm = numpy.tile(mm, [numpy.prod(Jd).astype(int), 1])  to fix wrong type when numpy.prod(Jd) is not casted as int
+
+- Bugfix: fix rcond=None error in Anaconda 3.6.5 and Numpy 1.13.1 (the recommended None in Numpy 1.14 is backward incompatible with 1.13)
+
+- Bugfix:  indx1 = indx.copy() was replaced by indx1 = list(indx) for Python2 compatibility
 
 **v0.3.3.7**
 
@@ -45,20 +49,16 @@ Bugfix in 0.3.3.8 rcond = -1 in numpy.linalg.lstsq to be backward compatible wit
 
 - Experimental support of NVIDIA's graphic processing unit (GPU). 
 
- The experimental class gpuNUFFT requires pycuda, scikit-cuda, and python-cuda-cffi. 
-
- scikit-cuda could be installed from standard command.
+- The experimental class gpuNUFFT requires pycuda, scikit-cuda, and python-cuda-cffi. scikit-cuda could be installed from standard command.
 
 **v0.3.2.8**
 
 - Tested under Linux and Windows Anaconda3
- 
-  add scipy.misc.face().
   
 **v0.3**
 
-- Update setup.py
+- Updated setup.py
 
- remove pyfftw due to segfault under some Linux distributions
+- Removal of pyfftw due to segfault under some Linux distributions
 
   

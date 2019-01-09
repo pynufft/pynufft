@@ -44,11 +44,15 @@ print(special_license)
 
 def benchmark(nufftobj, gx, maxiter):
     import time
+    
     t0= time.time()
+    
     for pp in range(0, maxiter):
+    
         gy = nufftobj.forward(gx)
     t1 = time.time()
     for pp in range(0, maxiter):
+    
         gx2 = nufftobj.adjoint(gy)
     t2 = time.time()
     return (t1 - t0)/maxiter, (t2 - t1)/maxiter, gy, gx2
@@ -59,37 +63,39 @@ Kd = (256,256,256) # frequency grid, tuple
 Jd = (6,6,6) # interpolator 
 #     om=       numpy.load(DATA_PATH+'om3D.npz')['arr_0']
 # om = numpy.random.randn(10000,3)*2
-for m in (1e+5, 2e+5, 3e+5, 4e+5, 5e+5, 6e+5, 7e+5, 8e+5, 9e+5, 1e+6, 2e+6, 3e+6, 4e+6, 5e+6, 
-          6e+6, 7e+6, 8e+6, 9e+6, 10e+6, 11e+6, 12e+6, 13e+6, 14e+6, 15e+6,
-          16e+6, 17e+6, 18e+6, 19e+6, 20e+6, 30e+6, 40e+6, 50e+6, 60e+6, 70e+6, 80e+6, 90e+6, 100e+6):
-    om = numpy.random.randn(m,3)*2
+# for m in (1e+5, 2e+5, 3e+5, 4e+5, 5e+5, 6e+5, 7e+5, 8e+5, 9e+5, 1e+6, 2e+6, 3e+6, 4e+6, 5e+6, 
+#           6e+6, 7e+6, 8e+6, 9e+6, 10e+6, 11e+6, 12e+6, 13e+6, 14e+6, 15e+6,
+#           16e+6, 17e+6, 18e+6, 19e+6, 20e+6, 30e+6, 40e+6, 50e+6, 60e+6, 70e+6, 80e+6, 90e+6, 100e+6):
+for m in (1e+7, ):
+    om = numpy.random.randn(int(m),3)*2
 #     om = numpy.load('/home/sram/UCL/DATA/G/3D_Angio/greg_3D.npz')['arr_0'][0:int(m), :]
     print(om.shape)
-    from pynufft import NUFFT_cpu, NUFFT_hsa, NUFFT_memsave
+    from pynufft import NUFFT_cpu, NUFFT_hsa#, NUFFT_memsave
     # from pynufft import NUFFT_memsave
-    #NufftObj_cpu = NUFFT_cpu()
+#     NufftObj_cpu = NUFFT_cpu()
 #     NufftObj_hsa = NUFFT_hsa()
-    NufftObj_memsave = NUFFT_memsave()
+    NufftObj_memsave = NUFFT_hsa('ocl', 0,0)
     
     import time
     t0=time.time()
-    #NufftObj_cpu.plan(om, Nd, Kd, Jd)
+#     NufftObj_cpu.plan(om, Nd, Kd, Jd)
     t1 = time.time()
 #     NufftObj_hsa.plan(om, Nd, Kd, Jd)
     t12 = time.time()
-    NufftObj_memsave.plan(om, Nd, Kd, Jd)
+    RADIX = 1
+    NufftObj_memsave.plan(om, Nd, Kd, Jd, radix=RADIX)
     t2 = time.time()
     # proc = 0 # GPU
-    proc = 1 # gpu
+#     proc = 1 # gpu
 #     NufftObj_hsa.offload(API = 'ocl',   platform_number = proc, device_number = 0)
     t22 = time.time()
-    NufftObj_memsave.offload(API = 'ocl',   platform_number = proc, device_number = 0)
+#     NufftObj_memsave.offload(API = 'ocl',   platform_number = proc, device_number = 0)
     # NufftObj_memsave.offload(API = 'cuda',   platform_number = 0, device_number = 0)
     t3 = time.time()
-    if proc is 0:
-        print('CPU')
-    else:
-        print('GPU')
+#     if proc is 0:
+#         print('CPU')
+#     else:
+#         print('GPU')
     print('Number of samples = ', om.shape[0])
 #     print('planning time of CPU = ', t1 - t0)
 #     print('planning time of HSA = ', t12 - t1)
@@ -98,15 +104,17 @@ for m in (1e+5, 2e+5, 3e+5, 4e+5, 5e+5, 6e+5, 7e+5, 8e+5, 9e+5, 1e+6, 2e+6, 3e+6
     print('loading time of MEM = ', t3 - t22)
     
 #     gx_hsa = NufftObj_hsa.thr.to_device(image.astype(numpy.complex64))
-    gx_memsave = NufftObj_memsave.thr.to_device(image.astype(numpy.complex64))
-    
+    gx_memsave = NufftObj_memsave.thr.to_device(image.astype(numpy.complex64).copy())
+    print('loading data')
     maxiter = 10
-    #tcpu_forward, tcpu_adjoint, ycpu, xcpu = benchmark(NufftObj_cpu, image, maxiter)
-    #print(tcpu_forward, tcpu_adjoint)
-    maxiter = 50
+#     tcpu_forward, tcpu_adjoint, ycpu, xcpu = benchmark(NufftObj_cpu, image, maxiter)
+#     print('CPU time', int(m), tcpu_forward, tcpu_adjoint)
+    maxiter = 10
 #     thsa_forward, thsa_adjoint, yhsa, xhsa = benchmark(NufftObj_hsa, gx_hsa, maxiter)
 #     print('HSA', 9, m, thsa_forward, thsa_adjoint, )#numpy.linalg.norm(yhsa.get() - ycpu)/  numpy.linalg.norm( ycpu))
     tmem_forward, tmem_adjoint, ymem, xmem = benchmark(NufftObj_memsave, gx_memsave, maxiter)
-    print('MEM' , int(m), tmem_forward, tmem_adjoint)
+    print('default radix = ', RADIX)
+    print('Hardware = ', NufftObj_memsave.device)
+    print('HSA' , int(m), tmem_forward, tmem_adjoint)
     del NufftObj_memsave
-# print(tmem_forward, tmem_adjoint, numpy.linalg.norm(ymem.get() - ycpu)/ numpy.linalg.norm( ycpu))
+# print('Error between CPU and HSA', numpy.linalg.norm(ymem.get() - ycpu)/ numpy.linalg.norm( ycpu))

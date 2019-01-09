@@ -1,7 +1,7 @@
 """
 Explicitly load the NUFFT_hsa to the 'ocl' backend.
 """
-from pynufft import NUFFT_cpu, NUFFT_hsa_legacy, NUFFT_hsa
+from pynufft import NUFFT_cpu, NUFFT_hsa
 
 import numpy
 
@@ -42,7 +42,7 @@ def test_opencl():
     nfft.plan(om, Nd, Kd, Jd)
 
     # initiating NUFFT_hsa object
-    NufftObj = NUFFT_hsa_legacy('ocl', 0, 0)
+    NufftObj = NUFFT_hsa('ocl', 0, 0)
 
     # Plan the NufftObj (similar to NUFFT_cpu)
     NufftObj.plan(om, Nd, Kd, Jd, batch = None)
@@ -66,26 +66,26 @@ def test_opencl():
     for pp in range(0,100):
         gy = NufftObj.forward(gx)
 #         gx2 = NufftObj.adjoint(gy)
-    t_cu = (time.time() - t0)/100
+    t_ocl = (time.time() - t0)/100
     
     print('t_cpu = ', t_cpu)
-    print('t_cuda =, ', t_cu)
+    print('t_ocl =, ', t_ocl)
     
     print('gy close? = ', numpy.allclose(y, gy.get(),  atol=numpy.linalg.norm(y)*1e-3))
 #     print('gx2 close? = ', numpy.allclose(x2, gx2.get(),  atol=numpy.linalg.norm(x2)*1e-3))
 #     matplotlib.pyplot.imshow(gx2.get().real)
 #     matplotlib.pyplot.show()
-    print("acceleration=", t_cpu/t_cu)
+    print("acceleration=", t_cpu/t_ocl)
     maxiter =100
     import time
     t0= time.time()
-    x_cpu_cg = nfft.solve(y, 'cg',maxiter=maxiter)
+    x_cpu_cg = nfft.solve(  y, 'cg',  maxiter=maxiter)
 #     x2 =  nfft.solve(y2, 'L1TVLAD',maxiter=maxiter, rho = 2)
     t1 = time.time()-t0 
 #     gy=NufftObj.thr.copy_array(NufftObj.thr.to_device(y2))
     
     t0= time.time()
-    x_cuda_cg = NufftObj.solve(gy,'cg', maxiter=maxiter)
+    x_cuda_cg = NufftObj.solve( gy,  'cg',   maxiter=maxiter)
 #     x = NufftObj.solve(gy,'L1TVLAD', maxiter=maxiter, rho=2)
     
     t2 = time.time() - t0
@@ -110,13 +110,13 @@ def test_opencl():
         matplotlib.pyplot.title('CG_cpu')
         matplotlib.pyplot.subplot(2, 2, 2)
         matplotlib.pyplot.imshow(x_cuda_cg.get().real, cmap= matplotlib.cm.gray)
-        matplotlib.pyplot.title('CG_cuda')
+        matplotlib.pyplot.title('CG_ocl')
         matplotlib.pyplot.subplot(2, 2, 3)
         matplotlib.pyplot.imshow( x_cpu_TV.real, cmap= matplotlib.cm.gray)
         matplotlib.pyplot.title('TV_cpu')
         matplotlib.pyplot.subplot(2, 2, 4)
         matplotlib.pyplot.imshow(x_cuda_TV.get().real, cmap= matplotlib.cm.gray)
-        matplotlib.pyplot.title('TV_cuda')    
+        matplotlib.pyplot.title('TV_ocl')    
         matplotlib.pyplot.show()
     except:
         print('no matplotlib')

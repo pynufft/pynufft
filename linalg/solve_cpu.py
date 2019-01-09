@@ -56,15 +56,15 @@ def L1TVOLS(nufft, y, maxiter, rho ): # main function of solver
         
     
     uker = mu*_create_kspace_sampling_density(nufft)
-    print('uker.shape', uker.shape) 
+#     print('uker.shape', uker.shape) 
     uker = uker - LMBD* helper.create_laplacian_kernel(nufft)
-    print('uker.shape', uker.shape)
-    import matplotlib.pyplot
-    matplotlib.pyplot.imshow(abs(uker))
-    matplotlib.pyplot.show()
-    print('y.shape=', y.shape)
+#     print('uker.shape', uker.shape)
+#     import matplotlib.pyplot
+#     matplotlib.pyplot.imshow(abs(uker))
+#     matplotlib.pyplot.show()
+#     print('y.shape=', y.shape)
     AHy = AH(y)
-    print('AHy.shape = ', AHy.shape)
+#     print('AHy.shape = ', AHy.shape)
     
     xkp1 = numpy.zeros_like(AHy)
     AHyk = numpy.zeros_like(AHy)

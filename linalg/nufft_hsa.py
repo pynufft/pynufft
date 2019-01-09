@@ -45,6 +45,7 @@ class NUFFT_hsa:
     def __init__(self, API = None, platform_number=None, device_number=None):
         """
         Constructor.
+        
         :param API: The API for the heterogeneous system. API='cuda' or API='ocl'
         :param platform_number: The number of the platform found by the API. 
         :param device_number: The number of the device found on the platform. 
@@ -58,13 +59,10 @@ class NUFFT_hsa:
 
         >>> import pynufft
         >>> NufftObj = pynufft.NUFFT_hsa(API='cuda', 0, 0)
-
         """
         
-#         pass
         self.dtype = numpy.complex64
-#         NUFFT_cpu.__init__(self)
-    
+   
         import reikna.cluda as cluda
         print('API = ', API)
         self.cuda_flag, self.ocl_flag = helper.diagnose()
@@ -102,9 +100,9 @@ class NUFFT_hsa:
 
 #         Create context from device
         self.thr = api.Thread(device) #pyopencl.create_some_context()
+        self.device = device #: device name
         print('Using opencl or cuda = ', self.thr.api)
-        
-#         print('Using opencl?  ', self.thr.api is reikna.cluda.ocl)
+
 #         """
 #         Wavefront: as warp in cuda. Can control the width in a workgroup
 #         Wavefront is required in spmv_vector as it improves data coalescence.
@@ -112,8 +110,7 @@ class NUFFT_hsa:
 #         """
         self.wavefront = api.DeviceParameters(device).warp_size
 
-        print('wavefront of OpenCL (as warp in CUDA) = ',self.wavefront)
-
+        print('wavefront of OpenCL (as warp of CUDA) = ',self.wavefront)
 
         from ..src.re_subroutine import create_kernel_sets
         kernel_sets = create_kernel_sets(API)
@@ -124,6 +121,7 @@ class NUFFT_hsa:
         self.prg = prg        
         
         print("Note: In the future the api will change!")
+        print("Note: NUFFT_hsa and NUFFT_cpu class will merge in the future!")
         print("You have been warned!")
     
     def plan(self, om, Nd, Kd, Jd, ft_axes = None, batch = None, radix = None):
@@ -222,10 +220,6 @@ class NUFFT_hsa:
         self.pELL['udata'] = self.thr.to_device(self.st['pELL'].udata.astype(self.dtype))
     
         self.volume = {}
-#         self.volume['gpu_sense2'] = self.thr.to_device(self.sense2.astype(self.dtype))
-#         self.volume['SnGPUArray'] = self.thr.to_device(self.sn.real.astype(numpy.float32))
-#         self.volume['NdGPUorder'] =self.thr.to_device(self.NdCPUorder)
-#         self.volume['KdGPUorder'] = self.thr.to_device(self.KdCPUorder)
         
         self.volume['Nd_elements'] = self.thr.to_device(numpy.asarray(self.Nd_elements, dtype = numpy.uint32))
         self.volume['Kd_elements'] = self.thr.to_device(numpy.asarray(self.Kd_elements, dtype = numpy.uint32))
@@ -264,10 +258,7 @@ class NUFFT_hsa:
         print('shape of Nd', self.Nd, self.batch)
 #         if coil_profile.shape == self.Nd + (self.batch, ):        
         self.volume['gpu_coil_profile'] = self.thr.to_device(coil_profile.reshape(coil_profile.shape, order='C').astype(self.dtype))
-#         else:
-#             print('The shape of the coil_profile is ', coil_profile.shape)
-#             print('While it should be ', self.Nd + (self.batch, ))
-#             raise ValueError
+
         
     @push_cuda_context
     def to_device(self, image, shape = None):
@@ -276,24 +267,8 @@ class NUFFT_hsa:
         self.thr.to_device(image.astype(self.dtype), dest = g_image)
         return g_image
     
-#     @push_cuda_context
-#     def x2xx(self, x):
-#         
-#         """
-#         Private: Scaling on the heterogeneous device
-#         Inplace multiplication of self.x_Nd by the scaling factor self.SnGPUArray.
-#         """           
-# #         z = self.x2z(x)
-#         xx = self.z2xx(z)
-#   
-#         return xx
-    
     @push_cuda_context
     def s2x(self, s):
-#         print("In x2z")
-#         x_in = self.thr.array(self.st['Nd'], dtype=self.dtype)
-#         print("Copy input to output")
-#         self.thr.copy_array(x, x_in,)#src_offset, dest_offset, size)
         x = self.thr.array(self.multi_Nd, dtype=self.dtype)
 #         print("Now populate the array to multi-coil")
         self.prg.cPopulate(self.batch, self.Ndprod, s, x, local_size = None, global_size = int(self.batch * self.Ndprod) )
@@ -322,7 +297,7 @@ class NUFFT_hsa:
                                     xx, 
                                     numpy.uint32(0),
                                     local_size = None, global_size = int(self.batch * self.Ndprod))
-        self.thr.synchronize()
+#         self.thr.synchronize()
         return xx
     
     @push_cuda_context
@@ -472,17 +447,7 @@ class NUFFT_hsa:
             x2 = x
         self.prg.cAggregate(self.batch, self.Ndprod, x2, s, local_size = int(self.wavefront), global_size = int(self.batch * self.Ndprod * self.wavefront))
         return s
-    
-#     @push_cuda_context
-#     def xx2x(self, xx):
-#         """
-#         Private: rescaling, which is identical to the  _x2xx() method
-#         """
-#         xx_in = self.xx2z(xx)
-#         x = self.z2x(xx_in)
-#         del xx_in
-#         return x
-    
+        
     @push_cuda_context
     def selfadjoint(self, gx):
         """

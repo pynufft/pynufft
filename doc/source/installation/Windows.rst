@@ -1,14 +1,11 @@
 Installation in Windows 10
 ==========================
 
-PyNUFFT has been tested on a Windows 10. 
+PyNUFFT has been tested on a Windows 10 home edition. 
 
-The successful installation happens with
-Nvidia-driver 417.35-notebook-win10-64bit-international-whql-rp,
- Anaconda3-2018.12-Windows-x86_64, 
- PyCUDA 2018.1.1, 
-Microsoft Visual Studio 2015 Community,
-CUDA 9.2.148_win10 and cuda_9.2.148.1_windows (patch).  
+The successful installation experience may be useful, but the actual process can be different due to various software and hardware environments.
+
+I used Nvidia-driver 417.35-notebook-win10-64bit-international-whql-rp, Anaconda3-2018.12-Windows-x86_64, PyCUDA 2018.1.1 from official pip, Microsoft Visual Studio 2015 Community, CUDA 9.2.148_win10 and cuda_9.2.148.1_windows (patch).  
 
 The following general guidance may be working in your case but there is no warranty.  
 
@@ -47,16 +44,28 @@ This error is due to Visual Studio is not added to the system path, so the syste
 
 - Add the environmental variable path. 
 Try to follow the webpage at `https://docs.microsoft.com/en-us/previous-versions/office/developer/sharepoint-2010/ee537574(v%3Doffice.14)`.
-Add `C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC/bin` and `C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\IDE`.
+Add "C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\bin" and "C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\Common7\\IDE".
  
+- Open windows cmd, it should find cl.exe without the above error message. If the error appears again, the path must be modified.
 
 **Installation of Anaconda3**
 
-Now install Anaconda3. 
+-  Now install Anaconda3. I downloaded Anaconda3-2018.12-Windows-x86_64. 
 
-**Installation of Pytools, PyCUDA**
+**Installation of Pytools, PyCUDA, and PyNUFFT**
 
-- The Anaconda3 
+- Open Anaconda3 command prompt, type::
+
+   set PYTHONIOENCODING=UTF-8
+   pip install pytools
+   pip install pycuda
+   pip install pynufft
+   
+- Test PyNUFFT::
+
+   python
+   from pynufft import tests
+   tests.test_init()
 
 
 
