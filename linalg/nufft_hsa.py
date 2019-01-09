@@ -187,6 +187,7 @@ class NUFFT_hsa:
         
         self.Nd_elements, self.invNd_elements = helper.strides_divide_itemsize(self.st['Nd'])
         self.Kd_elements = helper.strides_divide_itemsize( self.st['Kd'])[0] # only return the Kd_elements
+        self.NdCPUorder, self.KdCPUorder, self.nelem =     helper.preindex_copy(self.st['Nd'], self.st['Kd'])
         
         self.offload()
         
@@ -225,6 +226,8 @@ class NUFFT_hsa:
         self.volume['Kd_elements'] = self.thr.to_device(numpy.asarray(self.Kd_elements, dtype = numpy.uint32))
         self.volume['invNd_elements'] = self.thr.to_device(self.invNd_elements.astype(numpy.float32))
         self.volume['Nd'] =  self.thr.to_device(numpy.asarray(self.st['Nd'], dtype = numpy.uint32))
+        self.volume['NdGPUorder'] = self.thr.to_device( self.NdCPUorder)
+        self.volume['KdGPUorder'] = self.thr.to_device( self.KdCPUorder)
         
         Nd = self.st['Nd']
 #         tensor_sn = numpy.empty((numpy.sum(Nd), ), dtype=numpy.float32)
@@ -257,7 +260,9 @@ class NUFFT_hsa:
         print(coil_profile.shape)
         print('shape of Nd', self.Nd, self.batch)
 #         if coil_profile.shape == self.Nd + (self.batch, ):        
-        self.volume['gpu_coil_profile'] = self.thr.to_device(coil_profile.reshape(coil_profile.shape, order='C').astype(self.dtype))
+        self.volume['gpu_coil_profile'] = self.thr.to_device(coil_profile.astype(self.dtype))
+        print('load sense')
+        
 
         
     @push_cuda_context
@@ -272,7 +277,7 @@ class NUFFT_hsa:
         x = self.thr.array(self.multi_Nd, dtype=self.dtype)
 #         print("Now populate the array to multi-coil")
         self.prg.cPopulate(self.batch, self.Ndprod, s, x, local_size = None, global_size = int(self.batch * self.Ndprod) )
-        
+#         x2 = x  *  self.volume['gpu_coil_profile']
         try:
             x2 = x  *  self.volume['gpu_coil_profile']
         except:

@@ -95,12 +95,12 @@ def test_mCoil(sense_number):
         
     gx_hsa = NufftObj_hsa.thr.to_device(image.astype(numpy.complex64))
     gx_memsave = NufftObj_memsave.thr.to_device(image.astype(numpy.complex64))
-    gx_mCoil = NufftObj_mCoil.thr.to_device(image.astype(numpy.complex64))    
-    
-    maxiter = 2
+    gx_mCoil0 = NufftObj_mCoil.thr.to_device(image.astype(numpy.complex64))    
+    gx_mCoil = NufftObj_mCoil.s2x(gx_mCoil0)
+    maxiter = 50
     tcpu_forward, tcpu_adjoint, ycpu, xcpu = benchmark(NufftObj_cpu, image, maxiter, sense_number)
     print('CPU', int(m), tcpu_forward, tcpu_adjoint)
-    maxiter = 2
+    maxiter = 50
     thsa_forward, thsa_adjoint, yhsa, xhsa = benchmark(NufftObj_hsa, gx_hsa, maxiter, sense_number)
     print('HSA', int(m), thsa_forward, thsa_adjoint, )#numpy.linalg.norm(yhsa.get() - ycpu)/  numpy.linalg.norm( ycpu))
     tmem_forward, tmem_adjoint, ymem, xmem = benchmark(NufftObj_memsave, gx_memsave, maxiter, sense_number)
@@ -110,6 +110,7 @@ def test_mCoil(sense_number):
     print('mCoil' , int(m), tmCoil_forward, tmCoil_adjoint)    
     
     print(numpy.linalg.norm(ymCoil.get()[:,0] - ycpu)/ numpy.linalg.norm( ycpu))
+    print(numpy.linalg.norm(xmCoil.get()[...,0] - xcpu)/ numpy.linalg.norm( xcpu))
 #     NufftObj_memsave.release()
 #     NufftObj_mCoil.release()
 #     NufftObj_hsa.release()
@@ -127,7 +128,7 @@ MEM_adjoint = ()
 mCoil_adjoint = ()
 SENSE_NUM = ()
 
-for sense_number in (4,5):#6, 8, 12, 16, 32, 64):
+for sense_number in (1,2,4, 8, 12, 16, 32, 64):
     print('SENSE = ', sense_number)
     t = test_mCoil(sense_number)
     CPU_forward += (t[0], )

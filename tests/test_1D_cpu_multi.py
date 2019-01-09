@@ -47,7 +47,7 @@ def example_1D():
     x2 =NufftObj.adjoint(nufft_freq_data)
     restore_time = NufftObj.solve(nufft_freq_data,'cg', maxiter=30)
     
-    restore_time1 = NufftObj.solve(nufft_freq_data,'L1TVLAD', maxiter=30,rho=1)
+    restore_time1 = NufftObj.solve(nufft_freq_data,'L1TVOLS', maxiter=30,rho=1)
 # 
 #     restore_time2 = NufftObj.solve(nufft_freq_data,'L1TVOLS', maxiter=30,rho=1)
 #     
