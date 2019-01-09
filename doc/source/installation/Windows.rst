@@ -1,7 +1,8 @@
-Installation in Windows 10
-==========================
+-----------------------------
+Installation under Windows 10
+-----------------------------
 
-PyNUFFT has been tested on a Windows 10 home edition. 
+PyNUFFT has been tested under the Windows 10 home edition. 
 
 The successful installation experience may be useful, but the actual process can be different due to various software and hardware environments.
 
@@ -36,7 +37,7 @@ You may see ::
 which means the nvcc can be found. 
 
 - However, the system cannot find `cl.exe` ::
-
+   C:\Users\User>cl
    `cl` is not recognized as an internal or external command, 
    operable program or batch file.
    
@@ -46,7 +47,13 @@ This error is due to Visual Studio is not added to the system path, so the syste
 Try to follow the webpage at `https://docs.microsoft.com/en-us/previous-versions/office/developer/sharepoint-2010/ee537574(v%3Doffice.14)`.
 Add "C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\bin" and "C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\Common7\\IDE".
  
-- Open windows cmd, it should find cl.exe without the above error message. If the error appears again, the path must be modified.
+- Open windows cmd, it should find cl.exe without the above error message. If the error appears again, the path must be modified.::
+   
+   C:\Users\User>cl
+   Microsoft (R) C/C++ Optimizing Compiler Version 19.0024215.1 for x86
+   Copyright (C) Microsoft Corpoortion. All rights reserved.
+   
+   usage: cl [ option... ] filename... [ /link linkoption... ]
 
 **Installation of Anaconda3**
 

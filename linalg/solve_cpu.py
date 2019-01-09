@@ -34,7 +34,7 @@ def _create_kspace_sampling_density(nufft):
             w =  numpy.abs( nufft.xx2k(nufft.adjoint(y)))#**2) ))
         nufft.st['w'] = w#self.nufftobj.vec2k(w)
         RTR=nufft.st['w'] # see __init__() in class "nufft"
-        print('RTR.shape = ', RTR.shape)
+#         print('RTR.shape = ', RTR.shape)
         return RTR
    
     
@@ -223,35 +223,35 @@ def solve(nufft,   y,  solver=None, *args, **kwargs):
     
             return x
         elif ('lsmr'==solver) or ('lsqr'==solver):
-                """
-                Assymetric matrix A
-                Minimize L2 norm of |y-Ax|_2 or |y-Ax|_2+|x|_2
-                Very stable 
-                """
+            """
+            Assymetric matrix A
+            Minimize L2 norm of |y-Ax|_2 or |y-Ax|_2+|x|_2
+            Very stable 
+            """
 #                 A = nufft.sp
-                def sp(k):
-                    k2 = k.reshape(nufft.multi_Kd, order='C')
-                    return nufft.k2y(k2).ravel()
-                def spH(y):
-                    y2 = y.reshape(nufft.multi_M, order='C')
-                    return nufft.y2k(y2).ravel()                
+            def sp(k):
+                k2 = k.reshape(nufft.multi_Kd, order='C')
+                return nufft.k2y(k2).ravel()
+            def spH(y):
+                y2 = y.reshape(nufft.multi_M, order='C')
+                return nufft.y2k(y2).ravel()                
 #                 return nufft.spH.dot(nufft.sp.dot(x))
 #                 print('shape', (nufft.st['M']*nufft.batch, nufft.Kdprod*nufft.batch))
 #                 print('spH ')
-                A = scipy.sparse.linalg.LinearOperator((nufft.st['M']*nufft.batch, nufft.Kdprod*nufft.batch), matvec = sp, rmatvec = spH, )
-                
-                methods={'lsqr':scipy.sparse.linalg.lsqr,
-                                    'lsmr':scipy.sparse.linalg.lsmr,}
-                k2 = methods[solver](A,  y.flatten(), *args, **kwargs)#,show=True)
-    
-     
-                xx = nufft.k2xx(nufft.vec2k(k2[0]))
-                x= xx/nufft.sn
-                return x#, k2[1:]        
+            A = scipy.sparse.linalg.LinearOperator((nufft.st['M']*nufft.batch, nufft.Kdprod*nufft.batch), matvec = sp, rmatvec = spH, )
+            
+            methods={'lsqr':scipy.sparse.linalg.lsqr,
+                                'lsmr':scipy.sparse.linalg.lsmr,}
+            k2 = methods[solver](A,  y.flatten(), *args, **kwargs)#,show=True)
+
+ 
+            xx = nufft.k2xx(nufft.vec2k(k2[0]))
+            x= xx/nufft.sn
+            return x#, k2[1:]        
         elif 'L1TVOLS' == solver:
             return  L1TVOLS(nufft, y, *args, **kwargs)
-        elif 'L1TVLAD' == solver:
-            return  L1TVLAD(nufft, y, *args, **kwargs)
+#         elif 'L1TVLAD' == solver:
+#             return  L1TVLAD(nufft, y, *args, **kwargs)
         else:
             """
             Hermitian matrix A

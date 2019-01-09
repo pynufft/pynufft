@@ -554,13 +554,13 @@ def solve(nufft,gy, solver=None,  maxiter=30, *args, **kwargs):
  
         from reikna.algorithms import Reduce, Predicate, predicate_sum
          
-        nufft.reduce_sum = Reduce(numpy.zeros(nufft.st['Kd'], dtype = nufft.dtype), predicate_sum(dtype))
-        nufft.reduce_sum  = nufft.reduce_sum.compile(nufft.thr)        
+        nufft.reduce_sum = Reduce(numpy.zeros(nufft.multi_Kd, dtype = nufft.dtype), predicate_sum(dtype)).compile(nufft.thr)      
+#         nufft.reduce_sum  = nufft.reduce_sum.compile(nufft.thr)        
          
         
         # update: b = spH * gy         
         b = nufft.y2k(gy)
- 
+        
         # Initialize x = b
         x   =   nufft.thr.copy_array( b)
         rsold = nufft.thr.empty_like(nufft.reduce_sum.parameter.output)
@@ -570,23 +570,27 @@ def solve(nufft,gy, solver=None,  maxiter=30, *args, **kwargs):
          
         # initialize r = b - A * x
         r   =   nufft.thr.empty_like( b)
+        
 #         r.fill(0.0 + 0.0j) 
         y_tmp = nufft.k2y(x)
+        
         Ax = nufft.y2k(y_tmp)
+        
         del y_tmp
         rsold = nufft.thr.empty_like(nufft.reduce_sum.parameter.output)
 #         rsold.fill(0.0 + 0.0j)
         nufft.reduce_sum(rsold, Ax)
 #         print('Ax',rsold) 
-        nufft.prg.cAddVec(b, - Ax, r , local_size=None, global_size = int(nufft.Kdprod))
+        nufft.prg.cAddVec(b, - Ax, r , local_size=None, global_size = int(nufft.batch * nufft.Kdprod))
+        
 #         nufft.thr.synchronize()
         # p = r
         p   =   nufft.thr.copy_array(r)
- 
+        
         # rsold = r' * r
         tmp_array = nufft.thr.empty_like( r)
 #         tmp_array.fill(0.0 + 0.0j)
-        nufft.prg.cMultiplyConjVec(r, r, tmp_array, local_size=None, global_size=int(nufft.Kdprod))
+        nufft.prg.cMultiplyConjVec(r, r, tmp_array, local_size=None, global_size=int(nufft.batch * nufft.Kdprod))
 #         nufft.thr.synchronize()
         rsold = nufft.thr.empty_like(nufft.reduce_sum.parameter.output)
 #         rsold.fill(0.0 + 0.0j)
@@ -605,11 +609,10 @@ def solve(nufft,gy, solver=None,  maxiter=30, *args, **kwargs):
             Ap = nufft.y2k(tmp_p)
             del tmp_p
 #             alpha = rs_old/(p'*Ap)
-            nufft.prg.cMultiplyConjVec(p, Ap, tmp_array, local_size=None, global_size=int(nufft.Kdprod))
+            nufft.prg.cMultiplyConjVec(p, Ap, tmp_array, local_size=None, global_size=int(nufft.batch * nufft.Kdprod))
 #             nufft.thr.synchronize()
             nufft.reduce_sum(tmp_sum, tmp_array)
             
-                         
             alpha = rsold / tmp_sum
 #             alpha_cpu = alpha.get()
 #             if numpy.isnan(alpha_cpu):
@@ -619,7 +622,8 @@ def solve(nufft,gy, solver=None,  maxiter=30, *args, **kwargs):
 #             print(pp,rsold , alpha, numpy.sum(tmp_array.get()) )
             # x = x + alpha*p
             p2 = nufft.thr.copy_array(p)
-            nufft.prg.cMultiplyScalar(alpha.get(), p2,  local_size=None, global_size=int(nufft.Kdprod))
+            
+            nufft.prg.cMultiplyScalar(alpha.get(), p2,  local_size=None, global_size=int(nufft.batch * nufft.Kdprod))
 #             nufft.thr.synchronize()
 #             nufft.prg.cAddVec(x, alpha, local_size=None, global_size=int(nufft.Kdprod))
             x += p2
@@ -627,13 +631,13 @@ def solve(nufft,gy, solver=None,  maxiter=30, *args, **kwargs):
             # r = r - alpha * Ap
             p2= nufft.thr.copy_array(Ap)
 #             nufft.thr.synchronize()
-            nufft.prg.cMultiplyScalar(alpha.get(), p2,  local_size=None, global_size=int(nufft.Kdprod))
+            nufft.prg.cMultiplyScalar(alpha.get(), p2,  local_size=None, global_size=int(nufft.batch * nufft.Kdprod))
 #             nufft.thr.synchronize()
             r -= p2
 #             print(pp, numpy.sum(x.get()), numpy.sum(r.get()))
             # rs_new = r'*r
              
-            nufft.prg.cMultiplyConjVec(r,    r,  tmp_array, local_size=None, global_size=int(nufft.Kdprod))
+            nufft.prg.cMultiplyConjVec(r,    r,  tmp_array, local_size=None, global_size=int(nufft.batch * nufft.Kdprod))
 #             nufft.thr.synchronize()
             nufft.reduce_sum(rsnew, tmp_array)        
              
@@ -644,9 +648,9 @@ def solve(nufft,gy, solver=None,  maxiter=30, *args, **kwargs):
 #                 beta_cpu = 0
 #             print(beta, rsnew, rsold)
             p2= nufft.thr.copy_array(p)
-            nufft.prg.cMultiplyScalar(beta.get(),   p2,  local_size=None, global_size=int(nufft.Kdprod))
+            nufft.prg.cMultiplyScalar(beta.get(),   p2,  local_size=None, global_size=int(nufft.batch * nufft.Kdprod))
 #             nufft.thr.synchronize()
-            nufft.prg.cAddVec(r, p2, p, local_size=None, global_size=int(nufft.Kdprod))
+            nufft.prg.cAddVec(r, p2, p, local_size=None, global_size=int(nufft.batch * nufft.Kdprod))
 #             nufft.thr.synchronize()
             p = r + p2
              
@@ -659,12 +663,12 @@ def solve(nufft,gy, solver=None,  maxiter=30, *args, **kwargs):
          
         # inverse FFT: k_Kd2 -> x_Nd
         x2 = nufft.k2xx(x) # x is the solved k space
-         
+        
         # rescale the SnGPUArray
         # x2 /= nufft.volume['gpu_sense2']
-        x3 = nufft.x2s(x2) # combine multi-coil to single-coil
+#         x3 = nufft.x2s(x2) # combine multi-coil to single-coil
         try:
-            x3 /= nufft.volume['SnGPUArray']
+            x2 /= nufft.volume['SnGPUArray']
         except:
             
             nufft.prg.cTensorMultiply(numpy.uint32(nufft.batch), 
@@ -673,8 +677,8 @@ def solve(nufft,gy, solver=None,  maxiter=30, *args, **kwargs):
                                     nufft.volume['Nd_elements'],
                                     nufft.volume['invNd_elements'],
                                     nufft.volume['tensor_sn'], 
-                                    x3, 
-                                    numpy.uint32(1),
+                                    x2, 
+                                    numpy.uint32(1), # division, 1 is true
                                     local_size = None, global_size = int(nufft.batch*nufft.Ndprod))
          
-        return x3
+        return x2

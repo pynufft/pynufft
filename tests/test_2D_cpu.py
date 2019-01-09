@@ -77,7 +77,7 @@ def test_2D():
 #     matplotlib.pyplot.show()
     maxiter =25
     counter = 1
-    for solver in ('dc','bicg','bicgstab','cg', 'gmres','lgmres',  'lsmr', 'lsqr'):
+    for solver in ('lsmr', 'dc','bicg','bicgstab','cg', 'gmres','lgmres',  'lsqr'):
         print(counter, solver)
         if 'lsqr' == solver:
             image2 = NufftObj.solve(y, solver,iter_lim=maxiter)

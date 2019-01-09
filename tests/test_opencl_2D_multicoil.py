@@ -39,22 +39,22 @@ def test_opencl_multicoils():
     nfft = NUFFT_cpu()  # CPU NUFFT class
     
     # Plan the nfft object
-    nfft.plan(om, Nd, Kd, Jd)
+    nfft.plan(om, Nd, Kd, Jd, batch = 2)
 
     # initiating NUFFT_hsa object
     NufftObj = NUFFT_hsa('ocl', 1, 0)
 
     # Plan the NufftObj (similar to NUFFT_cpu)
-    NufftObj.plan(om, Nd, Kd, Jd, radix = 2)
+    NufftObj.plan(om, Nd, Kd, Jd, batch=2, radix = 2)
 
     
     import time
     t0 = time.time()
-    for pp in range(0,10):
+    for pp in range(0,1):
     
-            y = nfft.forward(image)
+            y = nfft.forward_single(image)
 
-    t_cpu = (time.time() - t0)/10.0 
+    t_cpu = (time.time() - t0)/1.0 
     
     
     ## Moving image to gpu
@@ -62,10 +62,10 @@ def test_opencl_multicoils():
     gx = NufftObj.to_device(image)  
 
     t0= time.time()
-    for pp in range(0,100):
-        gy = NufftObj.forward(gx)
-    t_cu = (time.time() - t0)/100
-    
+    for pp in range(0,1):
+        gy = NufftObj.forward_single(gx)
+    t_cu = (time.time() - t0)/1
+    print(y.shape, gy.get().shape)
     print('t_cpu = ', t_cpu)
     print('t_cuda =, ', t_cu)
     
@@ -82,36 +82,35 @@ def test_opencl_multicoils():
     t0= time.time()
     x_cuda_cg = NufftObj.solve(gy,'cg', maxiter=maxiter)
 #     x = NufftObj.solve(gy,'L1TVLAD', maxiter=maxiter, rho=2)
-    
+    print('shape of cg = ', x_cuda_cg.get().shape, x_cpu_cg.shape)
     t2 = time.time() - t0
     print(t1, t2)
     print('acceleration of cg=', t1/t2 )
 
-
     t0= time.time()
-    x_cpu_TV =  nfft.solve(y, 'L1TVOLS',maxiter=maxiter, rho = 2)
+#     x_cpu_TV =  nfft.solve(y, 'L1TVOLS',maxiter=maxiter, rho = 2)
     t1 = time.time()-t0 
     
     t0= time.time()
     
-    x_cuda_TV = NufftObj.solve(gy,'L1TVOLS', maxiter=maxiter, rho=2)
+#     x_cuda_TV = NufftObj.solve(gy,'L1TVOLS', maxiter=maxiter, rho=2)
     
     t2 = time.time() - t0
     print(t1, t2)
-    print('acceleration of TV=', t1/t2 )
+#     print('acceleration of TV=', t1/t2 )
     try:
         matplotlib.pyplot.subplot(2, 2, 1)
-        matplotlib.pyplot.imshow( x_cpu_cg.real, cmap= matplotlib.cm.gray)
+        matplotlib.pyplot.imshow( x_cpu_cg[...,0].real, cmap= matplotlib.cm.gray)
         matplotlib.pyplot.title('CG_cpu')
         matplotlib.pyplot.subplot(2, 2, 2)
-        matplotlib.pyplot.imshow(x_cuda_cg.get().real, cmap= matplotlib.cm.gray)
+        matplotlib.pyplot.imshow(x_cuda_cg.get()[...,0].real, cmap= matplotlib.cm.gray)
         matplotlib.pyplot.title('CG_cuda')
-        matplotlib.pyplot.subplot(2, 2, 3)
-        matplotlib.pyplot.imshow( x_cpu_TV.real, cmap= matplotlib.cm.gray)
-        matplotlib.pyplot.title('TV_cpu')
-        matplotlib.pyplot.subplot(2, 2, 4)
-        matplotlib.pyplot.imshow(x_cuda_TV.get().real, cmap= matplotlib.cm.gray)
-        matplotlib.pyplot.title('TV_cuda')    
+#         matplotlib.pyplot.subplot(2, 2, 3)
+#         matplotlib.pyplot.imshow( x_cpu_TV.real, cmap= matplotlib.cm.gray)
+#         matplotlib.pyplot.title('TV_cpu')#     x_cuda_TV = NufftObj.solve(gy,'L1TVOLS', maxiter=maxiter, rho=2)
+#         matplotlib.pyplot.subplot(2, 2, 4)
+#         matplotlib.pyplot.imshow(x_cuda_TV.get().real, cmap= matplotlib.cm.gray)
+#         matplotlib.pyplot.title('TV_cuda')    
         matplotlib.pyplot.show()
     except:
         print('no matplotlib')
@@ -181,5 +180,5 @@ def test_forward():
 
     
 if __name__ == '__main__':
-#     test_opencl_multicoils()
-    test_forward()    
+    test_opencl_multicoils()
+#     test_forward()    

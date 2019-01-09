@@ -71,9 +71,9 @@ Intel Studio 2019 supports Ubuntu 16.04, 18.04 and Windows.
  
 We have not tested OpenCL 2.0 but the PyNUFFT should be working with OpenCL properly.  
 
-------------------
-Quick Installation
-------------------
+--------------------
+General Installation
+--------------------
 
 
 

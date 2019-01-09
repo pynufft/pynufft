@@ -1,5 +1,7 @@
-Installation in Linux
-=====================
+------------------------
+Installation under Linux
+------------------------
+
 
 ** Ubuntu 18.04**
 
@@ -11,7 +13,7 @@ The nvidia related packages are: Nvidia-driver Version: 410.78       CUDA Versio
 
 **Gentoo**
 
-
+Gentoo is a meta distribution
 
 
 

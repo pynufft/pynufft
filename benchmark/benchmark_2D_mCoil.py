@@ -65,9 +65,9 @@ def test_mCoil(sense_number):
     t1 = time.time()
     NufftObj_hsa.plan(om, Nd, Kd, Jd)
     t12 = time.time()
-    NufftObj_memsave.plan(om, Nd, Kd, Jd, radix = 1)
+    NufftObj_memsave.plan(om, Nd, Kd, Jd, radix = 2)
     t2 = time.time()
-    NufftObj_mCoil.plan(om, Nd, Kd, Jd, batch = sense_number, radix = 1)
+    NufftObj_mCoil.plan(om, Nd, Kd, Jd, batch = sense_number, radix = 2)
     tc = time.time()
 #     proc = 0 # GPU
 #     proc = 1 # gpu
@@ -109,8 +109,13 @@ def test_mCoil(sense_number):
     tmCoil_forward, tmCoil_adjoint, ymCoil, xmCoil = benchmark(NufftObj_mCoil, gx_mCoil, maxiter)
     print('mCoil' , int(m), tmCoil_forward, tmCoil_adjoint)    
     
-    print(numpy.linalg.norm(ymCoil.get()[:,0] - ycpu)/ numpy.linalg.norm( ycpu))
-    print(numpy.linalg.norm(xmCoil.get()[...,0] - xcpu)/ numpy.linalg.norm( xcpu))
+    for ss in range(0, sense_number):
+        erry = numpy.linalg.norm(ymCoil.get()[:,ss] - ycpu)/ numpy.linalg.norm( ycpu)
+        errx = numpy.linalg.norm(xmCoil.get()[...,ss] - xcpu)/ numpy.linalg.norm( xcpu)
+        if erry > 1e-6 or errx > 1e-6:
+            print("degraded accuracy:", sense_number, erry, errx)
+        else:
+            print("Pass test for number of coils: ", sense_number)
 #     NufftObj_memsave.release()
 #     NufftObj_mCoil.release()
 #     NufftObj_hsa.release()
