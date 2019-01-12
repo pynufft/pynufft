@@ -230,26 +230,30 @@ class NUFFT_cpu:
         """
         Assume y.shape = self.multi_M
         """
-        try:
-            x2 = self.adjoint(y)
-        except:
-            print('y.shape = ', y.shape)
-            print('but self.multi_M = ', self.multi_M)
-            
-        try:
-            x = x2*self.volume['cpu_coil_profile'].conj()
-        except:
-            x = x2
-#             pass # assume ones
-#             raise NotImplementedError
-#         print('in self.adjoint_single = ', x.shape, x2.shape)
-        try:
-#             print('Here1', self.ndims, x.shape)
-            x3 = numpy.mean(x, axis = self.ndims)
-            
-        except:
-#             print('Here2', self.ndims, x.shape)
-            x3 = x
+        x2 = self.adjoint(y)
+        x = x2*self.volume['cpu_coil_profile'].conj()
+        x3 = numpy.mean(x, axis = self.ndims)
+        del x
+#         try:
+#             x2 = self.adjoint(y)
+#         except:
+#             print('y.shape = ', y.shape)
+#             print('but self.multi_M = ', self.multi_M)
+#             
+#         try:
+#             x = x2*self.volume['cpu_coil_profile'].conj()
+#         except:
+#             x = x2
+# #             pass # assume ones
+# #             raise NotImplementedError
+# #         print('in self.adjoint_single = ', x.shape, x2.shape)
+#         try:
+# #             print('Here1', self.ndims, x.shape)
+#             x3 = numpy.mean(x, axis = self.ndims)
+#             
+#         except:
+# #             print('Here2', self.ndims, x.shape)
+#             x3 = x
         return x3
     
     

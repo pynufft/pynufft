@@ -26,10 +26,10 @@ def benchmark(nufftobj, gx, maxiter, sense=1):
     import time
     t0= time.time()
     for pp in range(0, maxiter*sense):
-        gy = nufftobj.forward(gx)
+        gy = nufftobj.forward_single(gx)
     t1 = time.time()
     for pp in range(0, maxiter*sense):
-        gx2 = nufftobj.adjoint(gy)
+        gx2 = nufftobj.adjoint_single(gy)
     t2 = time.time()
     t_iter0 = time.time()
     for pp in range(0, maxiter*sense):
@@ -64,14 +64,14 @@ def test_mCoil(sense_number):
         # from pynufft import NUFFT_memsave
     NufftObj_cpu = NUFFT_cpu()
     api = 'ocl'
-    proc = 0
+    proc = 1
     NufftObj_radix1 = NUFFT_hsa(api, proc, 0)
     NufftObj_radix2 = NUFFT_hsa(api, proc, 0)
     NufftObj_radix3 = NUFFT_hsa(api, proc, 0)
         
     import time
 #     t0=time.time()
-    NufftObj_cpu.plan(om, Nd, Kd, Jd)
+    NufftObj_cpu.plan(om, Nd, Kd, Jd, batch = sense_number)
 #     t1 = time.time()
     
 #     t12 = time.time()
@@ -104,7 +104,7 @@ def test_mCoil(sense_number):
 #     print('loading time of mCoil = ', tp - t3)
 
     maxiter = 2
-    tcpu_forward, tcpu_adjoint, ycpu, xcpu = benchmark(NufftObj_cpu, image, maxiter, sense_number)
+    tcpu_forward, tcpu_adjoint, ycpu, xcpu = benchmark(NufftObj_cpu, image, maxiter)
     print('CPU', int(m), tcpu_forward, tcpu_adjoint)
     
     
@@ -112,17 +112,17 @@ def test_mCoil(sense_number):
     
         
     NufftObj_radix1.plan(om, Nd, Kd, Jd,batch = sense_number, radix = 1)
-    gx_hsa0 = NufftObj_radix1.thr.to_device(image.astype(numpy.complex64))
-    gx_hsa = NufftObj_radix1.s2x(gx_hsa0)
+    gx_hsa = NufftObj_radix1.thr.to_device(image.astype(numpy.complex64))
+#     gx_hsa = NufftObj_radix1.s2x(gx_hsa0)
     thsa_forward, thsa_adjoint, yradix1, xradix1 = benchmark(NufftObj_radix1, gx_hsa, maxiter)
     print('radix-1', int(m), thsa_forward, thsa_adjoint, )#numpy.linalg.norm(yradix1.get() - ycpu)/  numpy.linalg.norm( ycpu))
-    for ss in range(0, sense_number):
-            erry = numpy.linalg.norm(yradix1.get()[:,ss] - ycpu)/ numpy.linalg.norm( ycpu)
-            errx = numpy.linalg.norm(xradix1.get()[...,ss] - xcpu)/ numpy.linalg.norm( xcpu)
-            if erry > 1e-6 or errx > 1e-6:
-                print("degraded accuracy:", sense_number, erry, errx)
-            else:
-                print("Pass test for coil: ", ss)      
+#     for ss in range(0, sense_number):
+    erry = numpy.linalg.norm(yradix1.get() - ycpu)/ numpy.linalg.norm( ycpu)
+    errx = numpy.linalg.norm(xradix1.get() - xcpu)/ numpy.linalg.norm( xcpu)
+    if erry > 1e-6 or errx > 1e-6:
+        print("degraded accuracy:", sense_number, erry, errx)
+    else:
+        print("Pass test for coil: ")      
     NufftObj_radix1.release()
     
     
@@ -130,24 +130,24 @@ def test_mCoil(sense_number):
     
     
     NufftObj_radix2.plan(om, Nd, Kd, Jd, batch = sense_number, radix = 2)
-    gx_memsave0 = NufftObj_radix2.thr.to_device(image.astype(numpy.complex64))
-    gx_memsave = NufftObj_radix2.s2x(gx_memsave0)
+    gx_memsave = NufftObj_radix2.thr.to_device(image.astype(numpy.complex64))
+#     gx_memsave = NufftObj_radix2.s2x(gx_memsave0)
     tmem_forward, tmem_adjoint, yradix2, xradix2 = benchmark(NufftObj_radix2, gx_memsave, maxiter)#, sense_number)
     print('radix-2' , int(m), tmem_forward, tmem_adjoint)
-    for ss in range(0, sense_number):
-            erry = numpy.linalg.norm(yradix2.get()[:,ss] - ycpu)/ numpy.linalg.norm( ycpu)
-            errx = numpy.linalg.norm(xradix2.get()[...,ss] - xcpu)/ numpy.linalg.norm( xcpu)
-            if erry > 1e-6 or errx > 1e-6:
-                print("degraded accuracy:", sense_number, erry, errx)
-            else:
-                print("Pass test for coil: ", ss)  
+#     for ss in range(0, sense_number):
+    erry = numpy.linalg.norm(yradix2.get() - ycpu)/ numpy.linalg.norm( ycpu)
+    errx = numpy.linalg.norm(xradix2.get() - xcpu)/ numpy.linalg.norm( xcpu)
+    if erry > 1e-6 or errx > 1e-6:
+        print("degraded accuracy:", sense_number, erry, errx)
+    else:
+        print("Pass test for coil: ")  
                     
     NufftObj_radix2.release()
     
     
     NufftObj_radix3.plan(om, Nd, Kd, Jd, batch = sense_number, radix = 3)
-    gx_mCoil0 = NufftObj_radix3.thr.to_device(image.astype(numpy.complex64))    
-    gx_mCoil = NufftObj_radix3.s2x(gx_mCoil0)
+    gx_mCoil = NufftObj_radix3.thr.to_device(image.astype(numpy.complex64))    
+#     gx_mCoil = NufftObj_radix3.s2x(gx_mCoil0)
     tmCoil_forward, tmCoil_adjoint, yradix3, xradix3 = benchmark(NufftObj_radix3, gx_mCoil, maxiter)
     print('radix-3' , int(m), tmCoil_forward, tmCoil_adjoint)    
     
@@ -155,14 +155,14 @@ def test_mCoil(sense_number):
     
 
     
-    for ss in range(0, sense_number):
-            erry = numpy.linalg.norm(yradix3.get()[:,ss] - ycpu)/ numpy.linalg.norm( ycpu)
-            errx = numpy.linalg.norm(xradix3.get()[...,ss] - xcpu)/ numpy.linalg.norm( xcpu)
-            if erry > 1e-6 or errx > 1e-6:
-                print("degraded accuracy:", sense_number, erry, errx)
-            else:
-                print("Pass test for coil: ", ss)  
-                  
+#     for ss in range(0, sense_number):
+    erry = numpy.linalg.norm(yradix3.get() - ycpu)/ numpy.linalg.norm( ycpu)
+    errx = numpy.linalg.norm(xradix3.get() - xcpu)/ numpy.linalg.norm( xcpu)
+    if erry > 1e-6 or errx > 1e-6:
+        print("degraded accuracy:", sense_number, erry, errx)
+#     else:
+#         print("Pass test for coil: ", ss)  
+          
     NufftObj_radix3.release()
     
     

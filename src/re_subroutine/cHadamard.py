@@ -77,7 +77,7 @@ KERNEL void cMerge(
             const float2 u = arr_large[j]; // sensitivities and scaling, complex 
             const float2 v = arr_image[j];  
             float2 w; 
-            w.x = u.x * v.x + u.y * v.y; 
+            w.x = u.x * v.x + u.y * v.y; // conjugate of u 
             w.y = u.x * v.y - u.y * v.x; 
             w.x = w.x/(float)Reps;
             w.y = w.y/(float)Reps;
@@ -179,6 +179,7 @@ KERNEL void cPopulate(
     const float2 v = arr_image[nd];
     arr_out[t] = v;
     }
+    LOCAL_BARRIER;
 };  // End of cPopulate    
     
 """

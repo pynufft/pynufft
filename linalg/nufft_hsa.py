@@ -294,6 +294,7 @@ class NUFFT_hsa:
 #         except:
 #             x2 = x
         self.prg.cMultiplyVecInplace(numpy.uint32(1), self.volume['gpu_coil_profile'], x, local_size = None, global_size = int(self.batch * self.Ndprod) )
+#         self.prg.cDistribute(self.batch, self.Ndprod, self.volume['gpu_coil_profile'], s, x,  local_size = None, global_size = int(self.batch * self.Ndprod) )
         return x
     
     @push_cuda_context                
@@ -463,6 +464,7 @@ class NUFFT_hsa:
 #         except:
 #             x2 = x
         self.prg.cAggregate(self.batch, self.Ndprod, x, s, local_size = int(self.wavefront), global_size = int(self.batch * self.Ndprod * self.wavefront))
+#         self.prg.cMerge(self.batch, self.Ndprod, self.volume['gpu_coil_profile'], x, s, local_size = int(self.wavefront), global_size = int(self.batch * self.Ndprod * self.wavefront))
         return s
         
     @push_cuda_context
