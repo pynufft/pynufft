@@ -257,7 +257,7 @@ class NUFFT_hsa:
         print('end of offload')
         
     @push_cuda_context
-    def reset_sense(self, coil_profile):
+    def reset_sense(self):
         self.volume['gpu_coil_profile'].fill(1.0)
          
     @push_cuda_context

@@ -196,6 +196,8 @@ class NUFFT_cpu:
         except:
             print("errors occur in self.precompute_sp()")
             raise
+    def reset_sense(self):
+        self.volume['cpu_coil_profile'].fill(1.0) 
     def set_sense(self, coil_profile):
         
         self.volume = {}
