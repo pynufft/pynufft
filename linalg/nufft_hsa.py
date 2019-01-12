@@ -228,7 +228,7 @@ class NUFFT_hsa:
         self.volume['Nd'] =  self.thr.to_device(numpy.asarray(self.st['Nd'], dtype = numpy.uint32))
         self.volume['NdGPUorder'] = self.thr.to_device( self.NdCPUorder)
         self.volume['KdGPUorder'] = self.thr.to_device( self.KdCPUorder)
-        self.volume['gpu_coil_profile'] = self.thr.array(self.multi_Nd, dtype = self.dtype).fill(0)
+        self.volume['gpu_coil_profile'] = self.thr.array(self.multi_Nd, dtype = self.dtype).fill(1.0)
         
         Nd = self.st['Nd']
 #         tensor_sn = numpy.empty((numpy.sum(Nd), ), dtype=numpy.float32)

@@ -59,7 +59,7 @@ def test_mCoil(sense_number):
         # from pynufft import NUFFT_memsave
     NufftObj_cpu = NUFFT_cpu()
     api = 'ocl'
-    proc = 0
+    proc = 1
     NufftObj_hsa = NUFFT_hsa_legacy(api, proc, 0)
     NufftObj_radix1 = NUFFT_hsa(api, proc, 0)
     NufftObj_radix2 = NUFFT_hsa(api, proc, 0)
@@ -103,10 +103,10 @@ def test_mCoil(sense_number):
     gx_memsave = NufftObj_radix1.s2x(gx_memsave0)
     gx_mCoil0 = NufftObj_radix2.thr.to_device(image.astype(numpy.complex64))    
     gx_mCoil = NufftObj_radix2.s2x(gx_mCoil0)
-    maxiter = 5
+    maxiter = 2
     tcpu_forward, tcpu_adjoint, ycpu, xcpu = benchmark(NufftObj_cpu, image, maxiter, sense_number)
     print('CPU', int(m), tcpu_forward, tcpu_adjoint)
-    maxiter = 50
+    maxiter = 5
     thsa_forward, thsa_adjoint, yhsa, xhsa = benchmark(NufftObj_hsa, gx_hsa, maxiter, sense_number)
     print('CSR', int(m), thsa_forward, thsa_adjoint, )#numpy.linalg.norm(yhsa.get() - ycpu)/  numpy.linalg.norm( ycpu))
     tmem_forward, tmem_adjoint, ymem, xmem = benchmark(NufftObj_radix1, gx_memsave, maxiter)#, sense_number)
