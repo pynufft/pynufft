@@ -5,11 +5,12 @@ Version history
 
 - 0.4.0.0 is a beta version.
 
-- Major updates for the NUFFT_hsa class, including memory reduction and radix. 
+- Major updates for the NUFFT_hsa class, including memory reduction and split-radix. Multiple NUFFT_hsa() using cuda backend become possible, by pushing the context to the top of the stack when a method is called upon. 
 
 - Tested in Windows 10 with PyCUDA 2018.1.1, nvidia-driver 417.35, CUDA 9.2, Visual Studio 2015 Community, and Anaconda Python 3.7 64-bit. PyOpenCL remains untested. 
 
 - Add batch mode.  
+
   
  
 **v0.3.3.12** 

@@ -162,6 +162,7 @@ KERNEL void cAggregate(
        arr_out[myRow]=partialSums[t]; 
       }
      }
+     LOCAL_BARRIER;
 };    // End of cAggregate
     
 KERNEL void cPopulate(    

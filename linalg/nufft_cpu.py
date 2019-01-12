@@ -160,7 +160,9 @@ class NUFFT_cpu:
 
         # Calculate the density compensation function
         self.sp = self.st['p'].copy().tocsr()
-        self.spH = (self.st['p'].getH().copy()).tocsr()        
+#         self.sp.data = self.sp.data.astype(self.dtype) 
+        self.spH = (self.st['p'].getH().copy()).tocsr()
+#         self.spH.data = self.spH.data.astype(self.dtype)        
         self.Kdprod = numpy.int32(numpy.prod(self.st['Kd']))
         self.Jdprod = numpy.int32(numpy.prod(self.st['Jd']))
         del self.st['p'], self.st['sn']

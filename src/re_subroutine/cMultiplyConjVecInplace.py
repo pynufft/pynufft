@@ -1,6 +1,6 @@
 R="""
 KERNEL void cMultiplyConjVecInplace(
-        const unsigned int batch,
+        const unsigned int batch, 
         GLOBAL_MEM float2 *a,
         GLOBAL_MEM float2 *outb)
 {

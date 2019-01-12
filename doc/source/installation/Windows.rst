@@ -1,6 +1,7 @@
------------------------------
-Installation under Windows 10
------------------------------
+Special topic: Installation under Windows 10
+============================================
+
+
 
 PyNUFFT has been tested under the Windows 10 home edition. 
 
@@ -34,20 +35,24 @@ You may see ::
    Copyright (c) 2005-2018 NVIDIA Corporation
    Built on Tue_Jun_12_23:09_12_Central_Daylight_time_2018
    Cuda compilation tool, release 9.2, V9.2.148    
-which means the nvcc can be found. 
+   
+which indicates that nvcc can be found in the system. 
 
-- However, the system cannot find `cl.exe` ::
+
+- Add the environmental variable path.
+
+In case the system cannot find `cl.exe` when you type `cl`: ::
+
    C:\Users\User>cl
    `cl` is not recognized as an internal or external command, 
    operable program or batch file.
    
 This error is due to Visual Studio is not added to the system path, so the system cannot find cl. 
-
-- Add the environmental variable path. 
+ 
 Try to follow the webpage at `https://docs.microsoft.com/en-us/previous-versions/office/developer/sharepoint-2010/ee537574(v%3Doffice.14)`.
 Add "C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\bin" and "C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\Common7\\IDE".
  
-- Open windows cmd, it should find cl.exe without the above error message. If the error appears again, the path must be modified.::
+Once adding Visual Studio to the system, open windows cmd, it should find cl.exe ::
    
    C:\Users\User>cl
    Microsoft (R) C/C++ Optimizing Compiler Version 19.0024215.1 for x86
@@ -55,9 +60,11 @@ Add "C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\bin" and "C:\\Pr
    
    usage: cl [ option... ] filename... [ /link linkoption... ]
 
+without the earlier error message. If the error persists, the path must be modified again. 
+
 **Installation of Anaconda3**
 
--  Now install Anaconda3. I downloaded Anaconda3-2018.12-Windows-x86_64. 
+-  Now install Anaconda3. I downloaded Anaconda3-2018.12-Windows-x86_64. Once done you can follow the general installation procedure as mentioned in the earlier sections. 
 
 **Installation of Pytools, PyCUDA, and PyNUFFT**
 

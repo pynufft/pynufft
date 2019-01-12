@@ -1,7 +1,5 @@
 
 ocl_add = """
-
-
 // #pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
 KERNEL void atomic_add_float( 
         GLOBAL_MEM float *ptr, 
@@ -10,6 +8,7 @@ KERNEL void atomic_add_float(
 // The work-around of AtomicAdd for float
 // lockless add *source += operand 
 // Caution!!!!!!! Use with care! You have been warned!
+// http://simpleopencl.blogspot.com/2013/05/atomic-operations-and-floats-in-opencl.html
 // Source: https://github.com/clMathLibraries/clSPARSE/blob/master/src/library/kernels/csrmv_adaptive.cl
     union {
         unsigned int intVal;

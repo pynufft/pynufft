@@ -1,4 +1,4 @@
-special_license='''
+__license__='''
 The license of the 3D Shepp-Logan phantom:
 Copyright (c) 2006, Matthias Schabel 
 All rights reserved.
@@ -37,7 +37,7 @@ import pkg_resources
 DATA_PATH = pkg_resources.resource_filename('pynufft', './src/data/')   
 image = numpy.load(DATA_PATH +'phantom_3D_128_128_128.npz')['arr_0']#[0::2, 0::2, 0::2]
 image = numpy.array(image, order='C')
-print(special_license)
+# print(__license__)
 
 # pyplot.imshow(numpy.abs(image[:,:,64]), label='original signal',cmap=gray)
 # pyplot.show()
@@ -55,7 +55,12 @@ def benchmark(nufftobj, gx, maxiter):
     
         gx2 = nufftobj.adjoint(gy)
     t2 = time.time()
-    return (t1 - t0)/maxiter, (t2 - t1)/maxiter, gy, gx2
+    t_iter0 = time.time()
+    for pp in range(0, maxiter*sense):
+        pass
+    t_iter1 = time.time()
+    t_delta = t_iter1 - t_iter0     
+    return (t1 - t0 - t_delta)/maxiter, (t2 - t1 -t_delta)/maxiter, gy, gx2
         
  
 Nd = (128,128,128) # time grid, tuple
@@ -66,24 +71,24 @@ Jd = (6,6,6) # interpolator
 # for m in (1e+5, 2e+5, 3e+5, 4e+5, 5e+5, 6e+5, 7e+5, 8e+5, 9e+5, 1e+6, 2e+6, 3e+6, 4e+6, 5e+6, 
 #           6e+6, 7e+6, 8e+6, 9e+6, 10e+6, 11e+6, 12e+6, 13e+6, 14e+6, 15e+6,
 #           16e+6, 17e+6, 18e+6, 19e+6, 20e+6, 30e+6, 40e+6, 50e+6, 60e+6, 70e+6, 80e+6, 90e+6, 100e+6):
-for m in (1e+7, ):
+for m in (1e+4, ):
     om = numpy.random.randn(int(m),3)*2
 #     om = numpy.load('/home/sram/UCL/DATA/G/3D_Angio/greg_3D.npz')['arr_0'][0:int(m), :]
     print(om.shape)
     from pynufft import NUFFT_cpu, NUFFT_hsa#, NUFFT_memsave
     # from pynufft import NUFFT_memsave
-#     NufftObj_cpu = NUFFT_cpu()
+    NufftObj_cpu = NUFFT_cpu()
 #     NufftObj_hsa = NUFFT_hsa()
-    NufftObj_memsave = NUFFT_hsa('ocl', 0,0)
+    NufftObj_hsa = NUFFT_hsa('cuda', 0,0)
     
     import time
     t0=time.time()
-#     NufftObj_cpu.plan(om, Nd, Kd, Jd)
+    NufftObj_cpu.plan(om, Nd, Kd, Jd)
     t1 = time.time()
 #     NufftObj_hsa.plan(om, Nd, Kd, Jd)
     t12 = time.time()
     RADIX = 1
-    NufftObj_memsave.plan(om, Nd, Kd, Jd, radix=RADIX)
+    NufftObj_hsa.plan(om, Nd, Kd, Jd, radix=RADIX)
     t2 = time.time()
     # proc = 0 # GPU
 #     proc = 1 # gpu
@@ -104,17 +109,17 @@ for m in (1e+7, ):
     print('loading time of MEM = ', t3 - t22)
     
 #     gx_hsa = NufftObj_hsa.thr.to_device(image.astype(numpy.complex64))
-    gx_memsave = NufftObj_memsave.thr.to_device(image.astype(numpy.complex64).copy())
+    gx_memsave = NufftObj_hsa.thr.to_device(image.astype(numpy.complex64).copy())
     print('loading data')
-    maxiter = 10
-#     tcpu_forward, tcpu_adjoint, ycpu, xcpu = benchmark(NufftObj_cpu, image, maxiter)
-#     print('CPU time', int(m), tcpu_forward, tcpu_adjoint)
-    maxiter = 10
+    maxiter = 1
+    tcpu_forward, tcpu_adjoint, ycpu, xcpu = benchmark(NufftObj_cpu, image, maxiter)
+    print('CPU time', int(m), tcpu_forward, tcpu_adjoint)
+    maxiter = 1
 #     thsa_forward, thsa_adjoint, yhsa, xhsa = benchmark(NufftObj_hsa, gx_hsa, maxiter)
 #     print('HSA', 9, m, thsa_forward, thsa_adjoint, )#numpy.linalg.norm(yhsa.get() - ycpu)/  numpy.linalg.norm( ycpu))
-    tmem_forward, tmem_adjoint, ymem, xmem = benchmark(NufftObj_memsave, gx_memsave, maxiter)
+    tmem_forward, tmem_adjoint, ymem, xmem = benchmark(NufftObj_hsa, gx_memsave, maxiter)
     print('default radix = ', RADIX)
-    print('Hardware = ', NufftObj_memsave.device)
+    print('Hardware = ', NufftObj_hsa.device)
     print('HSA' , int(m), tmem_forward, tmem_adjoint)
-    del NufftObj_memsave
-# print('Error between CPU and HSA', numpy.linalg.norm(ymem.get() - ycpu)/ numpy.linalg.norm( ycpu))
+    del NufftObj_hsa
+print('Error between CPU and HSA', numpy.linalg.norm(ymem.get() - ycpu)/ numpy.linalg.norm( ycpu))

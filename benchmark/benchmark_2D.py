@@ -39,11 +39,11 @@ om = scipy.io.loadmat('/home/sram/Cambridge_2012/DATA_MATLAB/Ciuciu/Trajectories
 om = om/numpy.max(om.real.ravel()) * numpy.pi
 
 print(om.shape)
-from pynufft import NUFFT_cpu, NUFFT_hsa, NUFFT_memsave, NUFFT_mCoil
+from pynufft import NUFFT_cpu, NUFFT_hsa, NUFFT_hsa_legacy
 # from pynufft import NUFFT_memsave
 NufftObj_cpu = NUFFT_cpu()
 NufftObj_hsa = NUFFT_hsa()
-NufftObj_memsave = NUFFT_mCoil()
+NufftObj_memsave = NUFFT_hsa()
 
 import time
 t0=time.time()
@@ -54,9 +54,9 @@ NufftObj_memsave.plan(om, Nd, Kd, Jd)
 t2 = time.time()
 # proc = 0 # cpu
 proc = 1 # gpu
-NufftObj_hsa.offload(API = 'ocl',   platform_number = proc, device_number = 0)
+# NufftObj_hsa.offload(API = 'ocl',   platform_number = proc, device_number = 0)
 
-NufftObj_memsave.offload(API = 'ocl',   platform_number = proc, device_number = 0)
+# NufftObj_memsave.offload(API = 'ocl',   platform_number = proc, device_number = 0)
 # NufftObj_memsave.offload(API = 'cuda',   platform_number = 0, device_number = 0)
 t3 = time.time()
 print('planning time of CPU = ', t1 - t0)

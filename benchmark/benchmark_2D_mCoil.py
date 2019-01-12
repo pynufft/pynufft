@@ -31,7 +31,12 @@ def benchmark(nufftobj, gx, maxiter, sense=1):
     for pp in range(0, maxiter*sense):
         gx2 = nufftobj.adjoint(gy)
     t2 = time.time()
-    return (t1 - t0)/maxiter, (t2 - t1)/maxiter, gy, gx2
+    t_iter0 = time.time()
+    for pp in range(0, maxiter*sense):
+        pass
+    t_iter1 = time.time()
+    t_delta = t_iter1 - t_iter0 
+    return (t1 - t0 )/maxiter, (t2 - t1)/maxiter, gy, gx2
         
 def test_mCoil(sense_number):
     image = scipy.misc.ascent()
@@ -53,11 +58,11 @@ def test_mCoil(sense_number):
     from pynufft import NUFFT_cpu, NUFFT_hsa, NUFFT_hsa_legacy
         # from pynufft import NUFFT_memsave
     NufftObj_cpu = NUFFT_cpu()
-    api = 'cuda'
+    api = 'ocl'
     proc = 0
     NufftObj_hsa = NUFFT_hsa_legacy(api, proc, 0)
-    NufftObj_memsave = NUFFT_hsa(api, proc, 0)
-    NufftObj_mCoil = NUFFT_hsa(api, proc, 0)
+    NufftObj_radix1 = NUFFT_hsa(api, proc, 0)
+    NufftObj_radix2 = NUFFT_hsa(api, proc, 0)
         
     import time
     t0=time.time()
@@ -65,18 +70,18 @@ def test_mCoil(sense_number):
     t1 = time.time()
     NufftObj_hsa.plan(om, Nd, Kd, Jd)
     t12 = time.time()
-    NufftObj_memsave.plan(om, Nd, Kd, Jd, radix = 2)
+    NufftObj_radix1.plan(om, Nd, Kd, Jd, batch = sense_number, radix = 1)
     t2 = time.time()
-    NufftObj_mCoil.plan(om, Nd, Kd, Jd, batch = sense_number, radix = 2)
+    NufftObj_radix2.plan(om, Nd, Kd, Jd, batch = sense_number, radix = 2)
     tc = time.time()
 #     proc = 0 # GPU
 #     proc = 1 # gpu
 #     NufftObj_hsa.offload(API = 'ocl',   platform_number = proc, device_number = 0)
 #     t22 = time.time()
-#     NufftObj_memsave.offload(API = 'ocl',   platform_number = proc, device_number = 0)
-    # NufftObj_memsave.offload(API = 'cuda',   platform_number = 0, device_number = 0)
+#     NufftObj_radix1.offload(API = 'ocl',   platform_number = proc, device_number = 0)
+    # NufftObj_radix1.offload(API = 'cuda',   platform_number = 0, device_number = 0)
 #     t3 = time.time()
-#     NufftObj_mCoil.offload(API = 'ocl',   platform_number = proc, device_number = 0)
+#     NufftObj_radix2.offload(API = 'ocl',   platform_number = proc, device_number = 0)
 #     tp = time.time()
     if proc is 0:
         print('CPU')
@@ -94,20 +99,21 @@ def test_mCoil(sense_number):
 #     print('loading time of mCoil = ', tp - t3)
         
     gx_hsa = NufftObj_hsa.thr.to_device(image.astype(numpy.complex64))
-    gx_memsave = NufftObj_memsave.thr.to_device(image.astype(numpy.complex64))
-    gx_mCoil0 = NufftObj_mCoil.thr.to_device(image.astype(numpy.complex64))    
-    gx_mCoil = NufftObj_mCoil.s2x(gx_mCoil0)
-    maxiter = 50
+    gx_memsave0 = NufftObj_radix1.thr.to_device(image.astype(numpy.complex64))
+    gx_memsave = NufftObj_radix1.s2x(gx_memsave0)
+    gx_mCoil0 = NufftObj_radix2.thr.to_device(image.astype(numpy.complex64))    
+    gx_mCoil = NufftObj_radix2.s2x(gx_mCoil0)
+    maxiter = 5
     tcpu_forward, tcpu_adjoint, ycpu, xcpu = benchmark(NufftObj_cpu, image, maxiter, sense_number)
     print('CPU', int(m), tcpu_forward, tcpu_adjoint)
     maxiter = 50
     thsa_forward, thsa_adjoint, yhsa, xhsa = benchmark(NufftObj_hsa, gx_hsa, maxiter, sense_number)
-    print('HSA', int(m), thsa_forward, thsa_adjoint, )#numpy.linalg.norm(yhsa.get() - ycpu)/  numpy.linalg.norm( ycpu))
-    tmem_forward, tmem_adjoint, ymem, xmem = benchmark(NufftObj_memsave, gx_memsave, maxiter, sense_number)
-    print('MEM' , int(m), tmem_forward, tmem_adjoint)
+    print('CSR', int(m), thsa_forward, thsa_adjoint, )#numpy.linalg.norm(yhsa.get() - ycpu)/  numpy.linalg.norm( ycpu))
+    tmem_forward, tmem_adjoint, ymem, xmem = benchmark(NufftObj_radix1, gx_memsave, maxiter)#, sense_number)
+    print('radix-1' , int(m), tmem_forward, tmem_adjoint)
     
-    tmCoil_forward, tmCoil_adjoint, ymCoil, xmCoil = benchmark(NufftObj_mCoil, gx_mCoil, maxiter)
-    print('mCoil' , int(m), tmCoil_forward, tmCoil_adjoint)    
+    tmCoil_forward, tmCoil_adjoint, ymCoil, xmCoil = benchmark(NufftObj_radix2, gx_mCoil, maxiter)
+    print('radix-2' , int(m), tmCoil_forward, tmCoil_adjoint)    
     
     for ss in range(0, sense_number):
         erry = numpy.linalg.norm(ymCoil.get()[:,ss] - ycpu)/ numpy.linalg.norm( ycpu)
@@ -115,11 +121,11 @@ def test_mCoil(sense_number):
         if erry > 1e-6 or errx > 1e-6:
             print("degraded accuracy:", sense_number, erry, errx)
         else:
-            print("Pass test for number of coils: ", sense_number)
-#     NufftObj_memsave.release()
-#     NufftObj_mCoil.release()
-#     NufftObj_hsa.release()
-    
+            print("Pass test for coil: ", ss)
+    NufftObj_radix1.release()
+    NufftObj_radix2.release()
+    NufftObj_hsa.release()
+    del NufftObj_radix1, NufftObj_hsa, NufftObj_radix2, NufftObj_cpu
     return tcpu_forward, tcpu_adjoint,  thsa_forward, thsa_adjoint, tmem_forward, tmem_adjoint,  tmCoil_forward, tmCoil_adjoint
 
 import numpy
@@ -133,7 +139,7 @@ MEM_adjoint = ()
 mCoil_adjoint = ()
 SENSE_NUM = ()
 
-for sense_number in (1,2,4, 8, 12, 16, 32, 64):
+for sense_number in (128, 64, 32, 16, 8, 4, 2, 1):
     print('SENSE = ', sense_number)
     t = test_mCoil(sense_number)
     CPU_forward += (t[0], )
@@ -156,26 +162,36 @@ MEM_adjoint = numpy.array(MEM_adjoint)
 mCoil_adjoint = numpy.array(mCoil_adjoint)
 SENSE_NUM = numpy.array(SENSE_NUM)
 
+
 matplotlib.pyplot.subplot(1,3, 1)
 
-matplotlib.pyplot.plot(SENSE_NUM, CPU_forward/HSA_forward, '*-', label='HSA')
-matplotlib.pyplot.plot(SENSE_NUM, CPU_forward/MEM_forward, 'D--', label='MEM')
-matplotlib.pyplot.plot(SENSE_NUM, CPU_forward/mCoil_forward, 'x:', label='mCoil')
+matplotlib.pyplot.plot(SENSE_NUM, CPU_forward/HSA_forward, '*-', label='loop, CSR')
+matplotlib.pyplot.plot(SENSE_NUM, CPU_forward/MEM_forward, 'D--', label='batched, radix-1')
+matplotlib.pyplot.plot(SENSE_NUM, CPU_forward/mCoil_forward, 'x:', label='batched, radix-2')
 matplotlib.pyplot.legend()
+matplotlib.pyplot.ylabel('Acceleration')
+matplotlib.pyplot.xlabel('Number of coils')
+matplotlib.pyplot.title('Forward')
 
 matplotlib.pyplot.subplot(1,3, 2)
 
-matplotlib.pyplot.plot(SENSE_NUM, CPU_adjoint/HSA_adjoint, '*-', label='HSA')
-matplotlib.pyplot.plot(SENSE_NUM, CPU_adjoint/MEM_adjoint, 'D--', label='MEM')
-matplotlib.pyplot.plot(SENSE_NUM, CPU_adjoint/mCoil_adjoint, 'x:', label='mCoil')
+matplotlib.pyplot.plot(SENSE_NUM, CPU_adjoint/HSA_adjoint, '*-', label='loop, CSR')
+matplotlib.pyplot.plot(SENSE_NUM, CPU_adjoint/MEM_adjoint, 'D--', label='batched, radix-1')
+matplotlib.pyplot.plot(SENSE_NUM, CPU_adjoint/mCoil_adjoint, 'x:', label='batched, radix-2')
 matplotlib.pyplot.legend()
+matplotlib.pyplot.ylabel('Acceleration')
+matplotlib.pyplot.xlabel('Number of coils')
+matplotlib.pyplot.title('Adjoint')
 
 matplotlib.pyplot.subplot(1,3, 3)
 
-matplotlib.pyplot.plot(SENSE_NUM, (CPU_adjoint+CPU_forward)/(HSA_adjoint + HSA_forward), '*-', label='HSA')
-matplotlib.pyplot.plot(SENSE_NUM, (CPU_adjoint+CPU_forward)/(MEM_adjoint + MEM_forward), 'D--', label='MEM')
-matplotlib.pyplot.plot(SENSE_NUM, (CPU_adjoint+CPU_forward)/(mCoil_adjoint + mCoil_forward), 'x:', label='mCoil')
+matplotlib.pyplot.plot(SENSE_NUM, (CPU_adjoint+CPU_forward)/(HSA_adjoint + HSA_forward), '*-', label='loop, CSR')
+matplotlib.pyplot.plot(SENSE_NUM, (CPU_adjoint+CPU_forward)/(MEM_adjoint + MEM_forward), 'D--', label='batched, radix-1')
+matplotlib.pyplot.plot(SENSE_NUM, (CPU_adjoint+CPU_forward)/(mCoil_adjoint + mCoil_forward), 'x:', label='batched, radix-2')
 matplotlib.pyplot.legend()
+matplotlib.pyplot.ylabel('Acceleration')
+matplotlib.pyplot.xlabel('Number of coils')
+matplotlib.pyplot.title('Selfadjoint')
 matplotlib.pyplot.show()
 
 

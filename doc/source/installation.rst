@@ -7,14 +7,14 @@ System requirements
 
 **CPU**
 
-Each PyNUFFT instance is designed to be executed on a single node. 
+Each PyNUFFT instance is designed to be executed on a single node. PyNUFFT is not designed for distributed computing on multiple nodes, but user may install PyNUFFT on multiple nodes and control them through network.  
+
+Multple NUFFT_cpu instances on a single node provided that the total memory is sufficient to hold all of them. 
 
 We recommend one or more modern x86_64 processors on a single node. Successful stories include Intel® Core™ i7-6700HQ Processor, 
 Intel® Xeon® W-2125, Intel® Core™ i9-7900X. 
-Multiple CPUs on a single node have been used for testing.
 
-Distributed computing on multiple nodes is unsupported. 
- 
+
 
 **Memory**
 
@@ -26,7 +26,13 @@ For 3D NUFFT, it is not uncommon that a single NUFFT_cpu object can use more tha
 
 **GPU**
 
-To use GPU, a recent NVIDIA's GPU (after Maxwell, Pascal) with the recent drivers should be working properly.
+Each PyNUFFT instance is initiated on a single GPU. An instance cannot be distributed across multiple GPUs. (PyNUFFT is not using cuFFT.)
+
+However, multiple NUFFT_hsa instances may be initiated on a single GPU or multiple GPUs, but the performance may be impacted (limited by the memory, PCI-E bus or GPU cores).  
+
+To use GPU, a recent NVIDIA's GPU (after Maxwell, Pascal) with the recent drivers should be working properly. 
+
+
 
 The newest nvidia-driver versions of 415.18 is recommended. 
 Earlier versions may be working but please be informed that Nvidia may discontinue the support for outdated drivers. 
@@ -37,45 +43,41 @@ NVIDIA Geforce GTX 1060 6GB, NVIDIA Titan X Pascal, NVIDIA Quadro P6000, NVIDIA 
 
 **Operating System**
 
-Ubunut 16.04 - 18.04 have been tested. 
+Ubunut 16.04 - 18.04 are recommended. 
 
-Windows 10 has been tested.  
+Windows 10 has been tested but it requires Microsoft Studio 2015 community. Please refer to the following special topic about the installation under Windows 10. 
 
 --------
 Software
 --------
 
 **Python**
-To run the NUFFT_cpu, the basic CPython, Numpy and Scipy packages must be available on the system.
-IronPython might be functioning but not guaranteed.
    
-Users must be familiar with Python and its pip packaging system.    
-Optionally, users can clone the github repository and build the package from the local folder. 
+Users must be familiar with Python and its pip packaging system.  Python 2.7 and Python 3.6-3.7 are currently supported. 
+
+To run the NUFFT_cpu, the basic CPython, Numpy and Scipy packages must be available on the system.
+IronPython is compatible with CPython so ipython might be useful. 
+
+PyNUFFT can be installed from pip system. Optionally, users can clone the github repository and build the package from the local folder. 
 
 **Compiler**
 
-NUFFT_cpu class does not require compiler. Only Python/Numpy/Scipy is needed. 
+NUFFT_cpu class does not require compiler. 
 
-**GPU(CUDA and OpenCL) or multi-core CPU (OpenCL)**
+However, NUFFT_hsa requires JIT (just-in-time) compilation mechanism of Reikna/PyCUDA/PyOpenCL. The supporting compiler may be:
 
-However, NUFFT_hsa relies on the just-in-time (JIT) compilation so the CUDA/OpenCL must be able to compile the code. 
+- gcc-7.3.0
 
-To accelerate the code on the graphic processing unit (GPU), Reikna, PyCUDA, PyOpencl must be avaialbe. 
-Users need to know the basics of GPU computing.  
+- Microsoft (R) Visual Studio 2015 community edition. (Please refer to the following section: special topic: Installation under Windows 10). 
 
-The CUDA of Nvidia has been tested. 
+To accelerate the code on the graphic processing unit (GPU), Reikna, PyCUDA, PyOpencl must be avaialbe. Please refer the following special topic: Installation of OpenCL.
 
-PyNUFFT has been working with up to OpenCL 1.2, which is well supproted by Nvidia and Intel.
+Users could know the concepts about GPU computing but practical CUDA programming skills are not strictly needed.  
 
-Intel Studio 2019 supports Ubuntu 16.04, 18.04 and Windows. 
- 
-We have not tested OpenCL 2.0 but the PyNUFFT should be working with OpenCL properly.  
 
 --------------------
 General Installation
 --------------------
-
-
 
 Continuum's Anaconda_ environment should provide all the above packages. 
 
@@ -127,10 +129,13 @@ Simply use "pip uninstall" to remove pynufft::
 
     $ pip uninstall pynufft
 
-
+--------------
+Special topics
+--------------
 
 .. toctree::
    :maxdepth: 2
    
    installation/Linux
    installation/Windows
+   installation/OpenCL

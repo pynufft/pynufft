@@ -180,7 +180,7 @@ class NUFFT_hsa:
             self.multi_Nd =   self.Nd + (self.batch, )
             self.multi_Kd =   self.Kd + (self.batch, )
             self.multi_M =   (self.st['M'], )+ (self.batch, )            
- 
+        self.invbatch = 1.0/self.batch
         self.Kdprod = numpy.uint32(numpy.prod(self.st['Kd']))
         self.Jdprod = numpy.uint32(numpy.prod(self.st['Jd']))
         self.Ndprod = numpy.uint32(numpy.prod(self.st['Nd']))
@@ -228,6 +228,7 @@ class NUFFT_hsa:
         self.volume['Nd'] =  self.thr.to_device(numpy.asarray(self.st['Nd'], dtype = numpy.uint32))
         self.volume['NdGPUorder'] = self.thr.to_device( self.NdCPUorder)
         self.volume['KdGPUorder'] = self.thr.to_device( self.KdCPUorder)
+        self.volume['gpu_coil_profile'] = self.thr.array(self.multi_Nd, dtype = self.dtype).fill(0)
         
         Nd = self.st['Nd']
 #         tensor_sn = numpy.empty((numpy.sum(Nd), ), dtype=numpy.float32)
@@ -256,12 +257,22 @@ class NUFFT_hsa:
         print('end of offload')
         
     @push_cuda_context
+    def reset_sense(self, coil_profile):
+        self.volume['gpu_coil_profile'].fill(1.0)
+         
+    @push_cuda_context
     def set_sense(self, coil_profile):
-        print(coil_profile.shape)
-        print('shape of Nd', self.Nd, self.batch)
+        if coil_profile.shape != self.multi_Nd:
+            print('The shape of coil_profile is ', coil_profile.shape)
+            print('But it should be', self.Nd + (self.batch, ))
+            raise ValueError
+        else:
+            self.volume['gpu_coil_profile'] = self.thr.to_device(coil_profile.astype(self.dtype))
+            print('Successfully loading coil sensitivities!')
+        
 #         if coil_profile.shape == self.Nd + (self.batch, ):        
-        self.volume['gpu_coil_profile'] = self.thr.to_device(coil_profile.astype(self.dtype))
-        print('load sense')
+        
+        
         
 
         
@@ -278,12 +289,12 @@ class NUFFT_hsa:
 #         print("Now populate the array to multi-coil")
         self.prg.cPopulate(self.batch, self.Ndprod, s, x, local_size = None, global_size = int(self.batch * self.Ndprod) )
 #         x2 = x  *  self.volume['gpu_coil_profile']
-        try:
-            x2 = x  *  self.volume['gpu_coil_profile']
-        except:
-            x2 = x
-
-        return x2
+#         try:
+#             x2 = x  *  self.volume['gpu_coil_profile']
+#         except:
+#             x2 = x
+        self.prg.cMultiplyVecInplace(numpy.uint32(1), self.volume['gpu_coil_profile'], x, local_size = None, global_size = int(self.batch * self.Ndprod) )
+        return x
     
     @push_cuda_context                
     def x2xx(self, x):
@@ -315,7 +326,7 @@ class NUFFT_hsa:
         Second, copy self.x_Nd array to self.k_Kd array by cSelect
         Third: inplace FFT
         """
-        k = self.thr.array(self.multi_Kd, dtype = self.dtype)
+        k = self.thr.array(self.multi_Kd, dtype = self.dtype)#.fill(0.0 + 0.0j)
                     
         k.fill(0)
 #         self.prg.cMultiplyScalar(self.zero_scalar, k, local_size=None, global_size=int(self.Kdprod))
@@ -446,11 +457,12 @@ class NUFFT_hsa:
     @push_cuda_context
     def x2s(self, x):
         s = self.thr.array(self.st['Nd'], dtype=self.dtype)
-        try:
-            x2 = x  *  self.volume['gpu_coil_profile'].con()
-        except:
-            x2 = x
-        self.prg.cAggregate(self.batch, self.Ndprod, x2, s, local_size = int(self.wavefront), global_size = int(self.batch * self.Ndprod * self.wavefront))
+#         try:
+        self.prg.cMultiplyConjVecInplace(numpy.uint32(1), self.volume['gpu_coil_profile'], x, local_size = None,  global_size = int(self.batch * self.Ndprod))
+#         x2 = x  *  self.volume['gpu_coil_profile'].conj()
+#         except:
+#             x2 = x
+        self.prg.cAggregate(self.batch, self.Ndprod, x, s, local_size = int(self.wavefront), global_size = int(self.batch * self.Ndprod * self.wavefront))
         return s
         
     @push_cuda_context

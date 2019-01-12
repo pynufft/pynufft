@@ -4,10 +4,10 @@ Metaprogramming subroutines (using reikna, pyopencl, pycuda)
 """
 
 from __future__ import absolute_import # Python2 compatibility
-from . import cMultiplyScalar, cCopy, cTensorMultiply, cTensorCopy, cAddScalar, cAddVec,  cSelect, cMultiplyVec, cMultiplyConjVecInplace, cMultiplyVecInplace, cMultiplyRealInplace, cMultiplyConjVec, cDiff, cSqrt, cAnisoShrink, cHypot, cSpmv, cSpmvh, atomic_add, cHadamard
+from . import cFill, cMultiplyScalar, cCopy, cTensorMultiply, cTensorCopy, cAddScalar, cAddVec,  cSelect, cMultiplyVec, cMultiplyConjVecInplace, cMultiplyVecInplace, cMultiplyRealInplace, cMultiplyConjVec, cDiff, cSqrt, cAnisoShrink, cHypot, cSpmv, cSpmvh, atomic_add, cHadamard
 
 def create_kernel_sets(API):
-    kernel_sets = ( cMultiplyScalar.R + 
+    kernel_sets = ( cFill.R + cMultiplyScalar.R + 
                         cCopy.R + cTensorCopy.R + cHypot.R +cTensorMultiply.R + 
                         cAddScalar.R + 
                         cSelect.R + 
