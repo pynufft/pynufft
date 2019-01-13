@@ -111,14 +111,14 @@ def test_init():
     maxiter =100
     import time
     t0= time.time()
-    x2 =  nfft.solve(y2, 'cg',maxiter=maxiter)
+#     x2 =  nfft.solve(y2, 'cg',maxiter=maxiter)
     x2 =  nfft.solve(y2, 'L1TVOLS',maxiter=maxiter, rho = 2)
     t1 = time.time()-t0 
 #     gy=NufftObj.thr.copy_array(NufftObj.thr.to_device(y2))
     
     t0= time.time()
 
-    x = NufftObj.solve(gy,'cg', maxiter=maxiter)
+#     x = NufftObj.solve(gy,'cg', maxiter=maxiter)
     x = NufftObj.solve(gy,'L1TVOLS', maxiter=maxiter, rho=2)
     
     t2 = time.time() - t0
