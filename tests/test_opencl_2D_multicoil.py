@@ -52,7 +52,7 @@ def test_opencl_multicoils():
             NufftObj = NUFFT_hsa('ocl', 0, 0)
 
     # Plan the NufftObj (similar to NUFFT_cpu)
-    NufftObj.plan(om, Nd, Kd, Jd, batch= batch, radix = 1)
+    NufftObj.plan(om, Nd, Kd, Jd, batch= batch, radix = 2)
     coil_sense = numpy.ones(Nd + (batch,), dtype = numpy.complex64)
     for cc in range(0, batch, 2):
         coil_sense[ int(256/batch)*cc:int(256/batch)*(cc+1), : ,cc] *= 0.1*cc + 0.3j * cc
@@ -85,8 +85,10 @@ def test_opencl_multicoils():
     print('t_cpu = ', t_cpu)
     print('t_cuda =, ', t_cu)
     
-    print('gy close? = ', numpy.allclose(y, gy.get(),  atol=numpy.linalg.norm(y)*1e-6))
-    print('gxx close? = ', numpy.allclose(xx, gxx.get(),  atol=numpy.linalg.norm(xx)*1e-6))
+    print('gy close? = ', numpy.allclose(y, gy.get(),  atol=numpy.linalg.norm(y)*1e-4))
+    print('gy error = ', numpy.linalg.norm(y- gy.get())/numpy.linalg.norm(y))
+    print('gxx close? = ', numpy.allclose(xx, gxx.get(),  atol=numpy.linalg.norm(xx)*1e-4))
+    print('gxx error = ', numpy.linalg.norm(xx- gxx.get())/numpy.linalg.norm(xx))
 #     for bb in range(0, batch):
     matplotlib.pyplot.subplot(1,2,1)
     matplotlib.pyplot.imshow( xx[...].real, cmap= matplotlib.cm.gray)

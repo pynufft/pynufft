@@ -136,6 +136,6 @@ Special topics
 .. toctree::
    :maxdepth: 2
    
-   installation/Linux
-   installation/Windows
-   installation/OpenCL
+   Linux
+   Windows
+   OpenCL

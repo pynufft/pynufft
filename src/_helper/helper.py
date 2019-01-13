@@ -247,33 +247,67 @@ class Tensor_sn:
     Not implemented:
     '''     
     def __init__(self, snd, radix):
-        raise NotImplementedError
+#         raise NotImplementedError
         self.radix = radix
-        Tdims = len(snd2)
-        self.Td = Td
-        self.Td_elements = Td_elements
-        self.invTd_elements = invTd_elements
-        self.snd2 = snd2
-        self.Tdims = numpy.uint32(Tdims) 
-    def cat_snd(self, snd):
-        """
-        :param snd:  tuple of input 1D vectors
-        :type snd: tuple
-        :return:  tensor_sn: vector of concatenated scaling factor, shape = (numpy.sum(Nd), )
-        :rtype: tensor_sn: numpy.float32 
-        """
+        Ndims = len(snd)
         Nd = ()
-        dd = len(snd)
-        for dimid in range(0, dd):
-            Nd += (snd[dimid].shape[0],)
-        tensor_sn = numpy.empty((numpy.sum(Nd), ), dtype=numpy.float32)
+        for n in range(0, Ndims):
+            Nd += (snd[n].shape[0], )
+        
+        
+        
+        Tdims = int(numpy.ceil(Ndims / radix)) # the final tensor dimension
+        
+        
+        self.Tdims = Tdims
+        Td = ()
+        snd2 = ()
+        for count in range(0, Tdims):
+            d_start = count*radix
+            d_end = (count + 1)*radix
+            if d_end > Ndims:
+                d_end = Ndims    
+            Td += (numpy.prod(Nd[d_start:d_end]), )
             
-        shift = 0
-        for dimid in range(0, len(Nd)):
-    
-            tensor_sn[shift :shift + Nd[dimid]] = snd[dimid][:,0].real
-            shift = shift + Nd[dimid]       
-        return tensor_sn
+            # Now compute snd2 each element is the Kronecker product of the chosen axes
+            
+#             sn = snd[d_start]
+#             for inner in range(1, d_end):
+#                 sn = kronecker_scale(snd).realnumpy.outer(sn, snd[inner]).flatten()
+            Tsn = kronecker_scale(snd[d_start:d_end]).real.flatten()
+            snd2 += (Tsn.reshape((Tsn.shape[0],1)), )
+            
+        tensor_sn = cat_snd(snd2) # Borrow the 1D method to concatenate the radix snds
+        self.Td = Td
+#         print('Td = ', Td)
+        self.Td_elements, self.invTd_elements = strides_divide_itemsize(Td)
+#         print(self.Td_elements, self.invTd_elements)
+        self.tensor_sn = tensor_sn
+        
+#                                             numpy.uint32(self.ndims),
+#                                     self.volume['Nd'],
+#                                     self.volume['Nd_elements'],
+#                                     self.volume['invNd_elements'],
+#                                     self.volume['tensor_sn'], 
+#     def cat_snd(self, snd):
+#         """
+#         :param snd:  tuple of input 1D vectors
+#         :type snd: tuple
+#         :return:  tensor_sn: vector of concatenated scaling factor, shape = (numpy.sum(Nd), )
+#         :rtype: tensor_sn: numpy.float32 
+#         """
+#         Nd = ()
+#         dd = len(snd)
+#         for dimid in range(0, dd):
+#             Nd += (snd[dimid].shape[0],)
+#         tensor_sn = numpy.empty((numpy.sum(Nd), ), dtype=numpy.float32)
+#             
+#         shift = 0
+#         for dimid in range(0, len(Nd)):
+#     
+#             tensor_sn[shift :shift + Nd[dimid]] = snd[dimid][:,0].real
+#             shift = shift + Nd[dimid]       
+#         return tensor_sn
     
 def create_csr(uu, kk, Kd, Jd, M):
 #     Jprod = numpy.prod(Jd)
@@ -780,7 +814,8 @@ def plan(om, Nd, Kd, Jd, ft_axes = None, format='CSR', radix = None):
 #         print(ud2[0].shape, ud2[1].shape, kd2[0].shape, kd2[1].shape, Jd2)
         st['pELL'] = create_partialELL(ud2, kd2, Jd2, M) 
 #         st['tensor_sn'] = snd
-        st['tensor_sn'] = cat_snd(snd)
+#         st['tensor_sn'] = cat_snd(snd)
+        st['tSN'] = Tensor_sn(snd, radix)
 #         numpy.empty((numpy.sum(Nd), ), dtype=numpy.float32)
 #         
 #         shift = 0

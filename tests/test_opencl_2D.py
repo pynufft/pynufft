@@ -42,7 +42,7 @@ def test_opencl():
     nfft.plan(om, Nd, Kd, Jd)
 
     # initiating NUFFT_hsa object
-    NufftObj = NUFFT_hsa('ocl', 1, 0)
+    NufftObj = NUFFT_hsa('ocl', 0, 0)
 
     # Plan the NufftObj (similar to NUFFT_cpu)
     NufftObj.plan(om, Nd, Kd, Jd, batch = None)

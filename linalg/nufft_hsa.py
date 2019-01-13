@@ -108,7 +108,7 @@ class NUFFT_hsa:
 #         Wavefront is required in spmv_vector as it improves data coalescence.
 #         see cCSR_spmv and zSparseMatVec
 #         """
-        self.wavefront = api.DeviceParameters(device).warp_size
+        self.wavefront = 32#api.DeviceParameters(device).warp_size
 
         print('wavefront of OpenCL (as warp of CUDA) = ',self.wavefront)
 
@@ -238,8 +238,13 @@ class NUFFT_hsa:
 # 
 #             tensor_sn[shift :shift + Nd[dimid]] = self.st['tensor_sn'][dimid][:,0].real
 #             shift = shift + Nd[dimid]
-        self.volume['tensor_sn'] = self.thr.to_device(self.st['tensor_sn'].astype(numpy.float32))
-        
+#         self.volume['tensor_sn'] = self.thr.to_device(self.st['tensor_sn'].astype(numpy.float32))
+        self.tSN = {}
+        self.tSN['Td_elements'] = self.thr.to_device(numpy.asarray(self.st['tSN'].Td_elements, dtype = numpy.uint32))
+        self.tSN['invTd_elements'] = self.thr.to_device(self.st['tSN'].invTd_elements.astype(numpy.float32))
+        self.tSN['Td'] =  self.thr.to_device(numpy.asarray(self.st['tSN'].Td, dtype = numpy.uint32))
+        self.tSN['Tdims'] = self.st['tSN'].Tdims
+        self.tSN['tensor_sn'] = self.thr.to_device(self.st['tSN'].tensor_sn.astype(numpy.float32))
         
         self.Ndprod = numpy.int32(numpy.prod(self.st['Nd']))
         self.Kdprod = numpy.int32(numpy.prod(self.st['Kd']))
@@ -305,15 +310,25 @@ class NUFFT_hsa:
         self.thr.copy_array(x, dest=xx, )#size = int(xx.nbytes/xx.dtype.itemsize)) #size = int(xx.nbytes/8) is a hack of error in cuda backends; 8 is the byte of numpy.complex64 
                 
 #         self.prg.cMultiplyRealInplace(self.batch, self.volume['SnGPUArray'], xx, local_size=None, global_size=int(self.Ndprod * self.batch))
+#         self.prg.cTensorMultiply(numpy.uint32(self.batch), 
+#                                     numpy.uint32(self.ndims),
+#                                     self.volume['Nd'],
+#                                     self.volume['Nd_elements'],
+#                                     self.volume['invNd_elements'],
+#                                     self.volume['tensor_sn'], 
+#                                     xx, 
+#                                     numpy.uint32(0),
+#                                     local_size = None, global_size = int(self.batch * self.Ndprod))
+
         self.prg.cTensorMultiply(numpy.uint32(self.batch), 
-                                    numpy.uint32(self.ndims),
-                                    self.volume['Nd'],
-                                    self.volume['Nd_elements'],
-                                    self.volume['invNd_elements'],
-                                    self.volume['tensor_sn'], 
-                                    xx, 
-                                    numpy.uint32(0),
-                                    local_size = None, global_size = int(self.batch * self.Ndprod))
+                                            numpy.uint32(self.tSN['Tdims']),
+                                            self.tSN['Td'],
+                                            self.tSN['Td_elements'], 
+                                            self.tSN['invTd_elements'], 
+                                            self.tSN['tensor_sn'], 
+                                            xx, 
+                                            numpy.uint32(0),
+                                            local_size = None, global_size = int(self.batch * self.Ndprod))
 #         self.thr.synchronize()
         return xx
     
@@ -443,15 +458,24 @@ class NUFFT_hsa:
         self.thr.copy_array(xx, dest=x, )#size = int(xx.nbytes/xx.dtype.itemsize)) #size = int(xx.nbytes/8) is a hack of error in cuda backends; 8 is the byte of numpy.complex64 
         
 #         self.prg.cMultiplyRealInplace(self.batch, self.volume['SnGPUArray'], z, local_size=None, global_size =  int(self.batch * self.Ndprod))
+#         self.prg.cTensorMultiply(numpy.uint32(self.batch), 
+#                                     numpy.uint32(self.ndims),
+#                                     self.volume['Nd'],
+#                                     self.volume['Nd_elements'],
+#                                     self.volume['invNd_elements'],
+#                                     self.volume['tensor_sn'], 
+#                                     x, 
+#                                     numpy.uint32(0),
+#                                     local_size = None, global_size = int(self.batch * self.Ndprod))
         self.prg.cTensorMultiply(numpy.uint32(self.batch), 
-                                    numpy.uint32(self.ndims),
-                                    self.volume['Nd'],
-                                    self.volume['Nd_elements'],
-                                    self.volume['invNd_elements'],
-                                    self.volume['tensor_sn'], 
-                                    x, 
-                                    numpy.uint32(0),
-                                    local_size = None, global_size = int(self.batch * self.Ndprod))
+                                            numpy.uint32(self.tSN['Tdims']),
+                                            self.tSN['Td'],
+                                            self.tSN['Td_elements'], 
+                                            self.tSN['invTd_elements'], 
+                                            self.tSN['tensor_sn'], 
+                                            x, 
+                                            numpy.uint32(0),
+                                            local_size = None, global_size = int(self.batch * self.Ndprod))                                            
 #         self.thr.synchronize()
         return x
             

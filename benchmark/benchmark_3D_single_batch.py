@@ -103,12 +103,12 @@ def test_mCoil(sense_number):
 #     print('loading time of MEM = ', t3 - t22)
 #     print('loading time of mCoil = ', tp - t3)
 
-    maxiter = 2
+    maxiter = 1
     tcpu_forward, tcpu_adjoint, ycpu, xcpu = benchmark(NufftObj_cpu, image, maxiter)
     print('CPU', int(m), tcpu_forward, tcpu_adjoint)
     
     
-    maxiter = 2
+    maxiter = 20
     
         
     NufftObj_radix1.plan(om, Nd, Kd, Jd,batch = sense_number, radix = 1)
@@ -122,7 +122,8 @@ def test_mCoil(sense_number):
     if erry > 1e-6 or errx > 1e-6:
         print("degraded accuracy:", sense_number, erry, errx)
     else:
-        print("Pass test for coil: ")      
+        print("Pass test for coil: ", sense_number, erry, errx)
+        print("Pass test for coil: ", sense_number, erry, errx) 
     NufftObj_radix1.release()
     
     
@@ -140,7 +141,8 @@ def test_mCoil(sense_number):
     if erry > 1e-6 or errx > 1e-6:
         print("degraded accuracy:", sense_number, erry, errx)
     else:
-        print("Pass test for coil: ")  
+        print("Pass test for coil: ", sense_number, erry, errx)
+        print("Pass test for coil: ", sense_number, erry, errx) 
                     
     NufftObj_radix2.release()
     
@@ -160,7 +162,9 @@ def test_mCoil(sense_number):
     errx = numpy.linalg.norm(xradix3.get() - xcpu)/ numpy.linalg.norm( xcpu)
     if erry > 1e-6 or errx > 1e-6:
         print("degraded accuracy:", sense_number, erry, errx)
-#     else:
+    else:
+        print("Pass test for coil: ", sense_number, erry, errx)
+        print("Pass test for coil: ", sense_number, erry, errx) 
 #         print("Pass test for coil: ", ss)  
           
     NufftObj_radix3.release()
@@ -189,7 +193,7 @@ MEM_adjoint = ()
 mCoil_adjoint = ()
 SENSE_NUM = ()
 
-for sense_number in (4, 3, 2,1):#,2,4, 8, 12, 16, 32, 64,128):
+for sense_number in (1, 8, 16, 32):
     print('SENSE = ', sense_number)
     t = test_mCoil(sense_number)
     CPU_forward += (t[0], )

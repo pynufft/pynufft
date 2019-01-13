@@ -8,13 +8,14 @@ Welcome to pynufft's Documentation
    :maxdepth: 2
    
    
-   intro
-   installation
-   getstart
-   api
+   overview/init
+   tutor/init
+   manu/init
+   API/init
    misc
-   eg
+   installation/init
    versionhistory
+   acknow/init
 
 
 Indices and tables

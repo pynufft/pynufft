@@ -1,5 +1,5 @@
-Introduction
-============
+Overview
+========
 
 **Purpose**
 
@@ -17,8 +17,6 @@ PyNUFFT reimplements the MATLAB version of min-max NUFFT_, with the following fe
 
 - Provides 1D/2D/3D examples for further developments.
 
-- (New in 0.4.0) Support batch mode and split-radix technique. 
-
 If you find PyNUFFT useful, please cite:
 
 *Lin, Jyh-Miin. "Python Non-Uniform Fast Fourier Transform (PyNUFFT): An Accelerated Non-Cartesian MRI Package on a Heterogeneous Platform (CPU/GPU)." Journal of Imaging 4.3 (2018): 51.*
@@ -28,4 +26,6 @@ Users of PyNUFFT should be familiar with discrete Fourier transform (DFT).
 .. toctree::
    :maxdepth: 2
    
-   introduction/nufft
+   nufft
+   multi_dimensional
+   CPU_GPU

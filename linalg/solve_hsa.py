@@ -672,11 +672,11 @@ def solve(nufft,gy, solver=None,  maxiter=30, *args, **kwargs):
         except:
             
             nufft.prg.cTensorMultiply(numpy.uint32(nufft.batch), 
-                                    numpy.uint32(nufft.ndims),
-                                    nufft.volume['Nd'],
-                                    nufft.volume['Nd_elements'],
-                                    nufft.volume['invNd_elements'],
-                                    nufft.volume['tensor_sn'], 
+                                    numpy.uint32(nufft.tSN['Tdims']),
+                                    nufft.tSN['Td'],
+                                    nufft.tSN['Td_elements'],
+                                    nufft.tSN['invTd_elements'],
+                                    nufft.tSN['tensor_sn'], 
                                     x2, 
                                     numpy.uint32(1), # division, 1 is true
                                     local_size = None, global_size = int(nufft.batch*nufft.Ndprod))

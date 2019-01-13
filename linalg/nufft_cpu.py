@@ -232,7 +232,10 @@ class NUFFT_cpu:
         """
         x2 = self.adjoint(y)
         x = x2*self.volume['cpu_coil_profile'].conj()
-        x3 = numpy.mean(x, axis = self.ndims)
+        try:
+            x3 = numpy.mean(x, axis = self.ndims)
+        except:
+            x3 = x
         del x
 #         try:
 #             x2 = self.adjoint(y)
