@@ -46,11 +46,11 @@ def L1TVOLS(nufft, y, maxiter, rho ): # main function of solver
     LMBD = rho*mu
 
     def AHA(x):
-        x2 = nufft.selfadjoint_single(x)
+        x2 = nufft.selfadjoint_one2multi2one(x)
         return x2
     def AH(y):
         
-        x2 = nufft.adjoint_single(y.reshape(nufft.multi_M, order='C'))
+        x2 = nufft.adjoint_multi2one(y.reshape(nufft.multi_M, order='C'))
         return x2
     
         
@@ -107,7 +107,7 @@ def L1TVOLS(nufft, y, maxiter, rho ): # main function of solver
 #                 LMBD*(cDiff(dd[1] - bb[1],  dt_indx[1]))  )          
         # Note K = F' uker F
         # so K-1 ~ F
-        xkp1 = nufft.k2xx_single( (nufft.xx2k_single(rhs)+1e-7) / (uker+1e-7)) 
+        xkp1 = nufft.k2xx_one2one( (nufft.xx2k_one2one(rhs)+1e-7) / (uker+1e-7)) 
 #                 self._update_d(xkp1)
         for pp in range(0,ndims):
             

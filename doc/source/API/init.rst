@@ -1,6 +1,9 @@
 API documentaiton
 =================
 
+.. inheritance-diagram:: pynufft.linalg.nufft_cpu
+   :parts: 2
+
 .. automodule:: pynufft.linalg
 
 .. automodule:: pynufft.linalg.nufft_cpu

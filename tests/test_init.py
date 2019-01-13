@@ -38,7 +38,7 @@ def test_init():
         NufftObj = NUFFT_hsa('ocl',0,0)
 #     NufftObj2 = NUFFT_hsa('cuda',0,0)
     NufftObj.debug = 1
-    NufftObj.plan(om, Nd, Kd, Jd, radix=1)
+    NufftObj.plan(om, Nd, Kd, Jd, radix=2)
 #     NufftObj2.plan(om, Nd, Kd, Jd)
     
 #     NufftObj.offload(API = 'cuda',   platform_number = 0, device_number = 0)
@@ -111,14 +111,14 @@ def test_init():
     maxiter =100
     import time
     t0= time.time()
-#     x2 =  nfft.solve(y2, 'cg',maxiter=maxiter)
+    x2 =  nfft.solve(y2, 'cg',maxiter=maxiter)
     x2 =  nfft.solve(y2, 'L1TVOLS',maxiter=maxiter, rho = 2)
     t1 = time.time()-t0 
 #     gy=NufftObj.thr.copy_array(NufftObj.thr.to_device(y2))
     
     t0= time.time()
 
-#     x = NufftObj.solve(gy,'cg', maxiter=maxiter)
+    x = NufftObj.solve(gy,'cg', maxiter=maxiter)
     x = NufftObj.solve(gy,'L1TVOLS', maxiter=maxiter, rho=2)
     
     t2 = time.time() - t0

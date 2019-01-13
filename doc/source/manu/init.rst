@@ -6,12 +6,14 @@ Manual
    :maxdepth: 2
    
 
-
-   basic_use
-   realistic_om   
-   example
-   more2D
-   more3D
+   Class_reference
+   NUFFT_cpu
+   NUFFT_hsa
+   multiple_NUFFT
+   batch_mode
+   realistic_om 
+   variable_radix  
+ 
 ..
    quickstart/more3D
 

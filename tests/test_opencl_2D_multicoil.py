@@ -55,17 +55,18 @@ def test_opencl_multicoils():
     NufftObj.plan(om, Nd, Kd, Jd, batch= batch, radix = 2)
     coil_sense = numpy.ones(Nd + (batch,), dtype = numpy.complex64)
     for cc in range(0, batch, 2):
-        coil_sense[ int(256/batch)*cc:int(256/batch)*(cc+1), : ,cc] *= 0.1*cc + 0.3j * cc
+        coil_sense[ int(256/batch)*cc:int(256/batch)*(cc+1), : ,cc].real *= 0.1
+        coil_sense[:, int(256/batch)*cc:int(256/batch)*(cc+1),cc].imag *= -0.1  
         
     NufftObj.set_sense(coil_sense )
     nfft.set_sense(coil_sense)
-    y = nfft.forward_single(image)
+    y = nfft.forward_one2multi(image)
     import time
     t0 = time.time()
     for pp in range(0,2):
     
             
-            xx = nfft.adjoint_single(y)
+            xx = nfft.adjoint_multi2one(y)
 
     t_cpu = (time.time() - t0)/2
     
@@ -74,20 +75,20 @@ def test_opencl_multicoils():
     ## gx is an gpu array, dtype = complex64
     gx = NufftObj.to_device(image)  
     
-    gy = NufftObj.forward_single(gx)
+    gy = NufftObj.forward_one2multi(gx)
     
     t0= time.time()
     for pp in range(0,10):
         
-        gxx = NufftObj.adjoint_single(gy)
+        gxx = NufftObj.adjoint_multi2one(gy)
     t_cu = (time.time() - t0)/10
     print(y.shape, gy.get().shape)
     print('t_cpu = ', t_cpu)
     print('t_cuda =, ', t_cu)
     
-    print('gy close? = ', numpy.allclose(y, gy.get(),  atol=numpy.linalg.norm(y)*1e-4))
+    print('gy close? = ', numpy.allclose(y, gy.get(),  atol=numpy.linalg.norm(y)*1e-6))
     print('gy error = ', numpy.linalg.norm(y- gy.get())/numpy.linalg.norm(y))
-    print('gxx close? = ', numpy.allclose(xx, gxx.get(),  atol=numpy.linalg.norm(xx)*1e-4))
+    print('gxx close? = ', numpy.allclose(xx, gxx.get(),  atol=numpy.linalg.norm(xx)*1e-6))
     print('gxx error = ', numpy.linalg.norm(xx- gxx.get())/numpy.linalg.norm(xx))
 #     for bb in range(0, batch):
     matplotlib.pyplot.subplot(1,2,1)
@@ -102,7 +103,10 @@ def test_opencl_multicoils():
 #         matplotlib.pyplot.subplot(2, 2, 4)
 #         matplotlib.pyplot.imshow(x_cuda_TV.get().real, cmap= matplotlib.cm.gray)
 #         matplotlib.pyplot.title('TV_cuda')    
-    matplotlib.pyplot.show()    
+    matplotlib.pyplot.show(block=False)
+    matplotlib.pyplot.pause(4)
+    matplotlib.pyplot.close()
+        
     print("acceleration=", t_cpu/t_cu)
     maxiter =100
     import time

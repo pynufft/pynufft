@@ -12,11 +12,11 @@ Defining the equispaced to non-Cartesian transform as  operator :math:`A`, the N
 
 - selfadjoint() method computes the single-coil to single-coil, or multi-coil to multi-coil (batch mode) selfadjoint operation :math:`A^H A`. 
 
-- forward_single() method computes the single-coil to multi-coil forward operation :math:`A` in batch mode. The single-coil image is copied to multi-coil images before transform. If set_sense() is called first, multi-coil images will be implicitly multiplied by the coil sensitivities before transform. If set_sense() is never called, multi-coil images will not be changed by the coil sensitivities before transform.
+- forward_one2multi() method computes the single-coil to multi-coil forward operation :math:`A` in batch mode. The single-coil image is copied to multi-coil images before transform. If set_sense() is called first, multi-coil images will be implicitly multiplied by the coil sensitivities before transform. If set_sense() is never called, multi-coil images will not be changed by the coil sensitivities before transform.
 
-- adjoint_single() method computes the multi-coil to single-coil adjoint operation  :math:`A^H` in batch mode. The final reduction will divide the summed image by the number of coils.  If set_sense() is called first, multi-coil images will be implicitly multiplied by the conjugate of coil sensitivities before reduction. If set_sense() is never called, multi-coil images will not be changed by the coil sensitivities before reduction.
+- adjoint_multi2one() method computes the multi-coil to single-coil adjoint operation  :math:`A^H` in batch mode. The final reduction will divide the summed image by the number of coils.  If set_sense() is called first, multi-coil images will be implicitly multiplied by the conjugate of coil sensitivities before reduction. If set_sense() is never called, multi-coil images will not be changed by the coil sensitivities before reduction.
 
-- selfadjoint_single () method computes the single-coil to single-coil selfadjoint operation :math:`A^H A` in batch mode. It connects forward_single() and adjoint_single() methods.  If set_sense() is called first, coil sensitivities and the conjugate are used during forward_single() and adjoint_single().
+- selfadjoint_one2multi2one () method computes the single-coil to single-coil selfadjoint operation :math:`A^H A` in batch mode. It connects forward_one2multi() and adjoint_multi2one() methods.  If set_sense() is called first, coil sensitivities and the conjugate are used during forward_one2multi() and adjoint_multi2one().
 
 - solve() method link many solvers in pynufft.linalg.solver_cpu, which is based on the solvers of scipy.sparse.linalg.cg, scipy.sparse.linalg.'lsmr', 'lsqr', 'dc','bicg','bicgstab','cg', 'gmres','lgmres'  
 
@@ -57,7 +57,7 @@ class NUFFT_cpu:
     def __init__(self):
         """
         Constructor.
-        
+
         :param None:
         :type None: Python NoneType
         :return: NUFFT: the pynufft_hsa.NUFFT instance
@@ -80,7 +80,7 @@ class NUFFT_cpu:
     def plan(self, om, Nd, Kd, Jd, ft_axes = None, batch = None):
         """
         Plan the NUFFT_cpu object with the provided geometry.
-        
+
         :param om: The M off-grid locations in the frequency domain, which is normalized between [-pi, pi]
         :param Nd: The matrix size of equispaced image. Example: Nd=(256,256) for a 2D image; Nd = (128,128,128) for a 3D image
         :param Kd: The matrix size of the oversampled frequency grid. Example: Kd=(512,512) for 2D image; Kd = (256,256,256) for a 3D image
@@ -95,13 +95,13 @@ class NUFFT_cpu:
         :type batch: None, or integer
         :returns: 0
         :rtype: int, float
-        
+
         :ivar Nd: initial value: Nd
         :ivar Kd: initial value: Kd
         :ivar Jd: initial value: Jd
         :ivar ft_axes: initial value: None
         :ivar batch: initial value: None 
-        
+
         :Example:
 
         >>> import pynufft
@@ -209,7 +209,7 @@ class NUFFT_cpu:
             print('coil_profile.shape = ', coil_profile.shape)
             print('shape of Nd + (batch, ) = ', self.Nd + ( self.batch, ))   
     
-    def forward_single(self, x):
+    def forward_one2multi(self, x):
         """
         Assume x.shape = self.Nd
         
@@ -225,7 +225,7 @@ class NUFFT_cpu:
         
         return y2
     
-    def adjoint_single(self, y):
+    def adjoint_multi2one(self, y):
 #         raise NotImplementedError
         """
         Assume y.shape = self.multi_M
@@ -249,7 +249,7 @@ class NUFFT_cpu:
 #             x = x2
 # #             pass # assume ones
 # #             raise NotImplementedError
-# #         print('in self.adjoint_single = ', x.shape, x2.shape)
+# #         print('in self.adjoint_multi2one = ', x.shape, x2.shape)
 #         try:
 # #             print('Here1', self.ndims, x.shape)
 #             x3 = numpy.mean(x, axis = self.ndims)
@@ -307,9 +307,9 @@ class NUFFT_cpu:
         x = self.xx2x(self.k2xx(self.y2k(y)))
 
         return x
-    def selfadjoint_single(self, x):
-        y2 = self.forward_single(x)
-        x2 = self.adjoint_single(y2)
+    def selfadjoint_one2multi2one(self, x):
+        y2 = self.forward_one2multi(x)
+        x2 = self.adjoint_multi2one(y2)
         del y2
         return x2
     
@@ -363,7 +363,7 @@ class NUFFT_cpu:
         k = numpy.fft.fftn(output_x, axes = self.ft_axes)
 #         k = numpy.fft.fftn(a=xx, s=tuple(self.Kd[ax] for ax in self.ft_axes), axes = self.ft_axes)
         return k
-    def xx2k_single(self, xx):
+    def xx2k_one2one(self, xx):
         """
         Private: oversampled FFT on CPU
         
@@ -437,7 +437,7 @@ class NUFFT_cpu:
             xx.ravel()[self.NdCPUorder*self.batch + bat]=k.ravel()[self.KdCPUorder*self.batch + bat]
 #         xx = xx[crop_slice_ind(self.Nd)]
         return xx
-    def k2xx_single(self, k):
+    def k2xx_one2one(self, k):
         """
         Private: the inverse FFT and image cropping (which is the reverse of _xx2k() method)
         """
@@ -449,28 +449,14 @@ class NUFFT_cpu:
         xx.ravel()[self.NdCPUorder]=k.ravel()[self.KdCPUorder]
 #         xx = xx[crop_slice_ind(self.Nd)]
         return xx
+
     def xx2x(self, xx):
         """
         Private: rescaling, which is identical to the  _x2xx() method
         """
         x = self.x2xx(xx)
         return x
-    
-#     def k2y2k_single(self, k):
-#         """
-#         Private: the integrated interpolation-gridding by the Sparse Matrix-Vector Multiplication
-#         """
-# 
-# #         Xk = self.k2vec(k)
-#         y = self.sp.dot(k.ravel())
-#         k2 = self.spH.dot(y)
-#         k2 = numpy.reshape(k2, self.Kd, order='C')
-# #         k = self.spHsp.dot(Xk)
-# #         k = self.spH.dot(self.sp.dot(Xk))
-# #         k = self.y2vec(self.vec2y(Xk))
-# #         k = self.vec2k(k)
-#         return k2
-    
+
     def k2y2k(self, k):
         """
         Private: the integrated interpolation-gridding by the Sparse Matrix-Vector Multiplication

@@ -269,11 +269,7 @@ class Tensor_sn:
                 d_end = Ndims    
             Td += (numpy.prod(Nd[d_start:d_end]), )
             
-            # Now compute snd2 each element is the Kronecker product of the chosen axes
-            
-#             sn = snd[d_start]
-#             for inner in range(1, d_end):
-#                 sn = kronecker_scale(snd).realnumpy.outer(sn, snd[inner]).flatten()
+
             Tsn = kronecker_scale(snd[d_start:d_end]).real.flatten()
             snd2 += (Tsn.reshape((Tsn.shape[0],1)), )
             
@@ -281,33 +277,9 @@ class Tensor_sn:
         self.Td = Td
 #         print('Td = ', Td)
         self.Td_elements, self.invTd_elements = strides_divide_itemsize(Td)
-#         print(self.Td_elements, self.invTd_elements)
+
         self.tensor_sn = tensor_sn
         
-#                                             numpy.uint32(self.ndims),
-#                                     self.volume['Nd'],
-#                                     self.volume['Nd_elements'],
-#                                     self.volume['invNd_elements'],
-#                                     self.volume['tensor_sn'], 
-#     def cat_snd(self, snd):
-#         """
-#         :param snd:  tuple of input 1D vectors
-#         :type snd: tuple
-#         :return:  tensor_sn: vector of concatenated scaling factor, shape = (numpy.sum(Nd), )
-#         :rtype: tensor_sn: numpy.float32 
-#         """
-#         Nd = ()
-#         dd = len(snd)
-#         for dimid in range(0, dd):
-#             Nd += (snd[dimid].shape[0],)
-#         tensor_sn = numpy.empty((numpy.sum(Nd), ), dtype=numpy.float32)
-#             
-#         shift = 0
-#         for dimid in range(0, len(Nd)):
-#     
-#             tensor_sn[shift :shift + Nd[dimid]] = snd[dimid][:,0].real
-#             shift = shift + Nd[dimid]       
-#         return tensor_sn
     
 def create_csr(uu, kk, Kd, Jd, M):
 #     Jprod = numpy.prod(Jd)

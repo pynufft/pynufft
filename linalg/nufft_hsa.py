@@ -108,7 +108,7 @@ class NUFFT_hsa:
 #         Wavefront is required in spmv_vector as it improves data coalescence.
 #         see cCSR_spmv and zSparseMatVec
 #         """
-        self.wavefront = 32#api.DeviceParameters(device).warp_size
+        self.wavefront = api.DeviceParameters(device).warp_size
 
         print('wavefront of OpenCL (as warp of CUDA) = ',self.wavefront)
 
@@ -492,6 +492,20 @@ class NUFFT_hsa:
         return s
         
     @push_cuda_context
+    def selfadjoint_one2multi2one(self, gx):
+        """
+        selfadjoint_one2multi2one NUFFT (Teplitz) on the heterogeneous device
+        
+        :param gx: The input gpu array, with size=Nd
+        :type: reikna gpu array with dtype =numpy.complex64
+        :return: gx: The output gpu array, with size=Nd
+        :rtype: reikna gpu array with dtype =numpy.complex64
+        """      
+
+        gy = self.forward_one2multi(gx)
+        gx2 = self.adjoint_multi2one(gy)
+        del gy
+        return gx2    
     def selfadjoint(self, gx):
         """
         selfadjoint NUFFT (Teplitz) on the heterogeneous device
@@ -539,7 +553,7 @@ class NUFFT_hsa:
         return gy
     
     @push_cuda_context
-    def forward_single(self, s):
+    def forward_one2multi(self, s):
         try:
             x = self.s2x(s)
         except: # gx is not a gpu array 
@@ -559,7 +573,7 @@ class NUFFT_hsa:
         return y
     
     @push_cuda_context
-    def adjoint_single(self, y):
+    def adjoint_multi2one(self, y):
         try:
             x = self.adjoint(y)
         except: # gx is not a gpu array 

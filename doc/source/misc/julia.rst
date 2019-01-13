@@ -44,7 +44,7 @@ Now the NUFFT classes can be easily imported as follows::
 
 - Plan NUFFT
  
-Please refer to the examples in :doc:`../getstart`.
+Please refer to the examples in Tutorial.
 
 - Load Julia images and tests
 
