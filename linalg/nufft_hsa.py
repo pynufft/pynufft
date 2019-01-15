@@ -112,8 +112,8 @@ class NUFFT_hsa:
 
         print('wavefront of OpenCL (as warp of CUDA) = ',self.wavefront)
 
-        from ..src.re_subroutine import create_kernel_sets
-        kernel_sets = create_kernel_sets(API)
+        from ..src import re_subroutine #import create_kernel_sets
+        kernel_sets = re_subroutine.create_kernel_sets(API)
                
         prg = self.thr.compile(kernel_sets, 
                                 render_kwds=dict(LL =  str(self.wavefront)), 

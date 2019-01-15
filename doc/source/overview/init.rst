@@ -23,9 +23,24 @@ If you find PyNUFFT useful, please cite:
 
 Users of PyNUFFT should be familiar with discrete Fourier transform (DFT). 
 
+
+**The NUFFT using min-max interpolator**
+
+PyNUFFT was originally translated from MATLAB NUFFT to Python. 
+The translation was based on the min-max interpolator, which is described in the literature:
+
+*Fessler JA, Sutton BP. Nonuniform fast Fourier transforms using min-max interpolation. IEEE Trans Signal Process 2003;51(2):560-574.*
+
+
+
+**Acknowledgments**
+
+This is based on the work supported by Cambridge International and European Trust.  
+
+Any information expressed in this material are those of the author and do not necessarily reflect the views of Cambridge Trust or the authors of MATLAB NUFFT.  
+
 .. toctree::
    :maxdepth: 2
    
-   nufft
-   multi_dimensional
+   pynufft
    CPU_GPU

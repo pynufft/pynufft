@@ -15,15 +15,16 @@ from ..src._helper import helper
 
 def cDiff(x, d_indx):
         """
-        Compute image gradient
+        (stable) Compute image gradient
         Work with indxmap_diff(Nd)
+        ...
         """    
         a2=numpy.asarray(x.copy(),order='C')
         a2.flat =   a2 .flat[d_indx] - a2 .flat
         return a2
 def _create_kspace_sampling_density(nufft):
         """
-        Compute kspace sampling density from the nufft object
+        (stable) Compute k-space sampling density from the nufft object
         """    
         y = numpy.ones((nufft.st['M'],),dtype = numpy.complex64)
         gy = nufft.thr.to_device(y)
@@ -72,7 +73,7 @@ def _create_kspace_sampling_density(nufft):
     
 def L1TVLAD(nufft, gy, maxiter, rho): # main function of solver
     """
-    L1-total variation regularized least absolute deviation 
+    (testing) L1-total variation regularized least absolute deviation 
     """
     mu = 1.0
     LMBD = rho*mu
@@ -476,8 +477,8 @@ def L1TVOLS(nufft, gy, maxiter, rho  ): # main function of solver
 
 def _pipe_density(nufft,maxiter):
     """
-    Private: create the density function by iterative solution
-    Generate pHp matrix
+    Private: create the density function in the data space by a iterative solution
+    James Pipe et al. 1999
     """
 
 
@@ -506,21 +507,19 @@ def _pipe_density(nufft,maxiter):
             E = nufft.forward(nufft.adjoint(W))
             W /= E
 #                 nufft.prg.cMultiplyVecInplace(self.SnGPUArray, self.x_Nd, local_size=None, global_size=int(self.Ndprod))
-
-
-
-     
+    
     return W  
 
 def solve(nufft,gy, solver=None,  maxiter=30, *args, **kwargs):
     """
-    Solve NUFFT.
-    The current version supports solvers = 'cg' or 'L1TVOLS' or 'L1TVLAD'.
+    The solve function of NUFFT_hsa.
+    The current version supports solvers = 'cg' or 'L1TVOLS'. 
     
     :param nufft: NUFFT_hsa object
-    :param y: (M,) array, non-uniform data
-    :return: x: image
-        
+    :param y: (M,) or (M, batch) array, non-uniform data. If batch is provide, 'cg' and 'L1TVOLS' returns different image shape.
+    :type y: numpy.complex64 reikna array
+    :return: x: Nd or Nd + (batch, ) image. L1TVOLS always returns Nd. 'cg' returns Nd + (batch, ) in batch mode. 
+    :rtype: x: reikna array, complex64. 
     """
     # define the reduction kernel on the device
 #     if None ==  solver:

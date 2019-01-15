@@ -2,6 +2,91 @@ Multi-dimensional NUFFT
 =======================
 Multi-dimensional transforms are supported in PyNUFFT. 
 
+
+---------------------
+Parameters of PyNUFFT
+---------------------
+
+
+Here we summarize the required variables in :numref:`parameter_table`
+
+
+.. _parameter_table:
+.. list-table:: Title
+   :widths: 10 10 60 20
+   :header-rows: 1
+
+   * - Heading row 1, column 1
+     - Heading row 1, column 2
+     - Heading row 1, column 3
+     - 
+   * - Row 1, column 1
+     -
+     - Row 1, column 3
+     - 
+   * - Row 2, column 1
+     - Row 2, column 2
+     - Row 2, column 3
+     - 
+
+
+**Non-Cartesian coordinates (om)**
+
+om is an numpy array with a shape of (M, dim). 
+M is  the number of non-Cartesian samples, dim is the dimensionality. 
+The dtype of om is float.  om is normalized between :math:`[-\pi, \pi]`. 
+
+**Image grid size (Nd)**
+
+The image grid determines the size of the image. 
+
+**Oversampled Fourier grid (Kd)**
+
+The oversampled Fourier grid determines the size of the frequency. 
+Normally the Kd is 2 × Nd[d] for d-th axis. 
+
+**Interpolator size (Jd)**
+
+The interpolator computes the Jd[d] adjacent weighted sum of the oversampled Fourier grid.
+A normal choice of Jd is 6 for all axes.  
+ 
+Optionally, user can provide additional variables:
+ 
+**ft_axes (default = None (all axes))**
+
+ft_axes the NUFFT_cpu to operate the FFT on the given axes.
+ 
+**batch (default = None)**
+
+Batch mode allows NUFFT to operate on the additional axis. 
+ 
+ 
+:numref:`anatomy_nufft` illustrates the variables for 1D, 2D, 3D NUFFT.
+
+
+
+
+.. _anatomy_nufft:
+
+.. figure:: ../figure/anatomy_nufft.png
+   :width: 60%
+   
+   The anatomy of 1D, 2D, and 3D NUFFT. 
+   (A) 1D NUFFT: om is a numpy.array of the shape (M,1). 
+   M is the number of non-Cartesian points. 
+   Nd = (8, ) is the image domain grid size and Kd = (16, ) is the oversampled grid size. 
+   Jd = (6, ) is the interpolator size.
+   (B) 2D NUFFT: om is a numpy.array of the shape (M,2). 
+   M is the number of non-Cartesian points. 
+   Nd = (8, 8 ) is the image domain grid size and Kd = (16, 16 ) is the oversampled grid size. 
+   Jd = (6, 6 ) is the interpolator size.   
+   (C) 3D NUFFT: om is a numpy.array of the shape (M,3). 
+   M is the number of non-Cartesian points. 
+   Nd = (8, 8, 8 ) is the image domain grid size and Kd = (16, 16, 16 ) is the oversampled grid size. 
+   Jd = (6, 6, 6 ) is the interpolator size.      
+
+
+
 **Import pynufft module**
 
 In python environment, import pynufft module and other packages::

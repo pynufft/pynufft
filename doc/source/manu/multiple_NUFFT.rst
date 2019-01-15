@@ -1,5 +1,5 @@
-Multiple NUFFT
-==============
+Multiple NUFFT instances
+========================
 
 
 

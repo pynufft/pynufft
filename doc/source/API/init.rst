@@ -31,7 +31,7 @@ API documentaiton
     :private-members:
     :special-members:
     
-.. automodule:: pynufft.src.re_subroutine.__init__
+.. automodule:: pynufft.src.re_subroutine
     :members:
     :private-members:
     :special-members:    
