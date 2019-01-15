@@ -278,7 +278,7 @@ class Tensor_sn:
 #         print('Td = ', Td)
         self.Td_elements, self.invTd_elements = strides_divide_itemsize(Td)
 
-        self.tensor_sn = tensor_sn
+        self.tensor_sn = tensor_sn.astype(numpy.float32)
         
     
 def create_csr(uu, kk, Kd, Jd, M):
@@ -359,7 +359,7 @@ def create_partialELL(ud, kd, Jd, M):
     dd = len(Jd)
     curr_sumJd = numpy.zeros( ( dd, ), dtype = numpy.uint32)
     kindx = numpy.zeros( ( M, numpy.sum(Jd)), dtype = numpy.uint32)
-    udata = numpy.zeros( ( M, numpy.sum(Jd)), dtype = dtype)
+    udata = numpy.zeros( ( M, numpy.sum(Jd)), dtype = numpy.complex128)
     
     meshindex = numpy.zeros(  (numpy.prod(Jd),  dd), dtype = numpy.uint32)
     
@@ -388,7 +388,7 @@ def create_partialELL(ud, kd, Jd, M):
 #     print('meshindex,', meshindex)
 #     print('kindx.shape = ', kindx.shape)
 #     print('udata.shape = ', udata.shape)
-    partialELL = pELL(M, Jd, curr_sumJd, meshindex, kindx, udata)
+    partialELL = pELL(M, Jd, curr_sumJd, meshindex, kindx, udata.astype(dtype))
     return partialELL
 
 # def partial_combination(ud, kd, Jd):
@@ -593,7 +593,7 @@ def cat_snd(snd):
     dd = len(snd)
     for dimid in range(0, dd):
         Nd += (snd[dimid].shape[0],)
-    tensor_sn = numpy.empty((numpy.sum(Nd), ), dtype=numpy.float32)
+    tensor_sn = numpy.empty((numpy.sum(Nd), ), dtype=numpy.float64)
          
     shift = 0
     for dimid in range(0, len(Nd)):

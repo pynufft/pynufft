@@ -26,10 +26,10 @@ def benchmark(nufftobj, gx, maxiter, sense=1):
     import time
     t0= time.time()
     for pp in range(0, maxiter*sense):
-        gy = nufftobj.forward_one2multi(gx)
+        gy = nufftobj.forward_one2many(gx)
     t1 = time.time()
     for pp in range(0, maxiter*sense):
-        gx2 = nufftobj.adjoint_multi2one(gy)
+        gx2 = nufftobj.adjoint_many2one(gy)
     t2 = time.time()
     t_iter0 = time.time()
     for pp in range(0, maxiter*sense):

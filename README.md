@@ -11,13 +11,11 @@ A minimal "getting start" tutorial is available at http://jyhmiinlin.github.io/p
 Please use Python3. PyNUFFT has been tested with Python 3.4 and 3.6. However, it should work with Python 3.5. 
 
 
-### New in version 0.4.0-rc1
+### New in version 2019.1.1
 
-Version 0.4.0-rc1 is a beta version. 
+Version 2019.1.1 is a beta version. 
 
 Installation in Windows 10 has been tested. 
-
-Improved NUFFT_hsa with lower memory. 
 
 
 ### Summary

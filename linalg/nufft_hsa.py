@@ -492,9 +492,9 @@ class NUFFT_hsa:
         return s
         
     @push_cuda_context
-    def selfadjoint_one2multi2one(self, gx):
+    def selfadjoint_one2many2one(self, gx):
         """
-        selfadjoint_one2multi2one NUFFT (Teplitz) on the heterogeneous device
+        selfadjoint_one2many2one NUFFT (Teplitz) on the heterogeneous device
         
         :param gx: The input gpu array, with size=Nd
         :type: reikna gpu array with dtype =numpy.complex64
@@ -502,8 +502,8 @@ class NUFFT_hsa:
         :rtype: reikna gpu array with dtype =numpy.complex64
         """      
 
-        gy = self.forward_one2multi(gx)
-        gx2 = self.adjoint_multi2one(gy)
+        gy = self.forward_one2many(gx)
+        gx2 = self.adjoint_many2one(gy)
         del gy
         return gx2    
     def selfadjoint(self, gx):
@@ -553,7 +553,7 @@ class NUFFT_hsa:
         return gy
     
     @push_cuda_context
-    def forward_one2multi(self, s):
+    def forward_one2many(self, s):
         try:
             x = self.s2x(s)
         except: # gx is not a gpu array 
@@ -573,7 +573,7 @@ class NUFFT_hsa:
         return y
     
     @push_cuda_context
-    def adjoint_multi2one(self, y):
+    def adjoint_many2one(self, y):
         try:
             x = self.adjoint(y)
         except: # gx is not a gpu array 

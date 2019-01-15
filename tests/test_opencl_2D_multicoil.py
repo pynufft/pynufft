@@ -60,13 +60,13 @@ def test_opencl_multicoils():
         
     NufftObj.set_sense(coil_sense )
     nfft.set_sense(coil_sense)
-    y = nfft.forward_one2multi(image)
+    y = nfft.forward_one2many(image)
     import time
     t0 = time.time()
     for pp in range(0,2):
     
             
-            xx = nfft.adjoint_multi2one(y)
+            xx = nfft.adjoint_many2one(y)
 
     t_cpu = (time.time() - t0)/2
     
@@ -75,12 +75,12 @@ def test_opencl_multicoils():
     ## gx is an gpu array, dtype = complex64
     gx = NufftObj.to_device(image)  
     
-    gy = NufftObj.forward_one2multi(gx)
+    gy = NufftObj.forward_one2many(gx)
     
     t0= time.time()
     for pp in range(0,10):
         
-        gxx = NufftObj.adjoint_multi2one(gy)
+        gxx = NufftObj.adjoint_many2one(gy)
     t_cu = (time.time() - t0)/10
     print(y.shape, gy.get().shape)
     print('t_cpu = ', t_cpu)

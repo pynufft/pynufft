@@ -34,15 +34,15 @@ The PyNUFFT is designed to work with CPU and GPU. See :numref:`dimension_table`
      - ✓
      - ✓
      - (Normal and batch mode) Adjoint NUFFT :math:`A^H`
-   * - forward_one2multi()
+   * - forward_one2many()
      - ✓                   
      - ✓
      - (batch mode) Single image -> multi-coil data forward NUFFT :math:`A`
-   * - adjoint_multi2one()
+   * - adjoint_many2one()
      - ✓                   
      - ✓
      - (batch mode) Multi-coil data -> single image adjoint NUFFT :math:`A^H`
-   * - selfadjoint_one2multi2one()
+   * - selfadjoint_one2many2one()
      - ✓                   
      - ✓
      - (batch mode)  Single image -> multi-coil data -> single image selfadjoint  :math:`A^H A`
@@ -97,4 +97,8 @@ The PyNUFFT is designed to work with CPU and GPU. See :numref:`dimension_table`
    * - xx2x()
      - ✓          
      - ✓
-     - (Normal and batch mode) Apply the scaling factor                 
+     - (Normal and batch mode) Apply the scaling factor      
+   * - _precompute
+     - ✓          
+     - ✓
+     - (Normal and batch mode) Apply the scaling factor                   

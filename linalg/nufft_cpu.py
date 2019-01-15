@@ -12,11 +12,11 @@ Defining the equispaced to non-Cartesian transform as  operator :math:`A`, the N
 
 - selfadjoint() method computes the single-coil to single-coil, or multi-coil to multi-coil (batch mode) selfadjoint operation :math:`A^H A`. 
 
-- forward_one2multi() method computes the single-coil to multi-coil forward operation :math:`A` in batch mode. The single-coil image is copied to multi-coil images before transform. If set_sense() is called first, multi-coil images will be implicitly multiplied by the coil sensitivities before transform. If set_sense() is never called, multi-coil images will not be changed by the coil sensitivities before transform.
+- forward_one2many() method computes the single-coil to multi-coil forward operation :math:`A` in batch mode. The single-coil image is copied to multi-coil images before transform. If set_sense() is called first, multi-coil images will be implicitly multiplied by the coil sensitivities before transform. If set_sense() is never called, multi-coil images will not be changed by the coil sensitivities before transform.
 
-- adjoint_multi2one() method computes the multi-coil to single-coil adjoint operation  :math:`A^H` in batch mode. The final reduction will divide the summed image by the number of coils.  If set_sense() is called first, multi-coil images will be implicitly multiplied by the conjugate of coil sensitivities before reduction. If set_sense() is never called, multi-coil images will not be changed by the coil sensitivities before reduction.
+- adjoint_many2one() method computes the multi-coil to single-coil adjoint operation  :math:`A^H` in batch mode. The final reduction will divide the summed image by the number of coils.  If set_sense() is called first, multi-coil images will be implicitly multiplied by the conjugate of coil sensitivities before reduction. If set_sense() is never called, multi-coil images will not be changed by the coil sensitivities before reduction.
 
-- selfadjoint_one2multi2one () method computes the single-coil to single-coil selfadjoint operation :math:`A^H A` in batch mode. It connects forward_one2multi() and adjoint_multi2one() methods.  If set_sense() is called first, coil sensitivities and the conjugate are used during forward_one2multi() and adjoint_multi2one().
+- selfadjoint_one2many2one () method computes the single-coil to single-coil selfadjoint operation :math:`A^H A` in batch mode. It connects forward_one2many() and adjoint_many2one() methods.  If set_sense() is called first, coil sensitivities and the conjugate are used during forward_one2many() and adjoint_many2one().
 
 - solve() method link many solvers in pynufft.linalg.solver_cpu, which is based on the solvers of scipy.sparse.linalg.cg, scipy.sparse.linalg.'lsmr', 'lsqr', 'dc','bicg','bicgstab','cg', 'gmres','lgmres'  
 
@@ -209,7 +209,7 @@ class NUFFT_cpu:
             print('coil_profile.shape = ', coil_profile.shape)
             print('shape of Nd + (batch, ) = ', self.Nd + ( self.batch, ))   
     
-    def forward_one2multi(self, x):
+    def forward_one2many(self, x):
         """
         Assume x.shape = self.Nd
         
@@ -225,7 +225,7 @@ class NUFFT_cpu:
         
         return y2
     
-    def adjoint_multi2one(self, y):
+    def adjoint_many2one(self, y):
 #         raise NotImplementedError
         """
         Assume y.shape = self.multi_M
@@ -249,7 +249,7 @@ class NUFFT_cpu:
 #             x = x2
 # #             pass # assume ones
 # #             raise NotImplementedError
-# #         print('in self.adjoint_multi2one = ', x.shape, x2.shape)
+# #         print('in self.adjoint_many2one = ', x.shape, x2.shape)
 #         try:
 # #             print('Here1', self.ndims, x.shape)
 #             x3 = numpy.mean(x, axis = self.ndims)
@@ -307,9 +307,9 @@ class NUFFT_cpu:
         x = self.xx2x(self.k2xx(self.y2k(y)))
 
         return x
-    def selfadjoint_one2multi2one(self, x):
-        y2 = self.forward_one2multi(x)
-        x2 = self.adjoint_multi2one(y2)
+    def selfadjoint_one2many2one(self, x):
+        y2 = self.forward_one2many(x)
+        x2 = self.adjoint_many2one(y2)
         del y2
         return x2
     

@@ -1,8 +1,8 @@
 """
-Jyh-Miin Lin at UCL ICH/ Great Ormond Street Hospital
+Jyh-Miin Lin
 May - Aug 2018
 Tensor family
-Warning: Not for clinical purpose yet
+Warning: Not for clinical usage
 """
 import numpy
 import string
