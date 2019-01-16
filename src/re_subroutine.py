@@ -9,6 +9,9 @@ from __future__ import absolute_import # Python2 compatibility
 def create_kernel_sets(API):
     """
     Create the kernel from the kernel sets.
+    Note in some tests (Benoit's and my tests) CUDA shows some degraded accuracy.  
+    In one of my test OpenCL does not have such degraded accuracy. 
+    I have not tested if it appears in OpenCL, please be warned.
     """
     kernel_sets = ( cMultiplyScalar() + 
                         cCopy() + 
@@ -18,7 +21,6 @@ def create_kernel_sets(API):
                         cHypot() +  
                         cAddScalar() + 
                         cSelect() + 
-#                         cMultiplyConjVec() + 
                         cAddVec() +  
                         cMultiplyVecInplace() + 
                         cMultiplyConjVecInplace() +

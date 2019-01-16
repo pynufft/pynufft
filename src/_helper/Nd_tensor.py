@@ -1,8 +1,9 @@
 """
 Jyh-Miin Lin
 May - Aug 2018
-Tensor family
+Tensor related family
 Warning: Not for clinical usage
+Work in progress
 """
 import numpy
 import string
