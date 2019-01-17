@@ -19,8 +19,8 @@ import sys
 #if sys.version_info[0] == 2:
 #    sys.exit("Sorry, Python 2 is not supported yet")
 setup(name='pynufft',
-      version='2019.1.1',
-      description='Python non-uniform fast Fourier transform (pynufft)',
+      version='2019.1.1rc1',
+      description='Python non-uniform fast Fourier transform (PyNUFFT)',
       author='Jyh-Miin Lin',
       author_email='jyhmiinlin@gmail.com',
       url = 'https://github.com/jyhmiinlin/pynufft', # use the URL to the github repo
