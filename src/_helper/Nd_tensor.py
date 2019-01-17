@@ -1,10 +1,3 @@
-"""
-Jyh-Miin Lin
-May - Aug 2018
-Tensor related family
-Warning: Not for clinical usage
-Work in progress
-"""
 import numpy
 import string
 import scipy.sparse.linalg

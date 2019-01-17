@@ -53,7 +53,7 @@ def cMultiplyScalar():
         // Scale CX by CA: CX=CA*CX
         //  CA: scaling factor(float2)
         //*CX: input, output array(float2)
-        int gid = get_global_id(0);  
+        unsigned long gid = get_global_id(0);  
         CX[gid].x=CA.x*CX[gid].x-CA.y*CX[gid].y;
         CX[gid].y=CA.x*CX[gid].y+CA.y*CX[gid].x;
         };           
@@ -72,7 +72,7 @@ def cCopy():
     // Copy x to y: y = x;
     //CX: input array (float2)
     // CY output array (float2)
-    int gid=get_global_id(0);  
+    unsigned long long gid=get_global_id(0);  
     CY[gid]=CX[gid];
     };
     """  
@@ -217,14 +217,40 @@ def atomic_add(API):
     };         
     """
     
-    cuda_add = """
+    cuda_add2 = """
     
     __device__ void atomic_add_float( 
             GLOBAL_MEM float *ptr, 
             const float temp) 
     { // Wrapper around CUDA atomicAdd();
     atomicAdd(ptr, temp); 
-    };     
+    };   
+    """  
+    cuda_add = """
+    KERNEL void atomic_add_float( 
+            GLOBAL_MEM float *ptr, 
+            const float temp) 
+    {
+    // The work-around of AtomicAdd for float
+    // lockless add *source += operand 
+    // Caution!!!!!!! Use with care! You have been warned!
+    // http://simpleopencl.blogspot.com/2013/05/atomic-operations-and-floats-in-opencl.html
+    // Source: https://github.com/clMathLibraries/clSPARSE/blob/master/src/library/kernels/csrmv_adaptive.cl
+        union {
+            unsigned int intVal;
+            float floatVal;
+        } newVal;
+        
+        union {
+            unsigned int intVal;
+            float floatVal;
+        } prevVal;
+        
+        do {
+            prevVal.floatVal = *ptr;
+            newVal.floatVal = prevVal.floatVal + temp;
+        } while (atomicCAS((volatile GLOBAL_MEM unsigned int *)ptr, prevVal.intVal, newVal.intVal) != prevVal.intVal);
+    };        
     
     """
     if API == 'cuda':
@@ -273,7 +299,10 @@ def cHadamard():
     """
     
     R="""
-        KERNEL void cSelect2(
+    // Batched copying indata[order1] to outdata[order2] 
+    // Superceded by cTensorCopy()
+    // However left here as a general function.
+        KERNEL void cSelect2( 
         const unsigned int Reps, 
         GLOBAL_MEM const  unsigned int *order1,
         GLOBAL_MEM const  unsigned int *order2,
@@ -455,7 +484,9 @@ def cHadamard():
     return R
 def cSpmvh():
     """
-    Return the cSpmvh related kernel source. Only pELL_spmvh_mCoil is provided for Spmvh.
+    Return the cSpmvh related kernel source. 
+    Only pELL_spmvh_mCoil is provided for Spmvh.
+    NUFFT_hsa_legacy reuse the cCSR_spmv() function, which double the storage. 
     """
     
     R="""
