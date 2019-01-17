@@ -1,13 +1,13 @@
 CPU and GPU (HSA)
 =================
 
-The PyNUFFT was originally designed for CPU, by leveraging the Numpy/Scipy. 
+The PyNUFFT was originally running on Numpy/Scipy. Unfortunately the default Numpy/Scipy is most efficient on a single CPU core. 
 
-Later it was transplated to work with GPU and multi-core CPU. For heterogeneous accelerators such as CPU and GPU, NUFFT_hsa could access the speed of CUDA or OpenCL accelerators.  
+Later it was ported to PyCUDA and PyOpenCL, which allows us to leverage the speed of multi-core CPU and GPU.   
 
 Mixing NUFFT_cpu and NUFFT_hsa, or multiple NUFFT_cpu or multiple NUFFT_hsa is possible but no warranty. 
 
-The PyNUFFT is designed to work with CPU and GPU. See :numref:`dimension_table`
+The class methods are listed in :numref:`dimension_table`
 
 .. _dimension_table:
 .. list-table:: Methods implemented in NUFFT_cpu and NUFFT_hsa
