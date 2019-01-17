@@ -217,7 +217,7 @@ def atomic_add(API):
     };         
     """
     
-    cuda_add2 = """
+    cuda_add = """
     
     __device__ void atomic_add_float( 
             GLOBAL_MEM float *ptr, 
@@ -226,7 +226,7 @@ def atomic_add(API):
     atomicAdd(ptr, temp); 
     };   
     """  
-    cuda_add = """
+    cuda_add0 = """
     KERNEL void atomic_add_float( 
             GLOBAL_MEM float *ptr, 
             const float temp) 
