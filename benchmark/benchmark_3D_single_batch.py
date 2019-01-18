@@ -64,7 +64,7 @@ def test_mCoil(sense_number):
         # from pynufft import NUFFT_memsave
     NufftObj_cpu = NUFFT_cpu()
     api = 'ocl'
-    proc = 1
+    proc = 0
     NufftObj_radix1 = NUFFT_hsa(api, proc, 0)
     NufftObj_radix2 = NUFFT_hsa(api, proc, 0)
     NufftObj_radix3 = NUFFT_hsa(api, proc, 0)

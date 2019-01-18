@@ -73,6 +73,7 @@ without the earlier error message. If the error persists, the path must be modif
    set PYTHONIOENCODING=UTF-8
    pip install pytools
    pip install pycuda
+   pip install reikna
    pip install pynufft
    
 - Test PyNUFFT::
@@ -80,6 +81,8 @@ without the earlier error message. If the error persists, the path must be modif
    python
    from pynufft import tests
    tests.test_init()
+   
+**Installation of Pyopencl**   
 
 
 
