@@ -34,6 +34,8 @@ PyNUFFT implements the min-max NUFFT of Fessler and Sutton, with the following f
 
 - Kernel size of 5-7 has been tested. The numerical accuracy is limited to single-precision.  
 
+- I am still writing examples. However tests/test_init.py might give you an indication whether NUFFT_cpu and NUFFT_hsa are working properly.
+
 ### Other nufft implementations in Python:
 
 - Python-nufft: Python bindings to Fortran nufft. (https://github.com/dfm/Python-nufft/), MIT license
