@@ -77,7 +77,8 @@ class NUFFT_hsa:
         import reikna.cluda as cluda
         if self.verbosity > 0:
             print('The choosen API by the user is ', API)
-        self.cuda_flag, self.ocl_flag = helper.diagnose()
+        self.cuda_flag, self.ocl_flag = helper.diagnose(
+            verbosity=self.verbosity)
         if None is API:
             if self.cuda_flag is 1:
                 API = 'cuda'
