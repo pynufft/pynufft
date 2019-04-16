@@ -13,6 +13,8 @@ import scipy.special
 from functools import wraps as _wraps
 
 from ..src._helper import helper, helper1
+
+
 class hypercube:
     def __init__(self, shape, steps, invsteps, nelements, batch, dtype):
         self.shape = shape
@@ -37,18 +39,20 @@ def push_cuda_context(hsa_method):
         return hsa_method(*args, **kwargs)
     return wrapper
 
+
 class NUFFT_hsa:
     """
     NUFFT_hsa class.
     Multi-coil or single-coil memory reduced NUFFT.
 
     """
-    def __init__(self, API = None, platform_number=None, device_number=None,
+    def __init__(self, API=None, platform_number=None, device_number=None,
                  verbosity=0):
         """
         Constructor.
 
-        :param API: The API for the heterogeneous system. API='cuda' or API='ocl'
+        :param API: The API for the heterogeneous system. API='cuda'
+                    or API='ocl'
         :param platform_number: The number of the platform found by the API.
         :param device_number: The number of the device found on the platform.
         :param verbosity: Defines the verbosity level, default value is 0
@@ -84,7 +88,7 @@ class NUFFT_hsa:
                               'device has been detected.', UserWarning)
         else:
             api = API
-        if self.verbosity >0:
+        if self.verbosity > 0:
             print('The used API will be ', API)
         if platform_number is None:
             platform_number = 0
@@ -94,7 +98,7 @@ class NUFFT_hsa:
         from reikna import cluda
         import reikna.transformations
         from reikna.cluda import functions, dtypes
-        try: # try to create api/platform/device using the given parameters
+        try:  # try to create api/platform/device using the given parameters
             if 'cuda' == API:
                 api = cluda.cuda_api()
             elif 'ocl' == API:
@@ -103,15 +107,15 @@ class NUFFT_hsa:
             platform = api.get_platforms()[platform_number]
 
             device = platform.get_devices()[device_number]
-        except: # if failed, find out what's going wrong?
+        except:  # if failed, find out what's going wrong?
             warnings.warn('No parallelization will be made since no GPU '
                           'device has been detected.', UserWarning)
 
 #             return 1
 
 #         Create context from device
-        self.thr = api.Thread(device) #pyopencl.create_some_context()
-        self.device = device #: device name
+        self.thr = api.Thread(device)  # pyopencl.create_some_context()
+        self.device = device  # : device name
         if self.verbosity > 0:
             print('Using opencl or cuda = ', self.thr.api)
 
@@ -122,18 +126,17 @@ class NUFFT_hsa:
 #         """
         self.wavefront = api.DeviceParameters(device).warp_size
         if self.verbosity > 0:
-            print('Wavefront of OpenCL (as wrap of CUDA) = ',self.wavefront)
+            print('Wavefront of OpenCL (as wrap of CUDA) = ', self.wavefront)
 
-        from ..src import re_subroutine #import create_kernel_sets
+        from ..src import re_subroutine  # import create_kernel_sets
         kernel_sets = re_subroutine.create_kernel_sets(API)
 
         prg = self.thr.compile(kernel_sets,
-                                render_kwds=dict(LL =  str(self.wavefront)),
-                                fast_math=False)
+                               render_kwds=dict(LL=str(self.wavefront)),
+                               fast_math=False)
         self.prg = prg
 
-
-    def plan(self, om, Nd, Kd, Jd, ft_axes = None, batch = None, radix = None):
+    def plan(self, om, Nd, Kd, Jd, ft_axes=None, batch=None, radix=None):
         """
         Design the multi-coil or single-coil memory reduced interpolator.
 
@@ -173,13 +176,13 @@ class NUFFT_hsa:
 
         """
 
-        self.ndims = len(Nd) # dimension
+        self.ndims = len(Nd)  # dimension
         if ft_axes is None:
             ft_axes = range(0, self.ndims)
         self.ft_axes = ft_axes
-#
-        self.st = helper.plan(om, Nd, Kd, Jd, ft_axes = ft_axes,
-                              format = 'pELL', radix = radix)
+
+        self.st = helper.plan(om, Nd, Kd, Jd, ft_axes=ft_axes,
+                              format='pELL', radix=radix)
         if batch is None:
             self.parallel_flag = 0
         else:
@@ -196,15 +199,15 @@ class NUFFT_hsa:
         #  self.sn = numpy.asarray(self.st['sn'].astype(self.dtype),
         #                            order='C')# backup
         if self.batch == 1 and (self.parallel_flag == 0):
-            self.multi_Nd =   self.Nd
-            self.multi_Kd =   self.Kd
-            self.multi_M =   (self.st['M'], )
+            self.multi_Nd = self.Nd
+            self.multi_Kd = self.Kd
+            self.multi_M = (self.st['M'], )
             # Broadcasting the sense and scaling factor (Roll-off)
             # self.sense2 = self.sense*numpy.reshape(self.sn, self.Nd + (1, ))
-        else: #self.batch is 0:
-            self.multi_Nd =   self.Nd + (self.batch, )
-            self.multi_Kd =   self.Kd + (self.batch, )
-            self.multi_M =   (self.st['M'], )+ (self.batch, )
+        else:  # self.batch is 0:
+            self.multi_Nd = self.Nd + (self.batch, )
+            self.multi_Kd = self.Kd + (self.batch, )
+            self.multi_M = (self.st['M'], ) + (self.batch, )
         self.invbatch = 1.0/self.batch
         self.Kdprod = numpy.uint32(numpy.prod(self.st['Kd']))
         self.Jdprod = numpy.uint32(numpy.prod(self.st['Jd']))
@@ -213,7 +216,7 @@ class NUFFT_hsa:
         self.Nd_elements, self.invNd_elements = helper.strides_divide_itemsize(
                                                     self.st['Nd'])
         # only return the Kd_elements
-        self.Kd_elements = helper.strides_divide_itemsize( self.st['Kd'])[0]
+        self.Kd_elements = helper.strides_divide_itemsize(self.st['Kd'])[0]
         self.NdCPUorder, self.KdCPUorder, self.nelem = helper.preindex_copy(
                                                         self.st['Nd'],
                                                         self.st['Kd'])
@@ -223,7 +226,7 @@ class NUFFT_hsa:
         return 0
 
     @push_cuda_context
-    def offload(self):#API, platform_number=0, device_number=0):
+    def offload(self):  # API, platform_number=0, device_number=0):
         """
         self.offload():
 
@@ -240,7 +243,7 @@ class NUFFT_hsa:
         :return: self: instance
         """
 
-        self.pELL = {} # dictionary
+        self.pELL = {}  # dictionary
 
         self.pELL['nRow'] = numpy.uint32(self.st['pELL'].nRow)
         self.pELL['prodJd'] = numpy.uint32(self.st['pELL'].prodJd)
@@ -258,34 +261,35 @@ class NUFFT_hsa:
         self.volume = {}
 
         self.volume['Nd_elements'] = self.thr.to_device(
-            numpy.asarray(self.Nd_elements, dtype = numpy.uint32))
+            numpy.asarray(self.Nd_elements, dtype=numpy.uint32))
         self.volume['Kd_elements'] = self.thr.to_device(
-            numpy.asarray(self.Kd_elements, dtype = numpy.uint32))
+            numpy.asarray(self.Kd_elements, dtype=numpy.uint32))
         self.volume['invNd_elements'] = self.thr.to_device(
             self.invNd_elements.astype(numpy.float32))
-        self.volume['Nd'] =  self.thr.to_device(numpy.asarray(
-            self.st['Nd'], dtype = numpy.uint32))
-        self.volume['NdGPUorder'] = self.thr.to_device( self.NdCPUorder)
-        self.volume['KdGPUorder'] = self.thr.to_device( self.KdCPUorder)
+        self.volume['Nd'] = self.thr.to_device(numpy.asarray(
+            self.st['Nd'], dtype=numpy.uint32))
+        self.volume['NdGPUorder'] = self.thr.to_device(self.NdCPUorder)
+        self.volume['KdGPUorder'] = self.thr.to_device(self.KdCPUorder)
         self.volume['gpu_coil_profile'] = self.thr.array(
-            self.multi_Nd, dtype = self.dtype).fill(1.0)
+            self.multi_Nd, dtype=self.dtype).fill(1.0)
 
         Nd = self.st['Nd']
-#         tensor_sn = numpy.empty((numpy.sum(Nd), ), dtype=numpy.float32)
-#
-#         shift = 0
-#         for dimid in range(0, len(Nd)):
-#
-#             tensor_sn[shift :shift + Nd[dimid]] = self.st['tensor_sn'][dimid][:,0].real
-#             shift = shift + Nd[dimid]
-#         self.volume['tensor_sn'] = self.thr.to_device(self.st['tensor_sn'].astype(numpy.float32))
+        # tensor_sn = numpy.empty((numpy.sum(Nd), ), dtype=numpy.float32)
+        #
+        # shift = 0
+        # for dimid in range(0, len(Nd)):
+        #
+        #     tensor_sn[shift :shift + Nd[dimid]] = self.st['tensor_sn'][dimid][:,0].real
+        #     shift = shift + Nd[dimid]
+        # self.volume['tensor_sn'] = self.thr.to_device(
+        #     self.st['tensor_sn'].astype(numpy.float32))
         self.tSN = {}
         self.tSN['Td_elements'] = self.thr.to_device(
-            numpy.asarray(self.st['tSN'].Td_elements, dtype = numpy.uint32))
+            numpy.asarray(self.st['tSN'].Td_elements, dtype=numpy.uint32))
         self.tSN['invTd_elements'] = self.thr.to_device(
             self.st['tSN'].invTd_elements.astype(numpy.float32))
-        self.tSN['Td'] =  self.thr.to_device(
-            numpy.asarray(self.st['tSN'].Td, dtype = numpy.uint32))
+        self.tSN['Td'] = self.thr.to_device(
+            numpy.asarray(self.st['tSN'].Td, dtype=numpy.uint32))
         self.tSN['Tdims'] = self.st['tSN'].Tdims
         self.tSN['tensor_sn'] = self.thr.to_device(
             self.st['tSN'].tensor_sn.astype(numpy.float32))
@@ -294,18 +298,17 @@ class NUFFT_hsa:
         self.Kdprod = numpy.int32(numpy.prod(self.st['Kd']))
         self.M = numpy.int32(self.st['M'])
 
-
         import reikna.fft
-        if self.batch > 1: # batch mode
+        if self.batch > 1:  # batch mode
             self.fft = reikna.fft.FFT(
                 numpy.empty(self.st['Kd']+(self.batch, ), dtype=self.dtype),
                 self.ft_axes).compile(self.thr, fast_math=False)
-        else: # elf.Reps ==1 Batch mode is wrong for
+        else:  # elf.Reps == 1 Batch mode is wrong for
             self.fft = reikna.fft.FFT(
                 numpy.empty(self.st['Kd'], dtype=self.dtype),
                 self.ft_axes).compile(self.thr, fast_math=False)
 
-        self.zero_scalar=self.dtype(0.0+0.0j)
+        self.zero_scalar = self.dtype(0.0+0.0j)
         del self.st['pELL']
         if self.verbosity > 0:
             print('End of offload')
@@ -326,13 +329,13 @@ class NUFFT_hsa:
             if self.verbosity > 0:
                 print('Successfully loading coil sensitivities!')
 
-#         if coil_profile.shape == self.Nd + (self.batch, ):
+        # if coil_profile.shape == self.Nd + (self.batch, ):
 
     @push_cuda_context
-    def to_device(self, image, shape = None):
+    def to_device(self, image, shape=None):
 
-        g_image = self.thr.array(image.shape, dtype = self.dtype)
-        self.thr.to_device(image.astype(self.dtype), dest = g_image)
+        g_image = self.thr.array(image.shape, dtype=self.dtype)
+        self.thr.to_device(image.astype(self.dtype), dest=g_image)
         return g_image
 
     @push_cuda_context
@@ -345,12 +348,12 @@ class NUFFT_hsa:
             s,
             x,
             local_size=None,
-            global_size=int(self.batch*self.Ndprod) )
-#         x2 = x  *  self.volume['gpu_coil_profile']
-#         try:
-#             x2 = x  *  self.volume['gpu_coil_profile']
-#         except:
-#             x2 = x
+            global_size=int(self.batch * self.Ndprod))
+        # x2 = x  *  self.volume['gpu_coil_profile']
+        # try:
+        #     x2 = x  *  self.volume['gpu_coil_profile']
+        # except:
+        #     x2 = x
         self.prg.cMultiplyVecInplace(
             numpy.uint32(1),
             self.volume['gpu_coil_profile'],
@@ -372,9 +375,13 @@ class NUFFT_hsa:
         # xx = self.thr.array(xx.shape, dtype = self.dtype)
         # self.thr.copy_array(z, dest=xx, )
         # size = int(xx.nbytes/xx.dtype.itemsize))
-        #size = int(xx.nbytes/8) is a hack of error in cuda backends; 8 is the byte of numpy.complex64
-        xx = self.thr.array(x.shape, dtype = self.dtype)
-        self.thr.copy_array(x, dest=xx, )#size = int(xx.nbytes/xx.dtype.itemsize)) #size = int(xx.nbytes/8) is a hack of error in cuda backends; 8 is the byte of numpy.complex64
+        # Hack of error in cuda backends; 8 is the byte of numpy.complex64
+        # size = int(xx.nbytes/8)
+        xx = self.thr.array(x.shape, dtype=self.dtype)
+        self.thr.copy_array(x, dest=xx, )
+        # size = int(xx.nbytes/xx.dtype.itemsize))
+        # Hack of error in cuda backends; 8 is the byte of numpy.complex64:
+        # size = int(xx.nbytes/8)
 
         # self.prg.cMultiplyRealInplace(
         #     self.batch,
@@ -390,8 +397,8 @@ class NUFFT_hsa:
         #                             self.volume['tensor_sn'],
         #                             xx,
         #                             numpy.uint32(0),
-        #                             local_size = None,
-        #                             global_size = int(self.batch*self.Ndprod))
+        #                             local_size=None,
+        #                             global_size=int(self.batch*self.Ndprod))
 
         self.prg.cTensorMultiply(numpy.uint32(self.batch),
                                  numpy.uint32(self.tSN['Tdims']),
@@ -416,8 +423,8 @@ class NUFFT_hsa:
         Second, copy self.x_Nd array to self.k_Kd array by cSelect
         Third: inplace FFT
         """
-        k = self.thr.array(self.multi_Kd, dtype = self.dtype)#.fill(0.0 + 0.0j)
-
+        k = self.thr.array(self.multi_Kd, dtype=self.dtype)
+        # k = self.thr.array(self.multi_Kd, dtype=self.dtype).fill(0.0 + 0.0j)
         k.fill(0)
         # self.prg.cMultiplyScalar(self.zero_scalar,
         #                            k,
@@ -437,17 +444,17 @@ class NUFFT_hsa:
         #                     local_size=None,
         #                     global_size=int(self.Ndprod*self.batch))
         self.prg.cTensorCopy(
-                            self.batch,
-                            numpy.uint32(self.ndims),
-                             self.volume['Nd_elements'],
-                             self.volume['Kd_elements'],
-                             self.volume['invNd_elements'],
-                             xx,
-                             k,
-                             numpy.int32(1), # Directions: Nd -> Kd, 1; Kd -> Nd, -1
-                             local_size = None,
-                             global_size = int(self.Ndprod))
-        self.fft( k, k,inverse=False)
+             self.batch,
+             numpy.uint32(self.ndims),
+             self.volume['Nd_elements'],
+             self.volume['Kd_elements'],
+             self.volume['invNd_elements'],
+             xx,
+             k,
+             numpy.int32(1),  # Directions: Nd -> Kd, 1; Kd -> Nd, -1
+             local_size=None,
+             global_size=int(self.Ndprod))
+        self.fft(k, k, inverse=False)
 #         self.thr.synchronize()
         return k
 
@@ -456,11 +463,12 @@ class NUFFT_hsa:
         """
         Private: interpolation by the Sparse Matrix-Vector Multiplication
         """
-#         if self.parallel_flag is 1:
-#             y =self.thr.array( (self.st['M'], self.batch), dtype=self.dtype).fill(0)
-#         else:
-#             y =self.thr.array( (self.st['M'], ), dtype=self.dtype).fill(0)
-        y =self.thr.array( self.multi_M, dtype=self.dtype).fill(0)
+        # if self.parallel_flag is 1:
+        #     y =self.thr.array((self.st['M'], self.batch),
+        #                       dtype=self.dtype).fill(0)
+        # else:
+        #     y =self.thr.array( (self.st['M'], ), dtype=self.dtype).fill(0)
+        y = self.thr.array(self.multi_M, dtype=self.dtype).fill(0)
         self.prg.pELL_spmv_mCoil(
                             self.batch,
                             self.pELL['nRow'],
@@ -468,15 +476,15 @@ class NUFFT_hsa:
                             self.pELL['sumJd'],
                             self.pELL['dim'],
                             self.pELL['Jd'],
-#                             self.pELL_currsumJd,
+                            # self.pELL_currsumJd,
                             self.pELL['meshindex'],
                             self.pELL['kindx'],
                             self.pELL['udata'],
                             k,
                             y,
-                            local_size= int(self.wavefront),
-                            global_size= int(self.pELL['nRow']*
-                                             self.batch*self.wavefront)
+                            local_size=int(self.wavefront),
+                            global_size=int(self.pELL['nRow'] *
+                                            self.batch * self.wavefront)
                             )
 #         self.thr.synchronize()
         return y
@@ -488,8 +496,8 @@ class NUFFT_hsa:
         However, serial atomic add is far too slow and inaccurate.
         """
 
-        kx = self.thr.array(self.multi_Kd, dtype = numpy.float32).fill(0.0)
-        ky = self.thr.array(self.multi_Kd, dtype = numpy.float32).fill(0.0)
+        kx = self.thr.array(self.multi_Kd, dtype=numpy.float32).fill(0.0)
+        ky = self.thr.array(self.multi_Kd, dtype=numpy.float32).fill(0.0)
 
         self.prg.pELL_spmvh_mCoil(
                             self.batch,
@@ -504,10 +512,10 @@ class NUFFT_hsa:
                             kx, ky,
                             y,
                             local_size=None,
-                            global_size= int(self.pELL['nRow']*
-                                             self.pELL['prodJd']*self.batch)
+                            global_size=int(self.pELL['nRow'] *
+                                            self.pELL['prodJd'] * self.batch)
                             )
-        k = kx+1.0j* ky
+        k = kx + 1.0j * ky
 
         return k
 
@@ -518,7 +526,7 @@ class NUFFT_hsa:
         _xx2k() method)
         """
 
-        self.fft( k, k, inverse=True)
+        self.fft(k, k, inverse=True)
         # self.thr.synchronize()
         # self.x_Nd._zero_fill()
         # self.prg.cMultiplyScalar(self.zero_scalar,
@@ -530,7 +538,7 @@ class NUFFT_hsa:
             #                     dtype = self.dtype)
         # else:
         #     xx = self.thr.array(self.st['Nd'], dtype = self.dtype)
-        xx = self.thr.array(self.multi_Nd, dtype = self.dtype)
+        xx = self.thr.array(self.multi_Nd, dtype=self.dtype)
         xx.fill(0)
         # self.prg.cSelect(self.queue,
         #                  (self.Ndprod,),
@@ -547,22 +555,25 @@ class NUFFT_hsa:
         #                   local_size=None,
         #                   global_size=int(self.Ndprod*self.batch))
         self.prg.cTensorCopy(
-                            self.batch,
-                            numpy.uint32(self.ndims),
+                             self.batch,
+                             numpy.uint32(self.ndims),
                              self.volume['Nd_elements'],
                              self.volume['Kd_elements'],
                              self.volume['invNd_elements'],
                              k,
                              xx,
                              numpy.int32(-1),
-                             local_size = None,
-                             global_size = int(self.Ndprod))
+                             local_size=None,
+                             global_size=int(self.Ndprod))
         return xx
 
     @push_cuda_context
     def xx2x(self, xx):
-        x = self.thr.array(xx.shape, dtype = self.dtype)
-        self.thr.copy_array(xx, dest=x, )#size = int(xx.nbytes/xx.dtype.itemsize)) #size = int(xx.nbytes/8) is a hack of error in cuda backends; 8 is the byte of numpy.complex64
+        x = self.thr.array(xx.shape, dtype=self.dtype)
+        self.thr.copy_array(xx, dest=x, )
+        # size = int(xx.nbytes/xx.dtype.itemsize))
+        # Hack of error in cuda backends; 8 is the byte of numpy.complex64
+        # size = int(xx.nbytes/8)
 
         # self.prg.cMultiplyRealInplace(self.batch,
         #                               self.volume['SnGPUArray'],
@@ -577,19 +588,19 @@ class NUFFT_hsa:
         #                             self.volume['tensor_sn'],
         #                             x,
         #                             numpy.uint32(0),
-        #                             local_size = None,
-        #                             global_size = int(self.batch*self.Ndprod))
+        #                             local_size=None,
+        #                             global_size=int(self.batch*self.Ndprod))
         self.prg.cTensorMultiply(numpy.uint32(self.batch),
-                                            numpy.uint32(self.tSN['Tdims']),
-                                            self.tSN['Td'],
-                                            self.tSN['Td_elements'],
-                                            self.tSN['invTd_elements'],
-                                            self.tSN['tensor_sn'],
-                                            x,
-                                            numpy.uint32(0),
-                                            local_size=None,
-                                            global_size=int(self.batch*
-                                                            self.Ndprod))
+                                 numpy.uint32(self.tSN['Tdims']),
+                                 self.tSN['Td'],
+                                 self.tSN['Td_elements'],
+                                 self.tSN['invTd_elements'],
+                                 self.tSN['tensor_sn'],
+                                 x,
+                                 numpy.uint32(0),
+                                 local_size=None,
+                                 global_size=int(self.batch *
+                                                 self.Ndprod))
         # self.thr.synchronize()
         return x
 
@@ -601,8 +612,8 @@ class NUFFT_hsa:
             numpy.uint32(1),
             self.volume['gpu_coil_profile'],
             x,
-            local_size = None,
-            global_size = int(self.batch*self.Ndprod))
+            local_size=None,
+            global_size=int(self.batch*self.Ndprod))
 #         x2 = x  *  self.volume['gpu_coil_profile'].conj()
 #         except:
 #             x2 = x
@@ -612,7 +623,7 @@ class NUFFT_hsa:
             x,
             s,
             local_size=int(self.wavefront),
-            global_size = int(self.batch*self.Ndprod*self.wavefront))
+            global_size=int(self.batch*self.Ndprod*self.wavefront))
         # self.prg.cMerge(self.batch,
         #                 self.Ndprod,
         #                 self.volume['gpu_coil_profile'],
@@ -638,6 +649,7 @@ class NUFFT_hsa:
         gx2 = self.adjoint_many2one(gy)
         del gy
         return gx2
+
     def selfadjoint(self, gx):
         """
         selfadjoint NUFFT (Teplitz) on the heterogeneous device
@@ -665,11 +677,11 @@ class NUFFT_hsa:
         """
         try:
             xx = self.x2xx(gx)
-        except: # gx is not a gpu array
+        except:  # gx is not a gpu array
             try:
                 warnings.warn('The input array may not be a GPUarray '
-                             'Automatically moving the input array to gpu, '
-                             'which is throttled by PCIe.', UserWarning)
+                              'Automatically moving the input array to gpu, '
+                              'which is throttled by PCIe.', UserWarning)
                 px = self.to_device(gx, )
                 # pz = self.thr.to_device(numpy.asarray(gz.astype(self.dtype),
                 #                                       order = 'C' ))
@@ -691,11 +703,11 @@ class NUFFT_hsa:
     def forward_one2many(self, s):
         try:
             x = self.s2x(s)
-        except: # gx is not a gpu array
+        except:  # gx is not a gpu array
             try:
                 warnings.warn('In s2x(): The input array may not be '
-                              'a GPUarray. Automatically moving the input array'
-                              ' to gpu, which is throttled by PCIe.',
+                              'a GPUarray. Automatically moving the input'
+                              ' array to gpu, which is throttled by PCIe.',
                               UserWarning)
                 ps = self.to_device(s, )
                 # px = self.thr.to_device(numpy.asarray(x.astype(self.dtype),
@@ -715,7 +727,7 @@ class NUFFT_hsa:
     def adjoint_many2one(self, y):
         try:
             x = self.adjoint(y)
-        except: # gx is not a gpu array
+        except:  # gx is not a gpu array
             try:
                 if self.verbosity > 0:
                     print('y.shape = ', y.shape)
@@ -747,7 +759,7 @@ class NUFFT_hsa:
         """
         try:
             k = self.y2k(gy)
-        except: # gx is not a gpu array
+        except:  # gx is not a gpu array
             try:
                 warnings.warn('In adjoint(): The input array may not '
                               'be a GPUarray. Automatically moving the input'
@@ -806,7 +818,7 @@ class NUFFT_hsa:
                 if numpy.ndarray == type(gy):
                     print("Input gy must be a reikna array with dtype ="
                           " numpy.complex64")
-                    raise #TypeError
+                    raise  # TypeError
                 else:
                     print("wrong")
-                    raise #TypeError
+                    raise  # TypeError
