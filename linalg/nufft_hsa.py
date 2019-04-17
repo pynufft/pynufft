@@ -154,10 +154,14 @@ class NUFFT_hsa:
                    Example: Jd=(6,6) for 2D image;
                    Jd = (6,6,6) for a 3D image
         :param ft_axes: The dimensions to be transformed by FFT.
-                   Example: ft_axes = (0,1) for 2D,
-                   ft_axes = (0,1,2) for 3D;
+                   Example: ft_axes = (0, 1) for 2D,
+                   ft_axes = (0, 1, 2) for 3D;
                    ft_axes = None for all dimensions.
         :param batch: Batch NUFFT.
+                    If provided, the shape is Nd + (batch, ).
+                    The last axes is the number of parallel coils.
+                    batch = None for single coil.
+        :param radix: ????.
                     If provided, the shape is Nd + (batch, ).
                     The last axes is the number of parallel coils.
                     batch = None for single coil.
@@ -209,7 +213,7 @@ class NUFFT_hsa:
             self.multi_Nd = self.Nd + (self.batch, )
             self.multi_Kd = self.Kd + (self.batch, )
             self.multi_M = (self.st['M'], ) + (self.batch, )
-        self.invbatch = 1.0/self.batch
+        self.invbatch = 1.0 / self.batch
         self.Kdprod = numpy.uint32(numpy.prod(self.st['Kd']))
         self.Jdprod = numpy.uint32(numpy.prod(self.st['Jd']))
         self.Ndprod = numpy.uint32(numpy.prod(self.st['Nd']))
@@ -280,7 +284,8 @@ class NUFFT_hsa:
         # shift = 0
         # for dimid in range(0, len(Nd)):
         #
-        #     tensor_sn[shift :shift + Nd[dimid]] = self.st['tensor_sn'][dimid][:,0].real
+        #     tensor_sn[shift :shift + Nd[dimid]] = \
+        #     self.st['tensor_sn'][dimid][:, 0].real
         #     shift = shift + Nd[dimid]
         # self.volume['tensor_sn'] = self.thr.to_device(
         #     self.st['tensor_sn'].astype(numpy.float32))
@@ -671,10 +676,10 @@ class NUFFT_hsa:
         """
         Forward NUFFT on the heterogeneous device
 
-        :param gx: The input gpu array, with size=Nd
-        :type gx: reikna gpu array with dtype =numpy.complex64
-        :return: gy: The output gpu array, with size=(M,)
-        :rtype: reikna gpu array with dtype =numpy.complex64
+        :param gx: The input gpu array, with size = Nd
+        :type gx: reikna gpu array with dtype = numpy.complex64
+        :return: gy: The output gpu array, with size = (M,)
+        :rtype: reikna gpu array with dtype = numpy.complex64
         """
         try:
             xx = self.x2xx(gx)
