@@ -518,8 +518,8 @@ class NUFFT_hsa:
                             kx, ky,
                             y,
                             local_size=None,
-                            global_size=int(self.pELL['nRow'] *
-                                            int(self.pELL['prodJd']) * int(self.batch))
+                            global_size=int(self.pELL['nRow'] )#*
+#                                             int(self.pELL['prodJd']) * int(self.batch))
                             )
         k = kx + 1.0j * ky
 
