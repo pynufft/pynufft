@@ -52,7 +52,7 @@ PyNUFFT implements the min-max NUFFT of Fessler and Sutton, with the following f
 
 ### Acknowledgements
 
-PyNUFFT was funded by the Cambridge Commonwealth, European and International Trust (Cambridge, UK) and Ministry of Education, Taiwan. I am grateful for valuable comments from many experts. 
+PyNUFFT was funded by the Cambridge Commonwealth, European and International Trust (Cambridge, UK) and Ministry of Education, Taiwan. 
 
 I acknowledge the NVIDIA Corporation with the donation of a Titan X Pascal and a Quadro P6000 GPU used for developing the GPU code. Thanks to the authors of Michigan Image 
 Reconstruction Toolbox (MIRT) for releasing the original min-max interpolator code. However, errors in PyNUFFT are not related to MIRT and please contact me at 
