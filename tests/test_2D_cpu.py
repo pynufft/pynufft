@@ -14,10 +14,7 @@ def test_2D():
     from pynufft import NUFFT_cpu
     # load example image
 #     image = numpy.loadtxt(DATA_PATH +'phantom_256_256.txt')
-    image = scipy.misc.ascent()
-    
-    image = scipy.misc.imresize(image, (256,256))
-    
+    image = scipy.misc.ascent()[::2,::2]
     image=image.astype(numpy.float)/numpy.max(image[...])
     #numpy.save('phantom_256_256',image)
     matplotlib.pyplot.imshow(image, cmap=matplotlib.cm.gray)
@@ -77,7 +74,7 @@ def test_2D():
 #     matplotlib.pyplot.show()
     maxiter =25
     counter = 1
-    for solver in ('lsmr', 'dc','bicg','bicgstab','cg', 'gmres','lgmres',  'lsqr'):
+    for solver in ( 'dc','bicg','bicgstab','cg', 'gmres','lgmres',  'lsqr'):
         print(counter, solver)
         if 'lsqr' == solver:
             image2 = NufftObj.solve(y, solver,iter_lim=maxiter)
@@ -91,81 +88,6 @@ def test_2D():
         counter += 1
     matplotlib.pyplot.show()
 
-# def test_asoperator():
-#     
-#     import pkg_resources
-#     
-#     DATA_PATH = pkg_resources.resource_filename('pynufft', 'data/')
-# #     PHANTOM_FILE = pkg_resources.resource_filename('pynufft', 'data/phantom_256_256.txt')
-#     import numpy
-#     import matplotlib.pyplot
-#     # load example image
-# #     image = numpy.loadtxt(DATA_PATH +'phantom_256_256.txt')
-#     image = scipy.misc.ascent()
-#     
-#     image = scipy.misc.imresize(image, (256,256))
-#     
-#     image=image.astype(numpy.float)/numpy.max(image[...])
-#     #numpy.save('phantom_256_256',image)
-#     matplotlib.pyplot.imshow(image, cmap=matplotlib.cm.gray)
-#     matplotlib.pyplot.show()
-#     print('loading image...')
-# 
-#     
-#     
-#     Nd = (256, 256)  # image size
-#     print('setting image dimension Nd...', Nd)
-#     Kd = (512, 512)  # k-space size
-#     print('setting spectrum dimension Kd...', Kd)
-#     Jd = (6, 6)  # interpolation size
-#     print('setting interpolation size Jd...', Jd)
-#     # load k-space points
-#     # om = numpy.loadtxt(DATA_PATH+'om.txt')
-#     om = numpy.load(DATA_PATH+'om2D.npz')['arr_0']
-#     print('setting non-uniform coordinates...')
-#     matplotlib.pyplot.plot(om[::10,0],om[::10,1],'o')
-#     matplotlib.pyplot.title('non-uniform coordinates')
-#     matplotlib.pyplot.xlabel('axis 0')
-#     matplotlib.pyplot.ylabel('axis 1')
-#     matplotlib.pyplot.show()
-# 
-#     NufftObj = NUFFT()
-#     NufftObj.plan(om, Nd, Kd, Jd)
-#         
-#     print('NufftObj.dtype=',NufftObj.dtype, '  NufftObj.shape=',NufftObj.shape)
-#     
-#     y1 = NufftObj.forward(image)
-#     x_vec= numpy.reshape(image,  (numpy.prod(NufftObj.st['Nd']), ) , order='F')
-#     
-#     y2 = NufftObj._matvec(x_vec)
-#     
-#     A = scipy.sparse.linalg.LinearOperator(NufftObj.shape, matvec=NufftObj._matvec, rmatvec=NufftObj._adjoint, dtype=NufftObj.dtype)
-# #     scipy.sparse.linalg.aslinearoperator(A)
-#     
-#     print(type(A))
-# #     y1 = A.matvec(x_vec)
-#     print('y1.shape',numpy.shape(y1))  
-#     import time
-#     t0=time.time()
-#     KKK = scipy.sparse.linalg.lsqr(A, y1, )
-#     print(numpy.shape(KKK))  
-#     
-#     
-#     print(time.time() - t0)
-#     
-#     x2 = numpy.reshape(KKK[0], NufftObj.st['Nd'], order='F')
-#     
-#     
-#     matplotlib.pyplot.subplot(2,1,1)
-#     matplotlib.pyplot.imshow(x2.real,cmap=matplotlib.cm.gray)
-#     matplotlib.pyplot.subplot(2,1,2)
-#     matplotlib.pyplot.imshow(image,cmap=matplotlib.cm.gray)
-#     
-#     matplotlib.pyplot.show()
-#     
-#     
-#     print('y1 y2 close? ', numpy.allclose(y1, y2))
-        
 
 if __name__ == '__main__':
     """

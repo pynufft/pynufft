@@ -17,9 +17,7 @@ def test_init():
     
     import scipy
 
-    image = scipy.misc.ascent()    
-    image = scipy.misc.imresize(image, (256,256))
-    
+    image = scipy.misc.ascent()[::2,::2]
     image=image.astype(numpy.float)/numpy.max(image[...])
 
     Nd = (256, 256)  # image space size

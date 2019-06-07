@@ -20,8 +20,7 @@ def test_opencl():
     import scipy
 
 
-    image = scipy.misc.ascent()    
-    image = scipy.misc.imresize(image, (256,256))
+    image = scipy.misc.ascent()[::2,::2]
     image=image.astype(numpy.float)/numpy.max(image[...])
 
     Nd = (256, 256)  # image space size
@@ -42,7 +41,7 @@ def test_opencl():
     nfft.plan(om, Nd, Kd, Jd)
 
     # initiating NUFFT_hsa object
-    NufftObj = NUFFT_hsa('ocl', 1, 0)
+    NufftObj = NUFFT_hsa('ocl', 0, 0)
 
     # Plan the NufftObj (similar to NUFFT_cpu)
     NufftObj.plan(om, Nd, Kd, Jd, batch = None, radix = 2)

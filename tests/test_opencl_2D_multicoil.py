@@ -20,8 +20,7 @@ def test_opencl_multicoils():
     import scipy
 
 
-    image = scipy.misc.ascent()    
-    image = scipy.misc.imresize(image, (256,256))
+    image = scipy.misc.ascent()[::2,::2]
     image=image.astype(numpy.float)/numpy.max(image[...])
 
     Nd = (256, 256)  # image space size
@@ -104,7 +103,7 @@ def test_opencl_multicoils():
 #         matplotlib.pyplot.imshow(x_cuda_TV.get().real, cmap= matplotlib.cm.gray)
 #         matplotlib.pyplot.title('TV_cuda')    
     matplotlib.pyplot.show(block=False)
-    matplotlib.pyplot.pause(4)
+    matplotlib.pyplot.pause(1)
     matplotlib.pyplot.close()
         
     print("acceleration=", t_cpu/t_cu)
@@ -156,68 +155,6 @@ def test_opencl_multicoils():
     
     NufftObj.release()
     del NufftObj
-# def test_forward():
-#    
-#     import numpy
-#     import matplotlib.pyplot
-# 
-#     # load example image
-#     import pkg_resources
-#     
-#     ## Define the source of data 
-#     DATA_PATH = pkg_resources.resource_filename('pynufft', 'src/data/')
-# #     PHANTOM_FILE = pkg_resources.resource_filename('pynufft', 'data/phantom_256_256.txt')
-#     import scipy
-# 
-# 
-#     image = scipy.misc.ascent()    
-#     image = scipy.misc.imresize(image, (256,256))
-#     image=image.astype(numpy.float)/numpy.max(image[...])
-# 
-#     Nd = (256, 256)  # image space size
-#     Kd = (512, 512)  # k-space size
-#     Jd = (6, 6)  # interpolation size
-# 
-#     # load k-space points as M * 2 array
-#     om = numpy.load(DATA_PATH+'om2D.npz')['arr_0']
-#     
-#     # Show the shape of om
-#     print('the shape of om = ', om.shape)
-# 
-# 
-#     # initiating NUFFT_cpu object
-#     nfft = NUFFT_cpu()  # CPU NUFFT class
-#     
-#     # Plan the nfft object
-#     nfft.plan(om, Nd, Kd, Jd)
-# 
-#     # initiating NUFFT_hsa object
-#     NufftObj = NUFFT_hsa('ocl', 0, 0)
-# 
-#     # Plan the NufftObj (similar to NUFFT_cpu)
-#     batch = 4
-#     NufftObj.plan(om, Nd, Kd, Jd, batch = batch, radix = 2)
-# #     sense = numpy.ones(Nd + (batch, ), dtype = numpy.complex64)*(1.0 + 0.0j)
-# #     
-# #     sense[0:64,:,0] = 0.5 
-# #     sense[64:128,:,1] = 0.5 
-# #     sense[128:192,:,2] = 0.5 
-# #     sense[192:,:,3] = 0.5 
-# #     for pp in range(0, batch):
-# #         matplotlib.pyplot.subplot(2,2,pp + 1)
-# #         matplotlib.pyplot.imshow(sense[:,:,pp].imag)
-# #         matplotlib.pyplot.title('sense channel ' + str(pp))
-# #    
-# #     matplotlib.pyplot.show()    
-#     
-#     
-#     
-#     gs = NufftObj.to_device(image)
-# 
-#     x = NufftObj.s2x(gs)
-#     gy = NufftObj.forward(x)
-# 
-#     
 if __name__ == '__main__':
     test_opencl_multicoils()
 #     test_forward()    

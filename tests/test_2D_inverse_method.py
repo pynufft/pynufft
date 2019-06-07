@@ -14,10 +14,7 @@ def test_2D():
     from pynufft import NUFFT_cpu
     # load example image
 #     image = numpy.loadtxt(DATA_PATH +'phantom_256_256.txt')
-    image = scipy.misc.ascent()
-    
-    image = scipy.misc.imresize(image, (256,256))
-    
+    image = scipy.misc.ascent()[::2,::2]
     image=image.astype(numpy.float)/numpy.max(image[...])
     #numpy.save('phantom_256_256',image)
     matplotlib.pyplot.imshow(image, cmap=matplotlib.cm.gray)
@@ -92,7 +89,7 @@ def test_2D():
 #     matplotlib.pyplot.show()
     maxiter =25
     counter = 1
-    for solver in ('dc','bicg','bicgstab','cg', 'gmres','lgmres',  'lsmr', 'lsqr'):
+    for solver in ('dc','bicg','bicgstab','cg', 'gmres','lgmres',  'lsqr'):
         print(counter, solver)
         if 'lsqr' == solver:
             image2 = NufftObj.solve(y, solver,iter_lim=maxiter)

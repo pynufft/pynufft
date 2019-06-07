@@ -4,7 +4,7 @@ Explicitly load the NUFFT_hsa to the 'cuda' backend.
 
 
 
-from pynufft import NUFFT_cpu, NUFFT_hsa_legacy, NUFFT_hsa
+from pynufft import NUFFT_cpu, NUFFT_hsa
 
 import numpy
 
@@ -23,8 +23,7 @@ def test_cuda():
     import scipy
 
 
-    image = scipy.misc.ascent()    
-    image = scipy.misc.imresize(image, (256,256))
+    image = scipy.misc.ascent()[::2,::2]
     image=image.astype(numpy.float)/numpy.max(image[...])
 
     Nd = (256, 256)  # image space size
