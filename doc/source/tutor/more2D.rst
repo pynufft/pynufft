@@ -150,5 +150,5 @@ The spectrum of the restored image:
 
    
    
-.. literalinclude::  ../../../example/scrip_2D.py
+.. literalinclude::  ../../../example/script_2D.py
    

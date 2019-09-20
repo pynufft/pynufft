@@ -12,7 +12,6 @@ Welcome to pynufft's Documentation
    tutor/init
    manu/init
    API/init
-   misc
    installation/init
    versionhistory
    acknow/init

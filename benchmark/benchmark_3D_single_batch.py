@@ -27,9 +27,17 @@ def benchmark(nufftobj, gx, maxiter, sense=1):
     t0= time.time()
     for pp in range(0, maxiter*sense):
         gy = nufftobj.forward_one2many(gx)
+    try:
+        gy.get()
+    except:
+        pass
     t1 = time.time()
     for pp in range(0, maxiter*sense):
         gx2 = nufftobj.adjoint_many2one(gy)
+    try:
+        gx2.get()
+    except:
+        pass
     t2 = time.time()
     t_iter0 = time.time()
     for pp in range(0, maxiter*sense):
@@ -63,7 +71,7 @@ def test_mCoil(sense_number):
     from pynufft import NUFFT_cpu, NUFFT_hsa, NUFFT_hsa_legacy
         # from pynufft import NUFFT_memsave
     NufftObj_cpu = NUFFT_cpu()
-    api = 'ocl'
+    api = 'cuda'
     proc = 0
     NufftObj_radix1 = NUFFT_hsa(api, proc, 0)
     NufftObj_radix2 = NUFFT_hsa(api, proc, 0)
@@ -103,12 +111,12 @@ def test_mCoil(sense_number):
 #     print('loading time of MEM = ', t3 - t22)
 #     print('loading time of mCoil = ', tp - t3)
 
-    maxiter = 1
+    maxiter = 5
     tcpu_forward, tcpu_adjoint, ycpu, xcpu = benchmark(NufftObj_cpu, image, maxiter)
     print('CPU', int(m), tcpu_forward, tcpu_adjoint)
     
     
-    maxiter = 20
+    maxiter = 50
     
         
     NufftObj_radix1.plan(om, Nd, Kd, Jd,batch = sense_number, radix = 1)

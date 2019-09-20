@@ -39,9 +39,9 @@ def benchmark(nufftobj, gx, maxiter, sense=1):
     return (t1 - t0 )/maxiter, (t2 - t1)/maxiter, gy, gx2
         
 def test_mCoil(sense_number):
-    image = scipy.misc.ascent()
+    image = scipy.misc.ascent()[::2,::2]
     Nd = (256,256) # time grid, tuple
-    image = scipy.misc.imresize(image, Nd)*(1.0 + 0.0j)
+#     image = scipy.misc.imresize(image, Nd)*(1.0 + 0.0j)
     Kd = (512,512) # frequency grid, tuple
     Jd = (6,6) # interpolator 
 #     om=       numpy.load(DATA_PATH+'om3D.npz')['arr_0']
@@ -139,7 +139,7 @@ MEM_adjoint = ()
 mCoil_adjoint = ()
 SENSE_NUM = ()
 
-for sense_number in (128, 64, 32, 16, 8, 4, 2, 1):
+for sense_number in (64, 32, 16, 8, 4, 2, 1):
     print('SENSE = ', sense_number)
     t = test_mCoil(sense_number)
     CPU_forward += (t[0], )

@@ -56,7 +56,7 @@ def benchmark(nufftobj, gx, maxiter):
         gx2 = nufftobj.adjoint(gy)
     t2 = time.time()
     t_iter0 = time.time()
-    for pp in range(0, maxiter*sense):
+    for pp in range(0, maxiter):
         pass
     t_iter1 = time.time()
     t_delta = t_iter1 - t_iter0     

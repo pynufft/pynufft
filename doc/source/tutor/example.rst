@@ -98,5 +98,5 @@ Now display the restored signals::
 
 The complete code is:
    
-.. literalinclude::  ../../../example/scrip_1D.py
+.. literalinclude::  ../../../example/script_1D.py
    

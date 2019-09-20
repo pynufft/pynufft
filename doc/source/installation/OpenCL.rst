@@ -1,5 +1,5 @@
-Special topic: Installation of OpenCL
-=====================================
+Installation of OpenCL
+======================
 
 OpenCL is one of the backends that PyNUFFT supports. Up to the present, PyNUFFT uses OpenCL-1.2. One missing feature of OpenCL-1.2 is `atomicAdd` for array with the type float.   PyNUFFT makes use of `atomic_cmpxchg` (compare and exchange) to implement the atomic_add_float subroutine, which can be seen in `pynufft.src.re_subroutine.atomic_add`. This code has appeared in many resources, e.g. `http://simpleopencl.blogspot.com/2013/05/atomic-operations-and-floats-in-opencl.html` and `https://github.com/clMathLibraries/clSPARSE/blob/master/src/library/kernels/csrmv_adaptive.cl`.
 

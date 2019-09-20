@@ -1,5 +1,5 @@
-Special topic: Installation under Windows 10
-============================================
+Installation under Windows 10
+=============================
 
 PyNUFFT has been tested under the Windows 10 home edition. 
 

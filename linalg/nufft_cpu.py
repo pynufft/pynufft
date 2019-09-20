@@ -89,8 +89,8 @@ class NUFFT_cpu:
         :rtype: NUFFT: the pynufft_hsa.NUFFT class
         :Example:
 
-        >>> import pynufft
-        >>> NufftObj = pynufft.NUFFT_cpu()
+        >>> from pynufft import NUFFT_cpu
+        >>> NufftObj = NUFFT_cpu()
         """
         self.dtype = numpy.complex64  # : initial value: numpy.complex64
         self.debug = 0  #: initial value: 0
@@ -140,8 +140,8 @@ class NUFFT_cpu:
 
         :Example:
 
-        >>> import pynufft
-        >>> NufftObj = pynufft.NUFFT_cpu()
+        >>> from pynufft import NUFFT_cpu
+        >>> NufftObj = NUFFT_cpu()
         >>> NufftObj.plan(om, Nd, Kd, Jd)
 
         or
@@ -530,112 +530,112 @@ class NUFFT_cpu:
         return k
 
 
-class NUFFT_excalibur(NUFFT_cpu):
-    """
-    Class NUFFT_hsa for heterogeneous systems.
-   """
-
-    def __init__(self):
-        """
-        Constructor.
-
-        :param None:
-        :type None: Python NoneType
-        :return: NUFFT: the pynufft_hsa.NUFFT instance
-        :rtype: NUFFT: the pynufft_hsa.NUFFT class
-        :Example:
-
-        >>> import pynufft
-        >>> NufftObj = pynufft.NUFFT_hsa()
-        """
-#         raise NotImplementedError
-        pass
-        NUFFT_cpu.__init__(self)
-
-    def plan1(self, om, Nd, Kd, Jd, ft_axes, coil_sense):
-        """
-        Design the min-max interpolator.
-
-        :param om: The M off-grid locations in the frequency domain.
-                   Normalized between [-pi, pi]
-        :param Nd: The matrix size of equispaced image.
-                   Example: Nd=(256,256) for a 2D image;
-                            Nd = (128,128,128) for a 3D image
-        :param Kd: The matrix size of the oversampled frequency grid.
-                   Example: Kd=(512,512) for 2D image;
-                            Kd = (256,256,256) for a 3D image
-        :param Jd: The interpolator size.
-                   Example: Jd=(6,6) for 2D image;
-                            Jd = (6,6,6) for a 3D image
-        :type om: numpy.float array, matrix size = M * ndims
-        :type Nd: tuple, ndims integer elements.
-        :type Kd: tuple, ndims integer elements.
-        :type Jd: tuple, ndims integer elements.
-        :returns: 0
-        :rtype: int, float
-        :Example:
-
-        >>> import pynufft
-        >>> NufftObj = pynufft.NUFFT_cpu()
-        >>> NufftObj.plan(om, Nd, Kd, Jd)
-
-        """
-        # n_shift = tuple(0*x for x in Nd)
-        self.ndims = len(Nd)  # dimension
-        if ft_axes is None:
-            ft_axes = range(0, self.ndims)
-        self.ft_axes = ft_axes
-
-        self.st = helper1.plan1(om, Nd, Kd, Jd, ft_axes, coil_sense)
-        self.batch = coil_sense.shape[-1]
-
-        # st_tmp = helper.plan0(om, Nd, Kd, Jd)
-        if self.debug is 1:
-            print('error between current and old interpolators=',
-                  scipy.sparse.linalg.norm(self.st['p'] - st_tmp['p']) /
-                  scipy.sparse.linalg.norm(self.st['p']))
-            print('error between current and old scaling=',
-                  numpy.linalg.norm(self.st['sn'] - st_tmp['sn']))
-
-        self.Nd = self.st['Nd']  # backup
-        self.Kd = self.st['Kd']
-        # backup
-        self.sn = numpy.asarray(self.st['sn'].astype(self.dtype), order='C')
-
-        # Calculate the density compensation function
-        self.sp = self.st['p'].copy().tocsr()
-        self.spH = (self.st['p'].getH().copy()).tocsr()
-        self.Kdprod = numpy.int32(numpy.prod(self.st['Kd']))
-        self.Jdprod = numpy.int32(numpy.prod(self.st['Jd']))
-        self.M = om.shape[0]
-        del self.st['p'], self.st['sn']
-#         self._precompute_sp()
-#         del self.st['p0']
-        self.NdCPUorder, self.KdCPUorder, self.nelem = helper.preindex_copy(
-            self.st['Nd'],
-            self.st['Kd'])
-        return 0
-    def x2xx(self, x):
-        return self.sn * x
-    def xx2x(self, xx):
-        return self.sn * xx
-    def xx2k(self, xx):
-        output_x = numpy.zeros(self.Kd, dtype=self.dtype,order='C')
-        
-#         for bat in range(0, 1):
-        output_x.ravel()[self.KdCPUorder]=xx.ravel()[self.NdCPUorder]
-        
-        k = numpy.fft.fftn(output_x, axes = self.ft_axes)
-        return k
-    def k2xx(self, k):
-        k = numpy.fft.ifftn(k, axes = self.ft_axes)
-        xx= numpy.zeros(self.Nd,dtype=self.dtype, order='C')
-#         for bat in range(0, self.batch):
-        xx.ravel()[self.NdCPUorder]=k.ravel()[self.KdCPUorder]
-        return xx
-    def k2y(self, k):
-        y = self.sp.dot(k.flatten(order='C')).reshape((self.M, self.batch))
-        return y
-    def y2k(self, y):
-        k = self.spH.dot(y.flatten(order='C')).reshape(self.Kd)
-        return k
+# class NUFFT_excalibur(NUFFT_cpu):
+#     """
+#     Class NUFFT_hsa for heterogeneous systems.
+#    """
+# 
+#     def __init__(self):
+#         """
+#         Constructor.
+# 
+#         :param None:
+#         :type None: Python NoneType
+#         :return: NUFFT: the pynufft_hsa.NUFFT instance
+#         :rtype: NUFFT: the pynufft_hsa.NUFFT class
+#         :Example:
+# 
+#         >>> from pynufft import NUFFT_hsa
+#         >>> NufftObj = NUFFT_hsa()
+#         """
+# #         raise NotImplementedError
+#         pass
+#         NUFFT_cpu.__init__(self)
+# 
+#     def plan1(self, om, Nd, Kd, Jd, ft_axes, coil_sense):
+#         """
+#         Design the min-max interpolator.
+# 
+#         :param om: The M off-grid locations in the frequency domain.
+#                    Normalized between [-pi, pi]
+#         :param Nd: The matrix size of equispaced image.
+#                    Example: Nd=(256,256) for a 2D image;
+#                             Nd = (128,128,128) for a 3D image
+#         :param Kd: The matrix size of the oversampled frequency grid.
+#                    Example: Kd=(512,512) for 2D image;
+#                             Kd = (256,256,256) for a 3D image
+#         :param Jd: The interpolator size.
+#                    Example: Jd=(6,6) for 2D image;
+#                             Jd = (6,6,6) for a 3D image
+#         :type om: numpy.float array, matrix size = M * ndims
+#         :type Nd: tuple, ndims integer elements.
+#         :type Kd: tuple, ndims integer elements.
+#         :type Jd: tuple, ndims integer elements.
+#         :returns: 0
+#         :rtype: int, float
+#         :Example:
+# 
+#         >>> import pynufft
+#         >>> NufftObj = pynufft.NUFFT_cpu()
+#         >>> NufftObj.plan(om, Nd, Kd, Jd)
+# 
+#         """
+#         # n_shift = tuple(0*x for x in Nd)
+#         self.ndims = len(Nd)  # dimension
+#         if ft_axes is None:
+#             ft_axes = range(0, self.ndims)
+#         self.ft_axes = ft_axes
+# 
+#         self.st = helper1.plan1(om, Nd, Kd, Jd, ft_axes, coil_sense)
+#         self.batch = coil_sense.shape[-1]
+# 
+#         # st_tmp = helper.plan0(om, Nd, Kd, Jd)
+#         if self.debug is 1:
+#             print('error between current and old interpolators=',
+#                   scipy.sparse.linalg.norm(self.st['p'] - st_tmp['p']) /
+#                   scipy.sparse.linalg.norm(self.st['p']))
+#             print('error between current and old scaling=',
+#                   numpy.linalg.norm(self.st['sn'] - st_tmp['sn']))
+# 
+#         self.Nd = self.st['Nd']  # backup
+#         self.Kd = self.st['Kd']
+#         # backup
+#         self.sn = numpy.asarray(self.st['sn'].astype(self.dtype), order='C')
+# 
+#         # Calculate the density compensation function
+#         self.sp = self.st['p'].copy().tocsr()
+#         self.spH = (self.st['p'].getH().copy()).tocsr()
+#         self.Kdprod = numpy.int32(numpy.prod(self.st['Kd']))
+#         self.Jdprod = numpy.int32(numpy.prod(self.st['Jd']))
+#         self.M = om.shape[0]
+#         del self.st['p'], self.st['sn']
+# #         self._precompute_sp()
+# #         del self.st['p0']
+#         self.NdCPUorder, self.KdCPUorder, self.nelem = helper.preindex_copy(
+#             self.st['Nd'],
+#             self.st['Kd'])
+#         return 0
+#     def x2xx(self, x):
+#         return self.sn * x
+#     def xx2x(self, xx):
+#         return self.sn * xx
+#     def xx2k(self, xx):
+#         output_x = numpy.zeros(self.Kd, dtype=self.dtype,order='C')
+#         
+# #         for bat in range(0, 1):
+#         output_x.ravel()[self.KdCPUorder]=xx.ravel()[self.NdCPUorder]
+#         
+#         k = numpy.fft.fftn(output_x, axes = self.ft_axes)
+#         return k
+#     def k2xx(self, k):
+#         k = numpy.fft.ifftn(k, axes = self.ft_axes)
+#         xx= numpy.zeros(self.Nd,dtype=self.dtype, order='C')
+# #         for bat in range(0, self.batch):
+#         xx.ravel()[self.NdCPUorder]=k.ravel()[self.KdCPUorder]
+#         return xx
+#     def k2y(self, k):
+#         y = self.sp.dot(k.flatten(order='C')).reshape((self.M, self.batch))
+#         return y
+#     def y2k(self, y):
+#         k = self.spH.dot(y.flatten(order='C')).reshape(self.Kd)
+#         return k

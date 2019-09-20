@@ -22,14 +22,14 @@ def test_installation():
     import os.path
     
     
-    print('Does nufft.py exist? ',os.path.isfile(PYNUFFT_PATH+'nufft.py'))
+#     print('Does nufft.py exist? ',os.path.isfile(PYNUFFT_PATH+'nufft.py'))
     print('Does om1D.npz exist?',os.path.isfile(DATA_PATH+'om1D.npz'))
     print('Does om2D.npz exist?',os.path.isfile(DATA_PATH+'om2D.npz'))
     print('Does om3D.npz exist?',os.path.isfile(DATA_PATH+'om3D.npz'))
     print('Does phantom_3D_128_128_128.npz exist?', os.path.isfile(DATA_PATH+'phantom_3D_128_128_128.npz'))
     print('Does phantom_256_256.npz exist?', os.path.isfile(DATA_PATH+'phantom_256_256.npz'))
-    print('Does example_1D.py exist?', os.path.isfile(PYNUFFT_PATH+'./tests/example_1D.py'))
-    print('Does example_2D.py exist?', os.path.isfile(PYNUFFT_PATH+'./tests/example_2D.py'))
+    print('Does example_1D.py exist?', os.path.isfile(PYNUFFT_PATH+'./example/script_1D.py'))
+    print('Does example_2D.py exist?', os.path.isfile(PYNUFFT_PATH+'./example/script_2D.py'))
     
     
     for pkgname in ('reikna', 'pyopencl', 'pycuda'):

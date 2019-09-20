@@ -65,8 +65,8 @@ class NUFFT_hsa:
 
         :Example:
 
-        >>> import pynufft
-        >>> NufftObj = pynufft.NUFFT_hsa(API='cuda', platform_number=0,
+        >>> from pynufft import NUFFT_hsa
+        >>> NufftObj = NUFFT_hsa(API='cuda', platform_number=0,
                                          device_number=0, verbosity=0)
         """
         warnings.warn('In the future NUFFT_hsa and NUFFT_cpu api will'
@@ -175,8 +175,8 @@ class NUFFT_hsa:
         :rtype: int, float
         :Example:
 
-        >>> import pynufft
-        >>> NufftObj = pynufft.NUFFT_cpu()
+        >>> from pynufft import NUFFT_hsa
+        >>> NufftObj = NUFFT_cpu()
         >>> NufftObj.plan(om, Nd, Kd, Jd)
 
         """

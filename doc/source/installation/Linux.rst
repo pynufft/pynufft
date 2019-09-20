@@ -1,5 +1,5 @@
-Special topic: Installation under Linux
-=======================================
+Installation under Linux
+========================
 
 **Ubuntu 18.04**
 
