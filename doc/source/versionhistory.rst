@@ -1,6 +1,22 @@
 Version history
 ===============
 
+**v2019.2.1**
+
+**v2019.2.0**
+
+- Bump
+
+**v2019.1.2**
+
+- BUGFIX: fix the loss of accuracy in cSpmvh(). Replace the group/local by global memory (the group/local sizes have undetermined run-time behavior on cuda)
+
+**v2019.1.1**
+
+- Refactor the re_subroutine.py
+
+- Adopt tensor form
+
 **v0.4.0.0**
 
 - 0.4.0.0 is a beta version.

@@ -27,7 +27,7 @@ Indices and tables
 Contact information
 ===================
 
-jyhmiinlin@gmail.com
+pynufft@gmail.com
    
 ..
    gridding_regridding
