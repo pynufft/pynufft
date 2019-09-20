@@ -102,3 +102,50 @@ The class methods are listed in :numref:`dimension_table`
      - ✓          
      - ✓
      - (Normal and batch mode) Apply the scaling factor                   
+
+     
+---------------------
+Parameters of PyNUFFT
+---------------------
+
+
+Here we summarize the required variables in :numref:`parameter_table`
+
+
+.. _parameter_table:
+.. list-table:: Parameters of the plan() method
+   :widths: 25 12 12 30
+   :header-rows: 1
+
+   * - Parameter
+     - NUFFT_cpu
+     - NUFFT_hsa
+     - References
+   * - om (Numpy Array)
+     - ✓
+     - ✓  
+     - Non-Cartesian coordinates (M, dim)
+   * - Nd (tuple)
+     - ✓
+     - ✓ 
+     - Size of the image grid
+   * - Kd (tuple)
+     - ✓ 
+     - ✓ 
+     - Size of the oversampled Fourier grid
+   * - Jd (tuple)
+     - ✓ 
+     - ✓
+     - Size of the interpolator
+   * - ft_axes (tuple)
+     - optional 
+     - optional
+     - FFT on the given axes (default = None (all axes))    
+   * - batch (int)
+     - optional 
+     - optional
+     - Batch NUFFT (default = None)       
+   * - radix (int)
+     - ×
+     - optional
+     - radix (default = 1)         

@@ -10,6 +10,7 @@ Tutorial
    basic_use
    example
    more2D
+   more3D
 ..
    quickstart/more3D
 

@@ -6,7 +6,7 @@ Manual
    :maxdepth: 2
    
 
-   Nd_NUFFT
+   
    NUFFT_cpu
    NUFFT_hsa
    multiple_NUFFT

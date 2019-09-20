@@ -72,7 +72,7 @@ def cCopy():
     // Copy x to y: y = x;
     //CX: input array (float2)
     // CY output array (float2)
-    unsigned long long gid=get_global_id(0);  
+    unsigned long gid=get_global_id(0);  
     CY[gid]=CX[gid];
     };
     """  
@@ -213,29 +213,27 @@ def atomic_add(API):
         do {
             prevVal.floatVal = *ptr;
             newVal.floatVal = prevVal.floatVal + temp;
-        } while (atomic_cmpxchg((volatile GLOBAL_MEM unsigned int *)ptr, prevVal.intVal, newVal.intVal) != prevVal.intVal);
-    };         
-    """
+        } while (atomic_cmpxchg((__global volatile unsigned int *)ptr, prevVal.intVal, newVal.intVal) != prevVal.intVal);
+    };  
     
-    cuda_add = """
-    
-    __device__ void atomic_add_float( 
-            GLOBAL_MEM float *ptr, 
-            const float temp) 
-    { // Wrapper around CUDA atomicAdd();
-    atomicAdd(ptr, temp); 
-    };   
-    """  
-    cuda_add0 = """
-    KERNEL void atomic_add_float( 
-            GLOBAL_MEM float *ptr, 
-            const float temp) 
+    KERNEL void atomic_add_float2_old( 
+            GLOBAL_MEM float2 *ptr, 
+            const float2 temp) 
     {
-    // The work-around of AtomicAdd for float
-    // lockless add *source += operand 
-    // Caution!!!!!!! Use with care! You have been warned!
-    // http://simpleopencl.blogspot.com/2013/05/atomic-operations-and-floats-in-opencl.html
-    // Source: https://github.com/clMathLibraries/clSPARSE/blob/master/src/library/kernels/csrmv_adaptive.cl
+    atomic_add_float( 
+            (GLOBAL_MEM float*)ptr, 
+            temp.x);
+    atomic_add_float( 
+    (GLOBAL_MEM float*)ptr+1, 
+    temp.y);
+    };  
+    
+    KERNEL void atomic_add_float2( 
+            GLOBAL_MEM float2 *ptr, 
+            const float2 temp, 
+            GLOBAL_MEM float2 *res) 
+        { // Add atomic two sum for real/imaginary parts
+          // *res array stores the error
         union {
             unsigned int intVal;
             float floatVal;
@@ -245,14 +243,113 @@ def atomic_add(API):
             unsigned int intVal;
             float floatVal;
         } prevVal;
+        float x;
+        float val;
+        float newacc;
+        float r;
+            
+        __global const float * realptr = ( __global float *)ptr;
+        __global const float * imagptr = ( __global float *)ptr + 1;
+        __global const float * realres = ( __global float *)res;
+        __global const float * imagres = ( __global float *)res + 1;  
+          
+        do { // atomic add of the value
+            prevVal.floatVal = *realptr ;
+            newVal.floatVal = prevVal.floatVal + temp.x;
+        } while (atomic_cmpxchg((__global volatile unsigned int *)realptr, prevVal.intVal, newVal.intVal) != prevVal.intVal);
+        
+        x = prevVal.floatVal;
+        val = temp.x;
+        
+        if (fabs(x) < fabs(val))
+        {
+            const float swap = x;
+            x = val;
+            val = swap;
+        }
+        newacc = x + val;
+        r = val - (newacc - x);    // Recover rounding error using Fast2Sum, assumes |oldacc|>=|val|
+                
+        do { // atomic_add(realres, r)
+            prevVal.floatVal = *realres ;
+            newVal.floatVal = prevVal.floatVal + r;
+        } while (atomic_cmpxchg((__global volatile unsigned int *)realres, prevVal.intVal, newVal.intVal) != prevVal.intVal);
+        
+        // End of real part
+        
+        // Now do the imaginary part
         
         do {
-            prevVal.floatVal = *ptr;
-            newVal.floatVal = prevVal.floatVal + temp;
-        } while (atomicCAS((volatile GLOBAL_MEM unsigned int *)ptr, prevVal.intVal, newVal.intVal) != prevVal.intVal);
-    };        
+            prevVal.floatVal = *imagptr;
+            newVal.floatVal = prevVal.floatVal + temp.y;
+        } while (atomic_cmpxchg((__global volatile unsigned int *)imagptr, prevVal.intVal, newVal.intVal) != prevVal.intVal);
+        
+                x = prevVal.floatVal; // this copy the old value to x
+                val = temp.y; // this copy the  real part to val
+                
+                if (fabs(x) < fabs(val)) 
+                {
+                    const float swap = x;
+                    x = val;
+                    val = swap;
+                }
+                newacc = x + val;
+                r = val - (newacc - x);    // Recover rounding error using Fast2Sum, assumes |oldacc|>=|val|
+                
+                do {
+                    prevVal.floatVal = *imagres ;
+                    newVal.floatVal = prevVal.floatVal + r;
+                } while (atomic_cmpxchg((__global volatile unsigned int *)imagres, prevVal.intVal, newVal.intVal) != prevVal.intVal);
+       
+    };  
     
     """
+    
+    cuda_add = """
+    
+    __device__ void atomic_add_float_twosum(
+            GLOBAL_MEM float * address,
+            float val,
+            GLOBAL_MEM float * residue)
+    {
+        
+        // https://devtalk.nvidia.com/default/topic/817899/atomicadd-kahan-summation/
+        // By Sylvain Collange
+        // Also add the branch clsparse
+        
+        float x = atomicAdd(address, val);
+        
+        if (fabs(x) < fabs(val))
+        {
+            const float swap = x;
+            x = val;
+            val = swap;
+        }
+        float newacc = x + val;
+        float r = val - (newacc - x);    // Recover rounding error using Fast2Sum, assumes |oldacc|>=|val|
+        atomicAdd(residue, r);    // Accumulate error in residue
+        
+    }    
+    
+    __device__ void atomic_add_float( 
+            GLOBAL_MEM float *ptr, 
+            const float temp) 
+    { // Wrapper around CUDA atomicAdd();
+    atomicAdd(ptr, temp); 
+    };   
+    __device__ void atomic_add_float2( 
+            GLOBAL_MEM float2 * ptr, 
+            const float2 temp,
+            GLOBAL_MEM float2 *res) 
+    { // Wrapper around CUDA atomicAdd();
+    // atomicAdd((float*)ptr, temp.x);
+    // atomicAdd((float*)ptr+1, temp.y);
+    atomic_add_float_twosum((float*)ptr, temp.x, (float*)res);
+    atomic_add_float_twosum((float*)ptr+1, temp.y, (float*)res+1);
+    };       
+    
+    """  
+
     if API == 'cuda':
         code_text = cuda_add
     elif API == 'ocl':
@@ -486,12 +583,11 @@ def cSpmvh():
     """
     Return the cSpmvh related kernel source. 
     Only pELL_spmvh_mCoil is provided for Spmvh.
-    NUFFT_hsa_legacy reuse the cCSR_spmv() function, which double the storage. 
+    NUFFT_hsa_legacy reuses the cCSR_spmv() function, which doubles the storage. 
     """
     
     R="""
-        
-        KERNEL void pELL_spmvh_mCoil(
+        KERNEL void pELL_spmvh_mCoil_old(
         const    unsigned int    Reps,             // number of coils
         const    unsigned int    nRow,        // number of rows
         const    unsigned int    prodJd,     // product of Jd
@@ -505,20 +601,31 @@ def cSpmvh():
         GLOBAL_MEM    float    *kx, 
         GLOBAL_MEM    float    *ky,
         GLOBAL_MEM const float2 *input)   // y
-        {
-        unsigned int myRow= get_global_id(0);
+        {      
+        const unsigned int t = get_local_id(0);
+        const unsigned int d = get_local_size(0);
+        const unsigned int g = get_group_id(0);
+        const unsigned int a = g/prodJd;
+        const unsigned int b = g - (prodJd*a);
+        const unsigned int myRow = a*d + t;
+        const unsigned int j = b;
+        unsigned int m = myRow / Reps;
+        unsigned int nc = myRow - m * Reps;
+        
+        
+        // unsigned int myRow= get_global_id(0);
         float2 zero;
         zero.x = 0.0;
         zero.y = 0.0;
-        if (myRow < nRow)
-                { 
-                for (unsigned int j = 0;  j  <  prodJd; j ++)
+        if (m< nRow)
+                {if (nc < Reps)
                 {
                 float2 u = zero;
-                // for (unsigned int nc = 0;  nc  <  Reps; nc ++)
+                //  for (unsigned int j = 0;  j  <  prodJd; j ++)
+                if (j<prodJd)
                         {    
                         // now doing the first dimension
-                        unsigned int index_shift = myRow * sumJd;
+                        unsigned int index_shift = m * sumJd;
                         // unsigned int tmp_sumJd = 0;
                         unsigned int J = Jd[0];
                         unsigned int index =    index_shift +  meshindex[dim*j + 0];
@@ -537,22 +644,74 @@ def cSpmvh():
                                 index_shift  += J;
                                 }; // Iterate over dimensions 1 -> Nd - 1
                         
-                        for (unsigned int nc = 0;  nc  <  Reps; nc ++){
-                        
-                        float2 ydata=input[myRow*Reps + nc]; // kout[col];
+                        float2 ydata=input[myRow]; // kout[col];
                         u.x =  spdata.x*ydata.x + spdata.y*ydata.y;
                         u.y =  - spdata.y*ydata.x + spdata.x*ydata.y;
                         
                         atomic_add_float(kx + col*Reps + nc, u.x);
                         atomic_add_float(ky + col*Reps + nc, u.y);
-                        }
                         
                         }; // Iterate for (unsigned int j = 0;  j  <  prodJd; j ++)
                 }; // if (nc < Reps)
         };  // if (m < nRow)
         
-        };    // End of pELL_spmv_mCoil   
+        };    // End of pELL_spmvh_mCoil_old  
         
+        
+        KERNEL void pELL_spmvh_mCoil(
+        const    unsigned int    Reps,             // number of coils
+        const    unsigned int    nRow,        // number of rows
+        const    unsigned int    prodJd,     // product of Jd
+        const    unsigned int    sumJd,     // sum of Jd
+        const    unsigned int    dim,           // dimensionality
+        GLOBAL_MEM const unsigned int *Jd,    // Jd
+        // GLOBAL_MEM const unsigned int *curr_sumJd,    // 
+        GLOBAL_MEM const unsigned int *meshindex,    // meshindex, prodJd * dim
+        GLOBAL_MEM const unsigned int *kindx,    // unmixed column indexes of all dimensions
+        GLOBAL_MEM const float2 *udata,    // interpolation data before Kronecker product
+        GLOBAL_MEM    float2    *k, 
+        GLOBAL_MEM    float2    *res,
+        GLOBAL_MEM const float2 *input)   // y
+        {
+        unsigned int myRow0= get_global_id(0);
+        unsigned int myRow= myRow0/(float)Reps;
+        unsigned int nc = myRow0 - myRow*Reps;
+        float2 zero;
+        zero.x = 0.0;
+        zero.y = 0.0;
+        if (myRow < nRow){ 
+            for (unsigned int j = 0;  j  <  prodJd; j ++){
+                    float2 u = zero;
+
+                    // now doing the first dimension
+                    unsigned int index_shift = myRow * sumJd;
+                    // unsigned int tmp_sumJd = 0;
+                    unsigned int J = Jd[0];
+                    unsigned int index =    index_shift +  meshindex[dim*j + 0];
+                    unsigned int col = kindx[index] ;
+                    float2 spdata = udata[index];
+                    index_shift += J; 
+                    for (unsigned int dimid = 1; dimid < dim; dimid ++ ){
+                            J = Jd[dimid];
+                            index =   index_shift + meshindex[dim*j + dimid];   // the index of the partial ELL arrays *kindx and *udata
+                            col += kindx[index] + 1  ;                                            // the column index of the current j
+                            float tmp_x = spdata.x;
+                            float2 tmp_udata = udata[index];
+                            spdata.x = tmp_x * tmp_udata.x - spdata.y * tmp_udata.y;                            // the spdata of the current j
+                            spdata.y = tmp_x * tmp_udata.y + spdata.y * tmp_udata.x; 
+                            index_shift  += J;
+                    }; // Iterate over dimensions 1 -> Nd - 1
+                    
+                    float2 ydata=input[myRow*Reps + nc]; // kout[col];
+                    u.x =  spdata.x*ydata.x + spdata.y*ydata.y;
+                    u.y =  - spdata.y*ydata.x + spdata.x*ydata.y;
+                    atomic_add_float2(k + col*Reps + nc, u, res + col*Reps + nc);
+                        
+                }; // Iterate for (unsigned int j = 0;  j  <  prodJd; j ++)
+                
+            };  // if (m < nRow)
+        
+        };    // End of pELL_spmvh_mCoil          
         """
     return R
 

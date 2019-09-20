@@ -225,7 +225,6 @@ class NUFFT_hsa:
         self.NdCPUorder, self.KdCPUorder, self.nelem = helper.preindex_copy(
                                                         self.st['Nd'],
                                                         self.st['Kd'])
-
         self.offload()
 
         return 0
@@ -502,9 +501,12 @@ class NUFFT_hsa:
         However, serial atomic add is far too slow and inaccurate.
         """
 
-        kx = self.thr.array(self.multi_Kd, dtype=numpy.float32).fill(0.0)
-        ky = self.thr.array(self.multi_Kd, dtype=numpy.float32).fill(0.0)
-
+#         kx = self.thr.array(self.multi_Kd, dtype=numpy.float32).fill(0.0)
+#         ky = self.thr.array(self.multi_Kd, dtype=numpy.float32).fill(0.0)
+        k = self.thr.array(self.multi_Kd, dtype=numpy.complex64).fill(0.0)
+        res = self.thr.array(self.multi_Kd, dtype=numpy.complex64).fill(0.0)
+        # array which saves the residue of two sum
+        
         self.prg.pELL_spmvh_mCoil(
                             self.batch,
                             self.pELL['nRow'],
@@ -515,15 +517,16 @@ class NUFFT_hsa:
                             self.pELL['meshindex'],
                             self.pELL['kindx'],
                             self.pELL['udata'],
-                            kx, ky,
+#                             kx, ky,
+                            k,
+                            res,
                             y,
                             local_size=None,
-                            global_size=int(self.pELL['nRow'] )#*
+                            global_size=int(self.pELL['nRow']*self.batch )#*
 #                                             int(self.pELL['prodJd']) * int(self.batch))
                             )
-        k = kx + 1.0j * ky
 
-        return k
+        return k + res
 
     @push_cuda_context
     def k2xx(self, k):

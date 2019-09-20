@@ -222,9 +222,7 @@ def solve(nufft,   y,  solver=None, *args, **kwargs):
             x = nufft.adjoint(W*y)
     
             return x
-        elif ('lsmr'==solver):
-            raise TypeError('lsmr has a bug in scipy 1.3.0. Use lsqr instead.')
-        elif ('lsqr'==solver):
+        elif ('lsmr'==solver) or ('lsqr'==solver):
             """
             Assymetric matrix A
             Minimize L2 norm of |y-Ax|_2 or |y-Ax|_2+|x|_2
@@ -242,8 +240,8 @@ def solve(nufft,   y,  solver=None, *args, **kwargs):
 #                 print('spH ')
             A = scipy.sparse.linalg.LinearOperator((nufft.st['M']*nufft.batch, nufft.Kdprod*nufft.batch), matvec = sp, rmatvec = spH, )
             
-            methods={'lsqr':scipy.sparse.linalg.lsqr,}
-#                                 'lsmr':scipy.sparse.linalg.lsmr,}
+            methods={'lsqr':scipy.sparse.linalg.lsqr,
+                                'lsmr':scipy.sparse.linalg.lsmr,}
             k2 = methods[solver](A,  y.flatten(), *args, **kwargs)#,show=True)
 
  

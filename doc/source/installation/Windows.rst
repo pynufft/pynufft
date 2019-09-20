@@ -1,13 +1,11 @@
 Special topic: Installation under Windows 10
 ============================================
 
-
-
 PyNUFFT has been tested under the Windows 10 home edition. 
 
 The successful installation experience may be useful, but the actual process can be different due to various software and hardware environments.
 
-I used Nvidia-driver 417.35-notebook-win10-64bit-international-whql-rp, Anaconda3-2018.12-Windows-x86_64, PyCUDA 2018.1.1 from official pip, Microsoft Visual Studio 2015 Community, CUDA 9.2.148_win10 and cuda_9.2.148.1_windows (patch).  
+I had used Nvidia-driver 417.35-notebook-win10-64bit-international-whql-rp, Anaconda3-2018.12-Windows-x86_64, PyCUDA 2018.1.1 from official pip, Microsoft Visual Studio 2015 Community, CUDA 9.2.148_win10 and cuda_9.2.148.1_windows (patch).  
 
 The following general guidance may be working in your case but there is no warranty.  
 

@@ -2,7 +2,6 @@
 NUFFT CPU class
 =======================================
 
-The NUFFT_cpu depends on Numpy/Scipy, which support Windows, Mac, and Linux.
 
 Defining the equispaced to non-Cartesian transform as  operator :math:`A`, the
 NUFFT_cpu class provides methods as follows:
@@ -549,7 +548,7 @@ class NUFFT_excalibur(NUFFT_cpu):
         >>> import pynufft
         >>> NufftObj = pynufft.NUFFT_hsa()
         """
-        raise NotImplementedError
+#         raise NotImplementedError
         pass
         NUFFT_cpu.__init__(self)
 
@@ -588,6 +587,8 @@ class NUFFT_excalibur(NUFFT_cpu):
         self.ft_axes = ft_axes
 
         self.st = helper1.plan1(om, Nd, Kd, Jd, ft_axes, coil_sense)
+        self.batch = coil_sense.shape[-1]
+
         # st_tmp = helper.plan0(om, Nd, Kd, Jd)
         if self.debug is 1:
             print('error between current and old interpolators=',
@@ -606,6 +607,7 @@ class NUFFT_excalibur(NUFFT_cpu):
         self.spH = (self.st['p'].getH().copy()).tocsr()
         self.Kdprod = numpy.int32(numpy.prod(self.st['Kd']))
         self.Jdprod = numpy.int32(numpy.prod(self.st['Jd']))
+        self.M = om.shape[0]
         del self.st['p'], self.st['sn']
 #         self._precompute_sp()
 #         del self.st['p0']
@@ -613,3 +615,27 @@ class NUFFT_excalibur(NUFFT_cpu):
             self.st['Nd'],
             self.st['Kd'])
         return 0
+    def x2xx(self, x):
+        return self.sn * x
+    def xx2x(self, xx):
+        return self.sn * xx
+    def xx2k(self, xx):
+        output_x = numpy.zeros(self.Kd, dtype=self.dtype,order='C')
+        
+#         for bat in range(0, 1):
+        output_x.ravel()[self.KdCPUorder]=xx.ravel()[self.NdCPUorder]
+        
+        k = numpy.fft.fftn(output_x, axes = self.ft_axes)
+        return k
+    def k2xx(self, k):
+        k = numpy.fft.ifftn(k, axes = self.ft_axes)
+        xx= numpy.zeros(self.Nd,dtype=self.dtype, order='C')
+#         for bat in range(0, self.batch):
+        xx.ravel()[self.NdCPUorder]=k.ravel()[self.KdCPUorder]
+        return xx
+    def k2y(self, k):
+        y = self.sp.dot(k.flatten(order='C')).reshape((self.M, self.batch))
+        return y
+    def y2k(self, y):
+        k = self.spH.dot(y.flatten(order='C')).reshape(self.Kd)
+        return k

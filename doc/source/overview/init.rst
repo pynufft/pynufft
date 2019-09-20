@@ -35,12 +35,15 @@ The translation was based on the min-max interpolator, which is described in the
 
 **Acknowledgments**
 
-This is based on the work supported by Cambridge International and European Trust.  
-
-Any information expressed in this material are those of the author and do not necessarily reflect the views of Cambridge Trust or the authors of MATLAB NUFFT.  
+PyNUFFT was based on the work partly supported by 
+Cambridge International and European Trust.  
+Thanks to the contributions from many experts.  
+However, any information expressed in this material do not necessarily reflect the views 
+of the related organizations, or the contributors.   
 
 .. toctree::
    :maxdepth: 2
    
    pynufft
+   Nd_NUFFT
    CPU_GPU

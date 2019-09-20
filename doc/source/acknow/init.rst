@@ -2,11 +2,13 @@ Acknowledgements
 ================
 Contributors:
 
-I am grateful for the suggestions, designing ideas, testing works from the following contributors: 
+Thanks to Loubna El Gueddari Benoit Sarthou, and Dr. Philippe Ciuciu at CEA for constructive feedbacks.
 
-XXXX@XXXX
+Thanks to Dr. Sin Chi Chen for providing brain MRI.
 
-XXXX@YYYY
+We thank Andy Schwarzl and Dr Florian Knoll for providing gpuNUFFT with higher precision. 
+
+
 
 
 
