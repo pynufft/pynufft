@@ -1111,7 +1111,7 @@ def plan0(om, Nd, Kd, Jd):
                 (M,
                  1)),
             1))
-    # add-up all the linear phasees in all axes,
+    # add-up all the linear phases in all axes,
 
     st['p'] = scipy.sparse.diags(phase, 0).dot(st['p'])
 

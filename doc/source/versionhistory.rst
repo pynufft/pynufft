@@ -9,7 +9,7 @@ Version history
 
 **v2019.1.2**
 
-- BUGFIX: fix the loss of accuracy in cSpmvh(). Replace the group/local by global memory (the group/local sizes have undetermined run-time behavior on cuda)
+- BUGFIX: fix the loss of accuracy in cSpmvh(). Replace the group/local by global memory (the group/local sizes have caused the unknown run-time behaviour on cuda)
 
 **v2019.1.1**
 

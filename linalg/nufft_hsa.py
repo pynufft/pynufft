@@ -1,6 +1,7 @@
 """
 NUFFT HSA classes
 =======================================
+
 """
 from __future__ import absolute_import
 import numpy
@@ -176,7 +177,7 @@ class NUFFT_hsa:
         :Example:
 
         >>> from pynufft import NUFFT_hsa
-        >>> NufftObj = NUFFT_cpu()
+        >>> NufftObj = NUFFT_hsa()
         >>> NufftObj.plan(om, Nd, Kd, Jd)
 
         """

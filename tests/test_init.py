@@ -36,7 +36,7 @@ def test_init():
         NufftObj = NUFFT_hsa('ocl',0,0)
 #     NufftObj2 = NUFFT_hsa('cuda',0,0)
     NufftObj.debug = 1
-    NufftObj.plan(om, Nd, Kd, Jd, radix=2)
+    NufftObj.plan(om, Nd, Kd, Jd, radix=1)
 #     NufftObj2.plan(om, Nd, Kd, Jd)
     
 #     NufftObj.offload(API = 'cuda',   platform_number = 0, device_number = 0)
@@ -133,9 +133,10 @@ def test_init():
         matplotlib.pyplot.subplot(1, 2,2)
         matplotlib.pyplot.imshow(x2.real, cmap= matplotlib.cm.gray)
         matplotlib.pyplot.title("CPU reconstruction")
-        matplotlib.pyplot.show(block = False)
-        matplotlib.pyplot.pause(3)
-        matplotlib.pyplot.close()
+        matplotlib.pyplot.show()
+#         matplotlib.pyplot.show(block = False)
+#         matplotlib.pyplot.pause(3)
+#         matplotlib.pyplot.close()
 #         del NufftObj.thr
 #         del NufftObj
     except:

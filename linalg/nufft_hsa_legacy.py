@@ -155,6 +155,7 @@ class NUFFT_hsa_legacy:
  
 #         n_shift = tuple(0*x for x in Nd)
         self.ndims = len(Nd) # dimension
+        self.scale_gamma = numpy.prod(Kd)/numpy.prod(Nd)
         if ft_axes is None:
             ft_axes = range(0, self.ndims)
         self.ft_axes = ft_axes

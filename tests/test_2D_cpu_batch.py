@@ -57,26 +57,26 @@ def test_2D_batch():
     matplotlib.pyplot.imshow( shifted_kspectrum[...,0].real, cmap = matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=-100, vmax=100))
     matplotlib.pyplot.title('shifted k-space spectrum')
     matplotlib.pyplot.show()
-    image4 = NufftObj.solve(y,'L1TVOLS',maxiter=100, rho= 1)
-    image2 = NufftObj.solve(y, 'dc', maxiter = 25)
-    image3 = NufftObj.solve(y, 'cg', maxiter = 25)
-    
-    matplotlib.pyplot.subplot(1,3,1)
-    matplotlib.pyplot.imshow(image2[...,1].real, cmap=matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1))
-    matplotlib.pyplot.title('dc')
-    matplotlib.pyplot.subplot(1,3,2)
-    matplotlib.pyplot.imshow(image3[...,1].real, cmap=matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1))
-    matplotlib.pyplot.title('cg')
-    matplotlib.pyplot.subplot(1,3, 3)
-    matplotlib.pyplot.imshow(image4.real, cmap=matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1))
-    matplotlib.pyplot.title('L1TVOLS')
-    matplotlib.pyplot.show()  
+#     image4 = NufftObj.solve(y,'L1TVOLS',maxiter=100, rho= 1)
+#     image2 = NufftObj.solve(y, 'dc', maxiter = 25)
+#     image3 = NufftObj.solve(y, 'cg', maxiter = 25)
+#     
+#     matplotlib.pyplot.subplot(1,3,1)
+#     matplotlib.pyplot.imshow(image2[...,1].real, cmap=matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1))
+#     matplotlib.pyplot.title('dc')
+#     matplotlib.pyplot.subplot(1,3,2)
+#     matplotlib.pyplot.imshow(image3[...,1].real, cmap=matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1))
+#     matplotlib.pyplot.title('cg')
+#     matplotlib.pyplot.subplot(1,3, 3)
+#     matplotlib.pyplot.imshow(image4.real, cmap=matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1))
+#     matplotlib.pyplot.title('L1TVOLS')
+#     matplotlib.pyplot.show()  
   
 #     matplotlib.pyplot.imshow(image2.real, cmap=matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1))
 #     matplotlib.pyplot.show()
     maxiter =25
     counter = 1
-    for solver in ( 'lsqr', 'dc','bicg','bicgstab','cg', 'gmres','lgmres',  ):
+    for solver in ('lsqr', 'dc','bicg','bicgstab','cg', 'gmres','lgmres'):
         print(counter, solver)
         if 'lsqr' == solver:
             image2 = NufftObj.solve(y, solver,iter_lim=maxiter)
