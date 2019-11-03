@@ -7,7 +7,6 @@ from __future__ import absolute_import
 import numpy
 import scipy.sparse
 import numpy.fft
-# import scipy.signal
 import scipy.linalg
 import scipy.special
 
@@ -96,13 +95,6 @@ class NUFFT_cpu:
 
         self.st = helper.plan(om, Nd, Kd, Jd, ft_axes=ft_axes,
                               format='CSR')
-        # st_tmp = helper.plan0(om, Nd, Kd, Jd)
-        # if self.debug is 1:
-        #     print('error between current and old interpolators=',
-        #            scipy.sparse.linalg.norm(self.st['p'] - st_tmp['p']) /
-        #            scipy.sparse.linalg.norm(self.st['p']))
-        #     print('error between current and old scaling=',
-        #           numpy.linalg.norm(self.st['sn'] - st_tmp['sn']))
 
         self.Nd = self.st['Nd']  # backup
         self.Kd = self.st['Kd']
@@ -112,19 +104,11 @@ class NUFFT_cpu:
         if batch is None:  # single-coil
             self.parallel_flag = 0
             self.batch = 1
-            # self.sense = None
-            # self.sense = numpy.ones( Nd, dtype = self.dtype, order='C')
-            #
-            # self.Reps = numpy.uint32( 1)
-            # print('self.Reps = ', self.Reps ,'self.parallel_flag=',
-            #       self.parallel_flag)
+
         else:  # multi-coil
             self.parallel_flag = 1
             self.batch = batch
 
-            # self.Reps = numpy.uint32( coil_sense.shape[-1])
-            # print('self.Reps = ', self.Reps ,'self.parallel_flag=',
-            #       self.parallel_flag)
         if self.parallel_flag is 1:
             self.multi_Nd = self.Nd + (self.batch, )
             self.uni_Nd = self.Nd + (1, )
@@ -142,14 +126,13 @@ class NUFFT_cpu:
 
         # Calculate the density compensation function
         self.sp = self.st['p'].copy().tocsr()
-        # self.sp.data = self.sp.data.astype(self.dtype)
+        
         self.spH = (self.st['p'].getH().copy()).tocsr()
-        # self.spH.data = self.spH.data.astype(self.dtype)
+        
         self.Kdprod = numpy.int32(numpy.prod(self.st['Kd']))
         self.Jdprod = numpy.int32(numpy.prod(self.st['Jd']))
         del self.st['p'], self.st['sn']
-        # self._precompute_sp()
-        # del self.st['p0']
+
         self.NdCPUorder, self.KdCPUorder, self.nelem = helper.preindex_copy(
             self.st['Nd'],
             self.st['Kd'])
@@ -157,9 +140,6 @@ class NUFFT_cpu:
         self.volume['cpu_coil_profile'] = numpy.ones(self.multi_Nd)
 
         return 0
-        # print('untrimmed',self.st['pHp'].nnz)
-        # self.truncate_selfadjoint(1e-1)
-        # print('trimmed', self.st['pHp'].nnz)
 
     def _precompute_sp(self):
         """
@@ -220,26 +200,7 @@ class NUFFT_cpu:
         except:
             x3 = x
         del x
-#         try:
-#             x2 = self.adjoint(y)
-#         except:
-#             print('y.shape = ', y.shape)
-#             print('but self.multi_M = ', self.multi_M)
-#
-#         try:
-#             x = x2*self.volume['cpu_coil_profile'].conj()
-#         except:
-#             x = x2
-# #             pass # assume ones
-# #             raise NotImplementedError
-# #         print('in self.adjoint_many2one = ', x.shape, x2.shape)
-#         try:
-# #             print('Here1', self.ndims, x.shape)
-#             x3 = numpy.mean(x, axis = self.ndims)
-#
-#         except:
-# #             print('Here2', self.ndims, x.shape)
-#             x3 = x
+
         return x3
 
     def solve(self, y, solver=None, *args, **kwargs):
@@ -257,11 +218,6 @@ class NUFFT_cpu:
                 ('lsmr', 'lsqr', 'dc','bicg','bicgstab','cg', 'gmres','lgmres')
         """
         from ..linalg.solve_cpu import solve
-        # if self.parallel_flag is 1:
-        #     x2 = numpy.empty(self.multi_Nd, dtype = self.dtype)
-        #     for bat in range(0, self.batch):
-        #         x2[..., bat] = solve(self, y[:,bat], solver, *args, **kwargs)
-        # else:
         x2 = solve(self,  y,  solver, *args, **kwargs)
         return x2  # solve(self,  y,  solver, *args, **kwargs)
 
@@ -310,8 +266,6 @@ class NUFFT_cpu:
         # x2 = self.adjoint(self.forward(x))
 
         x2 = self.xx2x(self.k2xx(self.k2y2k(self.xx2k(self.x2xx(x)))))
-        # x2 = self.k2xx(self.W*self.xx2k(x))
-        # x2 = self.k2xx(self.k2y2k(self.xx2k(x)))
 
         return x2
 
@@ -339,8 +293,7 @@ class NUFFT_cpu:
         Second, copy self.x_Nd array to self.k_Kd array by cSelect
         Third: inplace FFT
         """
-        # dd = numpy.size(self.Kd)
-        # output_x = numpy.zeros(self.Kd, dtype=self.dtype, order='C')
+        
         output_x = numpy.zeros(self.multi_Kd, dtype=self.dtype, order='C')
 
         for bat in range(0, self.batch):
@@ -348,8 +301,7 @@ class NUFFT_cpu:
                 self.NdCPUorder * self.batch + bat]
 
         k = numpy.fft.fftn(output_x, axes=self.ft_axes)
-        # k = numpy.fft.fftn(a=xx, s=tuple(self.Kd[ax] for ax in self.ft_axes),
-        #                    axes=self.ft_axes)
+        
         return k
 
     def xx2k_one2one(self, xx):
@@ -360,16 +312,14 @@ class NUFFT_cpu:
         Second, copy self.x_Nd array to self.k_Kd array by cSelect
         Third: inplace FFT
         """
-        # dd = numpy.size(self.Kd)
-        # output_x = numpy.zeros(self.Kd, dtype=self.dtype, order='C')
+        
         output_x = numpy.zeros(self.st['Kd'], dtype=self.dtype, order='C')
 
         # for bat in range(0, self.batch):
         output_x.ravel()[self.KdCPUorder] = xx.ravel()[self.NdCPUorder]
 
         k = numpy.fft.fftn(output_x, axes=self.ft_axes)
-        # k = numpy.fft.fftn(a=xx, s=tuple(self.Kd[ax] for ax in self.ft_axes),
-        #                    axes=self.ft_axes)
+        
         return k
 
     def k2vec(self, k):
@@ -467,114 +417,3 @@ class NUFFT_cpu:
         k = self.y2vec(self.vec2y(Xk))
         k = self.vec2k(k)
         return k
-
-
-# class NUFFT_excalibur(NUFFT_cpu):
-#     """
-#     Class NUFFT_hsa for heterogeneous systems.
-#    """
-# 
-#     def __init__(self):
-#         """
-#         Constructor.
-# 
-#         :param None:
-#         :type None: Python NoneType
-#         :return: NUFFT: the pynufft_hsa.NUFFT instance
-#         :rtype: NUFFT: the pynufft_hsa.NUFFT class
-#         :Example:
-# 
-#         >>> from pynufft import NUFFT_hsa
-#         >>> NufftObj = NUFFT_hsa()
-#         """
-# #         raise NotImplementedError
-#         pass
-#         NUFFT_cpu.__init__(self)
-# 
-#     def plan1(self, om, Nd, Kd, Jd, ft_axes, coil_sense):
-#         """
-#         Design the min-max interpolator.
-# 
-#         :param om: The M off-grid locations in the frequency domain.
-#                    Normalized between [-pi, pi]
-#         :param Nd: The matrix size of equispaced image.
-#                    Example: Nd=(256,256) for a 2D image;
-#                             Nd = (128,128,128) for a 3D image
-#         :param Kd: The matrix size of the oversampled frequency grid.
-#                    Example: Kd=(512,512) for 2D image;
-#                             Kd = (256,256,256) for a 3D image
-#         :param Jd: The interpolator size.
-#                    Example: Jd=(6,6) for 2D image;
-#                             Jd = (6,6,6) for a 3D image
-#         :type om: numpy.float array, matrix size = M * ndims
-#         :type Nd: tuple, ndims integer elements.
-#         :type Kd: tuple, ndims integer elements.
-#         :type Jd: tuple, ndims integer elements.
-#         :returns: 0
-#         :rtype: int, float
-#         :Example:
-# 
-#         >>> import pynufft
-#         >>> NufftObj = pynufft.NUFFT_cpu()
-#         >>> NufftObj.plan(om, Nd, Kd, Jd)
-# 
-#         """
-#         # n_shift = tuple(0*x for x in Nd)
-#         self.ndims = len(Nd)  # dimension
-#         if ft_axes is None:
-#             ft_axes = range(0, self.ndims)
-#         self.ft_axes = ft_axes
-# 
-#         self.st = helper1.plan1(om, Nd, Kd, Jd, ft_axes, coil_sense)
-#         self.batch = coil_sense.shape[-1]
-# 
-#         # st_tmp = helper.plan0(om, Nd, Kd, Jd)
-#         if self.debug is 1:
-#             print('error between current and old interpolators=',
-#                   scipy.sparse.linalg.norm(self.st['p'] - st_tmp['p']) /
-#                   scipy.sparse.linalg.norm(self.st['p']))
-#             print('error between current and old scaling=',
-#                   numpy.linalg.norm(self.st['sn'] - st_tmp['sn']))
-# 
-#         self.Nd = self.st['Nd']  # backup
-#         self.Kd = self.st['Kd']
-#         # backup
-#         self.sn = numpy.asarray(self.st['sn'].astype(self.dtype), order='C')
-# 
-#         # Calculate the density compensation function
-#         self.sp = self.st['p'].copy().tocsr()
-#         self.spH = (self.st['p'].getH().copy()).tocsr()
-#         self.Kdprod = numpy.int32(numpy.prod(self.st['Kd']))
-#         self.Jdprod = numpy.int32(numpy.prod(self.st['Jd']))
-#         self.M = om.shape[0]
-#         del self.st['p'], self.st['sn']
-# #         self._precompute_sp()
-# #         del self.st['p0']
-#         self.NdCPUorder, self.KdCPUorder, self.nelem = helper.preindex_copy(
-#             self.st['Nd'],
-#             self.st['Kd'])
-#         return 0
-#     def x2xx(self, x):
-#         return self.sn * x
-#     def xx2x(self, xx):
-#         return self.sn * xx
-#     def xx2k(self, xx):
-#         output_x = numpy.zeros(self.Kd, dtype=self.dtype,order='C')
-#         
-# #         for bat in range(0, 1):
-#         output_x.ravel()[self.KdCPUorder]=xx.ravel()[self.NdCPUorder]
-#         
-#         k = numpy.fft.fftn(output_x, axes = self.ft_axes)
-#         return k
-#     def k2xx(self, k):
-#         k = numpy.fft.ifftn(k, axes = self.ft_axes)
-#         xx= numpy.zeros(self.Nd,dtype=self.dtype, order='C')
-# #         for bat in range(0, self.batch):
-#         xx.ravel()[self.NdCPUorder]=k.ravel()[self.KdCPUorder]
-#         return xx
-#     def k2y(self, k):
-#         y = self.sp.dot(k.flatten(order='C')).reshape((self.M, self.batch))
-#         return y
-#     def y2k(self, y):
-#         k = self.spH.dot(y.flatten(order='C')).reshape(self.Kd)
-#         return k
