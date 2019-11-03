@@ -15,6 +15,15 @@ import scipy.linalg
 # from ..src._helper import helper, helper1
 lower_case = 'abcdefghijklnopqrstuvwxyABCDEFGHIJKLNOPQRSTUVWXY'
 
+def fake_Cartesian(Nd):
+    dim = len(Nd) # dimension
+    M = numpy.prod(Nd)
+    om = numpy.zeros((M, dim), dtype = numpy.float64)
+    grid = numpy.indices(Nd)
+    for dimid in range(0, dim):
+        om[:, dimid] = (grid[dimid].ravel() *2/ Nd[dimid] - 1.0)*numpy.pi
+    return om    
+
 def DFT_matrix(Nd, om=None):
     dim = len(Nd) # dimension
     if om is None:
@@ -25,9 +34,9 @@ def DFT_matrix(Nd, om=None):
     for dimid in range(0, dim):
         omN[:, dimid] = (grid[dimid].ravel() - Nd[dimid]/2 )
     M = om.shape[0]
-    A = numpy.einsum('m, n -> mn', om[:, 0], omN[:,0])
+    A = numpy.einsum('m, n -> mn', om[:, 0], omN[:,0], optimize='optimal')
     for d in range(1, dim):
-        A += numpy.einsum('m, n -> mn', om[:, d], omN[:,d])
+        A += numpy.einsum('m, n -> mn', om[:, d], omN[:,d], optimize='optimal')
         
     return numpy.exp(-1.0j* A)   
 

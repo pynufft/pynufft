@@ -24,8 +24,8 @@ PyNUFFT implements the min-max NUFFT of Fessler and Sutton, with the following f
 PyNUFFT was funded by the Cambridge Commonwealth, European and International Trust (Cambridge, UK) and Ministry of Education, Taiwan. 
 
 I acknowledge the NVIDIA Corporation with the donation of a Titan X Pascal and a Quadro P6000 GPU used for developing the GPU code. Thanks to the authors of Michigan Image 
-Reconstruction Toolbox (MIRT) for releasing the original min-max interpolator code. However, errors in PyNUFFT are not related to MIRT and please contact me at 
-jyhmiinlin@gmail.com or open an issue. 
+Reconstruction Toolbox (MIRT) for releasing the original min-max interpolator code. However, errors in PyNUFFT are not related to MIRT and please contact PyNUFFT service at 
+pynufft@gmail.com or open an issue. 
 
 The interpolator is designed using the Fessler and Sutton's min-max NUFFT algorithm:
 Fessler JA, Sutton BP. Nonuniform fast Fourier transforms using min-max interpolation. IEEE Trans Signal Process 2003;51(2):560-574.
