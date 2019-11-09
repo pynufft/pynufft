@@ -3,7 +3,7 @@ An example of multiprocessing with NUFFT_hsa using PyCUDA backend,
 wrapped inside the atomic_NUFFT wrapper class.  
 The two processes are running on two CPU cores.
 Each process creates one NUFFT_hsa and offloads the computations to GPU.
-nvidia-smi confirms that two python programes are using the GPU.
+nvidia-smi confirms that two python programs are using the GPU.
 """
 
 import numpy
@@ -18,7 +18,7 @@ import os
 class atomic_NUFFT:
     def __init__(self, om, Nd, Kd, Jd, API, device_number):
         """
-        This only caches the parameters.
+        This caches the parameters only.
         Any other GPU related stuffs are carried out in run()
         """
         self.om = om

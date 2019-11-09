@@ -6,7 +6,7 @@ NUFFT_hsa
  
 
 Defining the equispaced to non-Cartesian transform as  operator :math:`A`, the
-NUFFT_hsa class provides methods as follows:
+NUFFT_hsa class provides the following methods:
 
 - forward() method computes the single-coil to single-coil, or multi-coil to
     multi-coil (batch mode) forward operation :math:`A`.
@@ -39,9 +39,9 @@ NUFFT_hsa class provides methods as follows:
         If set_sense() is called first, coil sensitivities and the conjugate
         are used during forward_one2many() and adjoint_many2one().
 
-- solve() method link many solvers in pynufft.linalg.solver_cpu,
+- solve() method links many solvers in pynufft.linalg.solver_cpu,
           which is based on the solvers of scipy.sparse.linalg.cg,
-          scipy.sparse.linalg.'lsmr', 'lsqr', 'dc', 'bicg', 'bicgstab', 'cg',
+          scipy.sparse.linalg.'lsqr', 'dc', 'bicg', 'bicgstab', 'cg',
           'gmres', 'lgmres'
 
 **Attributes**
@@ -57,20 +57,20 @@ NUFFT_hsa class provides methods as follows:
 
 - NUFFT_hsa.batch: internal attribute saving the number of channels.
                    If parallel_flag is 0, the batch is 1.
-                   Otherwise, batch must be given explictly during planning.
+                   Otherwise, the batch must be given explicitly during planning.
 
-- NUFFT_hsa.Nd: Tuple, the dimensions of image
+- NUFFT_hsa.Nd: Tuple, the dimensions of the image
 
 - NUFFT_hsa.Kd: Tuple, the dimensions of oversampled k-space
 
 **Acceleration on PyCUDA/PyOpenCL**
 
-The NUFFT_hsa was designed for accelerating the NUFFT function 
+The NUFFT_hsa was designed to accelerate the NUFFT function 
 on the multi-core CPU and GPU, using PyOpenCL and PyCUDA backends.
 This was made possible by using Reikna meta-package. 
 
 If multiple NUFFT_hsa objects are created with the PyCUDA backend, 
-each call can only be executed after the  context is 'popped up'. This is 
+each call can be executed only after the  context has 'popped up'. This is 
 achieved by the decorator function push_cuda_context():  
 calling NUFFT_hsa methods will trigger the decorator and get the context popped up. 
 However, PyOpenCL has no such restriction 
@@ -83,11 +83,11 @@ Different objects can be constructed on different PyCUDA and PyOpenCL backends.
 
 
 NUFFT_hsa employs the plan-execution two-stage model.
-This can be faster at the cost of the extra precomputation times and extra memory.
+This can maximize the runtime speed, at the cost of the extra precomputation times and extra memory.
 
 Instantiating an NUFFT_hsa instance also initiates the context and defines some instance attributes. 
 The context is linked to the accelerator and the kernels are compiled on the chosen device.
-Instance attributes will be replaced later when plan() takes place.
+Instance attributes will be replaced later when the method plan() is called.
 
 
 Then the plan() method calls the helper.plan() function, 
@@ -95,7 +95,7 @@ which constructs the scaling factor and the interpolator.
 The interpolator is precomputed and stored as multiple 1D ELLpack (ELL) sparse matrices. 
 Each ELL matrix preserves the sparse matrix as the data and column indices. 
 Multi-dimensional interpolators are implemented as a concatenated multiple 1D ELL sparse matrices.
-The actual data and column indeces are inferred from the meshindex.
+The actual data and column indices are inferred from the meshindex.
 At the end of the plan() method, the offload() method transfers the 
 precomputed arrays to the accelerator. 
 

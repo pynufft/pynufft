@@ -9,7 +9,7 @@ from ..src._helper import helper
 
 def cDiff(x, d_indx):
         """
-        Compute image gradient. Needing the results of indxmap_diff(Nd)
+        Compute image gradient, which needs the results of indxmap_diff(Nd)
         :param x: The image array
         :param d_indx: The index of the shifted image
         :type x: numpy.float array, matrix size = Nd

@@ -9,9 +9,9 @@ from __future__ import absolute_import # Python2 compatibility
 def create_kernel_sets(API):
     """
     Create the kernel from the kernel sets.
-    Note in some tests (Benoit's and my tests) CUDA shows some degraded accuracy.  
-    In one of my test OpenCL does not have such degraded accuracy. 
-    I have not tested if it appears in OpenCL, please be warned.
+    Note that in some tests (Benoit's and my tests) CUDA shows some degraded accuracy. 
+    This loss of accuracy was due to undefined shared memory behavior, which I don't fully understand.
+    This has been fixed in 2019.2.0 as the operations are moved to global memory.
     """
     kernel_sets = ( cMultiplyScalar() + 
                         cCopy() + 
@@ -392,7 +392,7 @@ def cAddScalar():
 
 def cHadamard():
     """
-    Return the Hardamard operations related kernel sources.
+    Return the Hadamard operations related kernel sources.
     """
     
     R="""
@@ -741,8 +741,8 @@ def cHypot():
 
 def cSpmv():
     """
-    Return the kernel sources for cSpmv related operations.
-    Providing cCSR_spmv_vector and cpELL_spmv_mCoil.
+    Return the kernel sources for cSpmv related operations,
+    providing cCSR_spmv_vector and cpELL_spmv_mCoil.
     """
     
     R = """

@@ -1,5 +1,5 @@
-A 2D example
-============
+The 2D example
+==============
 **Import pynufft module**
 
 In python environment, import pynufft module and other packages::
@@ -17,13 +17,13 @@ In python environment, import pynufft module and other packages::
 
 It requires the x-y coordinates of :math:`M` points to plan NufftObj.
 
-A 2D trajectory from my PROPELLER MRI research is provided in pynufft package.::
+A 2D trajectory from my PROPELLER MRI research is provided in the pynufft package.::
     
    import pkg_resources
    DATA_PATH = pkg_resources.resource_filename('pynufft', './src/data/')
    om = numpy.load(DATA_PATH+'om2D.npz')['arr_0']
 
-The :math:`M` locations of non-uniform samples (:math:`om`) is an M x 2 numpy.ndarray ::
+The :math:`M` locations of non-uniform samples (:math:`om`) forms an M x 2 numpy.ndarray ::
 
     print(om)
    
@@ -57,7 +57,7 @@ Create a pynufft object NufftObj::
 
    NufftObj = NUFFT_cpu()
    
-Provided :math:`om`, the size of time series (:math:`Nd`), oversampled grid (:math:`Kd`), and interpolatro size (:math:`Jd`) are:: 
+Provided :math:`om`, the size of time series (:math:`Nd`), oversampled grid (:math:`Kd`), and interpolatro size (:math:`Jd`) :: 
     
    Nd = (256, 256)  # image size
    print('setting image dimension Nd...', Nd)
@@ -75,7 +75,7 @@ Now we can plan NufftObj with these parameters::
 
 **Forward transform**
 
-Now NufftObj has been prepared and is ready for computations. Now continue with an example.::
+Now NufftObj has been prepared and is ready for computations. We continue with an example.::
    
    image = scipy.misc.ascent()
    image = scipy.misc.imresize(image, (256,256))
@@ -87,7 +87,7 @@ Now NufftObj has been prepared and is ready for computations. Now continue with 
    matplotlib.pyplot.show()
     
 
-This display the image :numref:`2d_example_image`.
+This displays the image :numref:`2d_example_image`.
 
 .. _2d_example_image:
 

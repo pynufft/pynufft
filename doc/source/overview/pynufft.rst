@@ -1,11 +1,11 @@
-Python Non-uniform fast Fourier transform (PyNUFFT)
-===================================================
+The Python Non-uniform fast Fourier transform (PyNUFFT)
+=======================================================
 
 
 
 **Purpose**
 
-The PyNUFFT user manual documents *Python non-uniform fast Fourier transform*, a Python package for non-uniform fast Fourier transform.
+The PyNUFFT user manual documents the *Python non-uniform fast Fourier transform*, a Python package for non-uniform fast Fourier transform.
 
 If you find PyNUFFT useful, please cite:
 
@@ -26,7 +26,7 @@ Users of PyNUFFT should be familiar with discrete Fourier transform (DFT).
 
 - However, FFT does not handle non-Cartesian DFT. 
 
-- Thus, NUFFT is proposed to compute the spectrum, by leveraging the speed of FFT and fast interpolation. 
+- Thus, NUFFT is proposed as a way to compute the spectrum, by leveraging the speed of FFT and fast interpolation. 
 
  
 **Current status of PyNUFFT**
@@ -35,9 +35,9 @@ Users of PyNUFFT should be familiar with discrete Fourier transform (DFT).
 
 - PyNUFFT provides two NUFFT classes: (1) NUFFT_cpu and (2) NUFFT_hsa (HSA: heterogeneous system architecture). 
 
-- Unlike TensorFlow for AI, the current PyNUFFT does NOT recommend any single solver to a wide range of reconstruction problems, especially in medical imaging applications.
+- Unlike TensorFlow for AI, the current PyNUFFT does NOT recommend any single solver for a wide range of reconstruction problems, especially in medical imaging applications.
 
-- However, it does provide some referenced solvers to a limited number of problems, but without any warranty.
+- However, it does provide some referenced solvers for a limited number of problems, but without any warranty.
 
 **Technology overview**
 

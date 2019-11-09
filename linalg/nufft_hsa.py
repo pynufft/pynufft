@@ -160,11 +160,11 @@ class NUFFT_hsa:
                    ft_axes = None for all dimensions.
         :param batch: Batch NUFFT.
                     If provided, the shape is Nd + (batch, ).
-                    The last axes is the number of parallel coils.
+                    The last axis is the number of parallel coils.
                     batch = None for single coil.
         :param radix: ????.
                     If provided, the shape is Nd + (batch, ).
-                    The last axes is the number of parallel coils.
+                    The last axis is the number of parallel coils.
                     batch = None for single coil.
         :type om: numpy.float array, matrix size = (M, ndims)
         :type Nd: tuple, ndims integer elements.
@@ -425,9 +425,9 @@ class NUFFT_hsa:
         """
         Private: oversampled FFT on the heterogeneous device
 
-        Firstly, zeroing the self.k_Kd array
+        First, zeroing the self.k_Kd array
         Second, copy self.x_Nd array to self.k_Kd array by cSelect
-        Third: inplace FFT
+        Third, inplace FFT
         """
         k = self.thr.array(self.multi_Kd, dtype=self.dtype)
         # k = self.thr.array(self.multi_Kd, dtype=self.dtype).fill(0.0 + 0.0j)
@@ -662,7 +662,7 @@ class NUFFT_hsa:
 
     def selfadjoint(self, gx):
         """
-        selfadjoint NUFFT (Teplitz) on the heterogeneous device
+        selfadjoint NUFFT (Toeplitz) on the heterogeneous device
 
         :param gx: The input gpu array, with size=Nd
         :type gx: reikna gpu array with dtype =numpy.complex64

@@ -16,7 +16,7 @@ from ..src._helper import helper
 def cDiff(x, d_indx):
         """
         (stable) Compute image gradient
-        Work with indxmap_diff(Nd)
+        Work with indxmap_diff(Nd).
         ...
         """    
         a2=numpy.asarray(x.copy(),order='C')
@@ -478,7 +478,7 @@ def L1TVOLS(nufft, gy, maxiter, rho  ): # main function of solver
 def _pipe_density(nufft,maxiter):
     """
     Private: create the density function in the data space by a iterative solution
-    James Pipe et al. 1999
+    Pipe et al. 1999
     """
 
 
@@ -516,7 +516,7 @@ def solve(nufft,gy, solver=None,  maxiter=30, *args, **kwargs):
     The current version supports solvers = 'cg' or 'L1TVOLS'. 
     
     :param nufft: NUFFT_hsa object
-    :param y: (M,) or (M, batch) array, non-uniform data. If batch is provide, 'cg' and 'L1TVOLS' returns different image shape.
+    :param y: (M,) or (M, batch) array, non-uniform data. If batch is provided, 'cg' and 'L1TVOLS' returns different image shape.
     :type y: numpy.complex64 reikna array
     :return: x: Nd or Nd + (batch, ) image. L1TVOLS always returns Nd. 'cg' returns Nd + (batch, ) in batch mode. 
     :rtype: x: reikna array, complex64. 
