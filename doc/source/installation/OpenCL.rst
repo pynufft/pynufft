@@ -1,17 +1,17 @@
 Installation of OpenCL
 ======================
 
-OpenCL is one of the backends that PyNUFFT supports. Up to the present, PyNUFFT uses OpenCL-1.2. One missing feature of OpenCL-1.2 is `atomicAdd` for array with the type float.   PyNUFFT makes use of `atomic_cmpxchg` (compare and exchange) to implement the atomic_add_float subroutine, which can be seen in `pynufft.src.re_subroutine.atomic_add`. This code has appeared in many resources, e.g. `http://simpleopencl.blogspot.com/2013/05/atomic-operations-and-floats-in-opencl.html` and `https://github.com/clMathLibraries/clSPARSE/blob/master/src/library/kernels/csrmv_adaptive.cl`.
+OpenCL is one of the backends that PyNUFFT supports. Up to the present, PyNUFFT has used OpenCL-1.2. One missing feature of OpenCL-1.2 is `atomicAdd` for the array with floating point numbers.   PyNUFFT makes use of `atomic_cmpxchg` (compare and exchange) to implement the atomic_add_float subroutine, which can be seen in the `pynufft.src.re_subroutine.atomic_add`. This code has appeared in many resources, e.g. `http://simpleopencl.blogspot.com/2013/05/atomic-operations-and-floats-in-opencl.html` and `https://github.com/clMathLibraries/clSPARSE/blob/master/src/library/kernels/csrmv_adaptive.cl`.
 
-Note the OpenCL standard is still evolving and all of OpenCL supports may change quickly. Old sdk may not be working with the newest Intel chipsets. Please try different versions of hardware and software.
+Note that the OpenCL standard is still evolving and all of the OpenCL supports may change quickly. Old sdk may not work with the newest Intel chipsets. Please try different versions of the hardware and software.
 
-The current compiler version is gcc version 7.3.0. Other compiler may be used on the target system but I haven't tested other compiler. 
+The current compiler version is gcc version 7.3.0. Other compilers may be used on the target system but I haven't tested any of them. 
 
 **Intel OpenCL**
 
-Intel HD graphics after Skylake generation usually supports OpenCL given the suitable intel-sdk is installed.  
+Intel HD graphics after the Skylake generation usually support OpenCL as long as the suitable intel-sdk is installed.  
 
-An OpenCL example is a Gigabyte aero 14 Gentoo Linux on a machine with Intel Corporation HD Graphics 530 (rev 06). The dev-util/intel-ocl-sdk-4.4.0.117-r1 installed the `intel_sdk_for_ocl_applications_2014_ubuntu_4.4.0.117_x64.tgz` opencl package. The `clinfo` command shows ::
+One OpenCL example is a Gigabyte aero 14 Gentoo Linux on a machine with Intel Corporation HD Graphics 530 (rev 06). The dev-util/intel-ocl-sdk-4.4.0.117-r1 installed the `intel_sdk_for_ocl_applications_2014_ubuntu_4.4.0.117_x64.tgz` opencl package. The `clinfo` command shows ::
 
      Platform Name                                   Intel(R) OpenCL    
      Number of devices                                 1
@@ -200,11 +200,11 @@ NVIDIA also supports OpenCL 1.2. A successful installation made use of nvidia-dr
  
 **AMD GPU**
 
-AMD has a very good support for OpenCL but I haven't had one AMD GPU for testing. 
+AMD has very good support for OpenCL but I haven't had an AMD GPU for testing. 
 
 **Open-source Intel Compute OpenCL (Beignet and NEO)**
 
-Benoit provides some instructions about using open-source opencl driver `beignet`. A recent open-source Intel OpenCL `neo` (see `https://github.com/intel/compute-runtime`) may be useful. 
+Benoit provides some instructions for using the open-source opencl driver `beignet`. A recent open-source Intel OpenCL `neo` (see `https://github.com/intel/compute-runtime`) may be useful. 
 
  
 

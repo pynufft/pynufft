@@ -18,6 +18,7 @@ In python environment, import pynufft module and other packages::
     
  
 **Planning**
+
 Create a pynufft object NufftObj::
 
    from pynufft import NUFFT_cpu, NUFFT_hsa
@@ -41,7 +42,7 @@ Now we can plan NufftObj with these parameters::
 
 **Forward transform**
 
-Now NufftObj has been prepared and is ready for computations. Continue with an example.::
+Now NufftObj has been prepared and is ready for computations. Continue with an example, as follows.::
    
   
    import pkg_resources
@@ -50,7 +51,7 @@ Now NufftObj has been prepared and is ready for computations. Continue with an e
    print(special_license)
     
 
-This display the image :numref:`3d_example_image`.
+This displays the image :numref:`3d_example_image`.
 
 .. _3d_example_image:
 

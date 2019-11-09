@@ -2,25 +2,25 @@ Multiple NUFFT instances
 ========================
 
 Multiple NUFFT_cpu instances, NUFFT_hsa instances, 
-or different types of instances can co-exist at the same time.
+or mixed types of instances can exist at the same time.
 Each instance has its own memory. 
-However,  multiple instances  may be penalized by the insufficient memory and the degraded efficiency.
+However,  multiple instances  may be penalized by hardware and reduced runtime speed.
 
 Multiple instances can be planned after all the instances have been created.
-Alternatively, each instance can be created and planned, followed by another instance.   
+Alternatively, each instance can be planned immediately after being created.   
 
-Note that multiple PyCUDA backends are possible since 2019.1.1. 
-This is made possible by introducing the push_cuda_context() decorating 
-function. Version earlier than 2019.1.1 do not support multiple PyCUDA backends.
+Note that multiple PyCUDA instances were made possible since 2019.1.1, 
+by introducing the push_cuda_context() decorating function. 
+Versions earlier than 2019.1.1 do not support multiple PyCUDA backends.
 This is because every call to a CUDA context will require the current 
-context to be popped up to the top of the stack of the contexts.
+context to pop up to the top of the stack of the contexts.
 
-PyOpenCL does not have the context pop-up issue. 
-Still, only the newest version is recommended.  
+PyOpenCL does not have the context pop-up issue but please always use the newest version. 
+
 
 **Multiple NUFFT_cpu instances**
 
-Multiple instances can be planned after all the instances are created::
+Multiple instances can be planned after all the instances have been created::
 
    # Create the first NUFFT_cpu
    NufftObj1 = NUFFT_cpu()
@@ -31,7 +31,7 @@ Multiple instances can be planned after all the instances are created::
    NufftObj2.plan(om2, Nd, Kd, Jd)
    
    
-or each instance can be created and planned sequentially::
+or each instance can be planned once it has been created::
 
    # Create the first NUFFT_cpu
    NufftObj1 = NUFFT_cpu()
@@ -46,7 +46,7 @@ or each instance can be created and planned sequentially::
 
 **Multiple NUFFT_hsa instances**
 
-Like NUFFT_cpu, each instance can be created and planned sequentially:
+Like NUFFT_cpu, each instance can be planned immediately after being created:
 
 ::
 
@@ -61,7 +61,7 @@ Like NUFFT_cpu, each instance can be created and planned sequentially:
    y1 = NufftObj1.forward(x)
    y2 = NufftObj2.forward(x)
 
-Mixing cuda and opencl is possible.
+Mixing cuda and opencl is also possible.
 
 ::
 
@@ -80,25 +80,24 @@ Multiprocessing (experimental)
 ==============================
 
 
-Multiprocessing is the built-in package for parallelism 
-of C-Python. 
+The multiprocessing module is the built-in parallel method of C-Python. 
 PyNUFFT may (experimentally) work together with the multiprocessing 
 module of Python.  
 
-Mutliprocessing module relies on pickle to serialize the data, whereas 
+The mutliprocessing module relies on pickle to serialize the data, whereas 
 the PyCUDA and PyOpenCL contexts are "unpicklable". 
-Thus, I found that multiprocessing for PyNUFFT must fulfill the following 3 conditions: (1)
-each NUFFT_hsa instance is to be created then executed in a separate process, 
+Thus, I found that multiprocessing for PyNUFFT must fulfil the following conditions: (1)
+each NUFFT_hsa instance should be created and then executed in a separate process; 
 (2) any CUDA/PyOpenCL related object cannot be sent or planned in advance, and
-(3)Using taskset to assign a process to a specified CPU core. 
+(3) taskset should be used to assign a process to a specified CPU core. 
 
-It is user's responsibility to take care of the hardware (total memory and IO). 
+It is the user's responsibility to take care of the hardware (total memory and IO). 
 
 
 
-An example of working with multiprocessing (mixed CUDA and OpenCL backends) is as follows.
+One example of working with multiprocessing (mixed CUDA and OpenCL backends) is as follows.
 In this example, an "atomic_NUFFT" class is created as a high-level wrapper for the creation and execution of NUFFT_hsa.
-This is only tested using Linux because parallel computing is highly platform dependent.
+This example has only been tested in Linux because parallel computing is highly platform dependent.
 
 .. literalinclude::  ../../../example/parallel_NUFFT_hsa.py
  

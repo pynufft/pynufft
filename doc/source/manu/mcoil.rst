@@ -2,14 +2,14 @@ Multi-coil NUFFT
 ================
 
 Coil sensitivity profiles can be incorporated into the
-NUFFT.  The set_sense() instance method accept the coil sensitivity profile.
+NUFFT.  The set_sense() instance method accepts the coil sensitivity profile.
 Once the coil sensitivity profile is configured, the forward() method 
 applies the coil sensitivity profile, while the  adjoint() method 
 applies the conjugate of the coil sensitivity profile. 
 
-The reset_sense() resets the coil sensitivities to ones and it returns to batch NUFFT.
+The reset_sense() resets the coil sensitivities to one and it returns to batch NUFFT.
 If the set_sense() is not called, the default coil sensitivities are all 
-ones and it is the batch NUFFT.
+ones and it is a batch NUFFT.
 
 Both the NUFFT_cpu and NUFFT_hsa instances support the multi-coil mode.
 

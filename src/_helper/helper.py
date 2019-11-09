@@ -222,9 +222,9 @@ class pELL:
         :type Jd: tuple of int
         :param curr_sumJd: Summation of Jd[0:d-1], for fast shift computing
         :type curr_sumJd: tuple of int
-        :param meshindex: The tensor indeces to all interpolation points
+        :param meshindex: The tensor indices to all interpolation points
         :type meshindex: numpy.uint32, shape =  (numpy.prod(Jd),  dd)
-        :param kindx: Premixed k-indeces to be combined
+        :param kindx: Premixed k-indices to be combined
         :type kindx: numpy.uint32, shape = (M, numpy.sum(Jd))
         :param udata: Premixed interpolation data values
         :type udata: numpy.complex64, shape = (M, numpy.sum(Jd))
@@ -348,7 +348,7 @@ def create_partialELL(ud, kd, Jd, M):
     :param ud: tuple of all 1D interpolators
     :param kd: tuple of all 1D indices
     :param Jd: tuple of interpolation sizes
-    :param M: the number of samples
+    :param M: number of samples
     :type ud: tuple of numpy.complex64 arrays
     :type kd: tuple of numpy.int32 arrays
     :type Jd: tuple of int32
@@ -556,7 +556,7 @@ def rdx_kron(ud, kd, Jd, radix=None):
 
 def kronecker_scale(snd):
     """
-    Compute the Kronecker product of scaling factor.
+    Compute the Kronecker product of the scaling factor.
 
     :param snd: Tuple of 1D scaling factors
     :param dd: Number of dimensions
@@ -1130,7 +1130,7 @@ def strides_divide_itemsize(Nd):
     :param Nd: Input shape
     :type Nd: tuple of int
     :return: Nd_elements: strides/itemsize of the Nd.
-    :return:  invNd_elements: (float32)(1/Nd_elements). Division on GPU is slow but multiply is fast. Thus we can precompute the inverse then multiply the inverse on GPU.
+    :return:  invNd_elements: (float32)(1/Nd_elements). Division on GPU is slow but multiply is fast. Thus we can precompute the inverse and then multiply the inverse on GPU.
     :rtype: Nd_elements: tuple of int
     :rtype: invNd_elements: tuple of float32
 
@@ -1148,13 +1148,10 @@ def strides_divide_itemsize(Nd):
 
 def preindex_copy(Nd, Kd):
     """
-    Building the array index for copying two arrays of sizes Nd and Kd
-
-    Only the front part of the input/output arrays are copied.
-
-    The oversize  parts of the input array are truncated (if Nd > Kd).
-
-    And the smaller size are zero-padded (if Nd < Kd)
+    Building the array index for copying two arrays of sizes Nd and Kd.
+    Only the front parts of the input/output arrays are copied.
+    The oversize  parts of the input array are truncated (if Nd > Kd), 
+    and the smaller size are zero-padded (if Nd < Kd)
 
     :param Nd: tuple, the dimensions of array1
     :param Kd: tuple, the dimensions of array2
@@ -1221,7 +1218,7 @@ def outer_sum(xx, yy):
 
 def nufft_offset(om, J, K):
     '''
-    For every om points(outside regular grids), find the nearest
+    For every om point (outside regular grids), find the nearest
     central grid (from Kd dimension)
     '''
     gam = 2.0 * numpy.pi / (K * 1.0)
@@ -1234,9 +1231,9 @@ def nufft_alpha_kb_fit(N, J, K):
     Find parameters alpha and beta for scaling factor st['sn']
     The alpha is hardwired as [1,0,0...] when J = 1 (uniform scaling factor)
 
-    :param N: The size of image
-    :param J: The size of interpolator
-    :param K: The size of oversampled k-space
+    :param N: size of image
+    :param J: size of interpolator
+    :param K: size of oversampled k-space
     :type N: int
     :type J: int
     :type K: int
@@ -1380,9 +1377,9 @@ def mat_inv(A):
 
 def nufft_T(N, J, K, alpha, beta):
     '''
-     The Equation (29) and (26) in Fessler and Sutton 2003.
-     Create the overlapping matrix CSSC (diagonal dominent matrix)
-     of J points and find out the pseudo-inverse of CSSC '''
+     Equation (29) and (26) in Fessler and Sutton 2003.
+     Create the overlapping matrix CSSC (diagonal dominant matrix)
+     of J points, then find the pseudo-inverse of CSSC '''
 
 #     import scipy.linalg
     L = numpy.size(alpha) - 1
@@ -1406,7 +1403,7 @@ def nufft_T(N, J, K, alpha, beta):
 
 def nufft_r(om, N, J, K, alpha, beta):
     '''
-    equation (30) of Fessler's paper
+    Equation (30) of Fessler & Sutton's paper
 
     '''
     def iterate_sum(rr, alf, r1):
@@ -1440,7 +1437,7 @@ def nufft_r(om, N, J, K, alpha, beta):
 
 def block_outer_sum0(x1, x2):
     '''
-    Multiply x1 (J1 x M) and x2 (J2xM) and extend the dimension to 3D (J1xJ2xM)
+    Multiply x1 (J1 x M) and x2 (J2xM) and extend the dimensions to 3D (J1xJ2xM)
     '''
     (J1, M) = x1.shape
     (J2, M) = x2.shape
@@ -1456,7 +1453,7 @@ def block_outer_sum0(x1, x2):
 
 def block_outer_prod(x1, x2):
     '''
-    Multiply x1 (J1 x M) and x2 (J2xM) and extend the dimension to 3D (J1xJ2xM)
+    Multiply x1 (J1 x M) and x2 (J2xM) and extend the dimensions to 3D (J1xJ2xM)
     '''
     (J1, M) = x1.shape
     (J2, M) = x2.shape
@@ -1487,13 +1484,13 @@ def crop_slice_ind(Nd):
     '''
     (Deprecated in v.0.3.4)
     Return the "slice" of Nd size to index multi-dimensional array.  "Slice" functions as the index of the array.
-    Superseded by preindex_copy() which avoid run-time indexing.
+    This function is superseded by preindex_copy(), which avoid run-time indexing.
     '''
     return [slice(0, Nd[ss]) for ss in range(0, len(Nd))]
 def diagnose(verbosity=0):
     """
     Diagnosis function
-    Find available device when NUFFT.offload() failed
+    Find available devices when NUFFT.offload() fails.
     """
     from reikna import cluda
     import reikna.transformations

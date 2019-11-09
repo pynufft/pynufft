@@ -43,11 +43,11 @@ class NUFFT_cpu:
 
     def plan(self, om, Nd, Kd, Jd, ft_axes=None, batch=None):
         """
-        Plan the NUFFT_cpu object with the provided geometry.
+        Plan the NUFFT_cpu object with the geometry provided.
 
-        :param om: The M off-grid locations in the frequency domain,
+        :param om: The M off-grid locates in the frequency domain,
                     which is normalized between [-pi, pi]
-        :param Nd: The matrix size of equispaced image.
+        :param Nd: The matrix size of the equispaced image.
                    Example: Nd=(256,256) for a 2D image;
                              Nd = (128,128,128) for a 3D image
         :param Kd: The matrix size of the oversampled frequency grid.
@@ -57,11 +57,11 @@ class NUFFT_cpu:
                    Example: Jd=(6,6) for 2D image;
                             Jd = (6,6,6) for a 3D image
         :param ft_axes: (Optional) The axes for Fourier transform.
-                        The default is all axes if None is given.
+                        The default is all axes if 'None' is given.
         :param batch: (Optional) Batch mode.
-                     If batch is provided, the last appended axes is the number
+                     If the batch is provided, the last appended axis is the number
                      of identical NUFFT to be transformed.
-                     The default is None.
+                     The default is 'None'.
         :type om: numpy.float array, matrix size = M * ndims
         :type Nd: tuple, ndims integer elements.
         :type Kd: tuple, ndims integer elements.
@@ -300,7 +300,7 @@ class NUFFT_cpu:
 
     def selfadjoint(self, x):
         """
-        selfadjoint NUFFT (Teplitz) on CPU
+        selfadjoint NUFFT (Toeplitz) on CPU
 
         :param x: The input numpy array, with size=Nd
         :type: numpy array with dtype =numpy.complex64
@@ -337,7 +337,7 @@ class NUFFT_cpu:
 
         Firstly, zeroing the self.k_Kd array
         Second, copy self.x_Nd array to self.k_Kd array by cSelect
-        Third: inplace FFT
+        Third, inplace FFT
         """
         # dd = numpy.size(self.Kd)
         # output_x = numpy.zeros(self.Kd, dtype=self.dtype, order='C')
@@ -356,9 +356,9 @@ class NUFFT_cpu:
         """
         Private: oversampled FFT on CPU
 
-        Firstly, zeroing the self.k_Kd array
+        First, zeroing the self.k_Kd array
         Second, copy self.x_Nd array to self.k_Kd array by cSelect
-        Third: inplace FFT
+        Third, inplace FFT
         """
         # dd = numpy.size(self.Kd)
         # output_x = numpy.zeros(self.Kd, dtype=self.dtype, order='C')
@@ -395,7 +395,7 @@ class NUFFT_cpu:
 
     def y2vec(self, y):
         '''
-       regridding non-uniform data, (unsorted vector)
+       regridding non-uniform data (unsorted vector)
         '''
         # k_vec = self.st['p'].getH().dot(y)
         k_vec = self.spH.dot(y)

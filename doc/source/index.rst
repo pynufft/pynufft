@@ -1,8 +1,8 @@
 .. pynufft Documentation master file.
 
-##################################
-Welcome to pynufft's Documentation
-##################################
+#################################
+Welcome to PyNUFFT's User Manual!
+#################################
 
 .. toctree::
    :maxdepth: 2

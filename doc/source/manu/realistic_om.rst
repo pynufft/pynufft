@@ -5,15 +5,15 @@ k-Space trajectories (om)
 -----------------
 Cartesian k-space
 -----------------
-This section aims to provide a good example that NUFFT can be used to compute many different trajectories, including the Cartesian k-space. 
+This section aims to provide a good example to show that NUFFT can be used to compute many different trajectories, including the Cartesian k-space. 
 
-However, Cartesian k-space should be computed by FFT in most circumstances and this section is only provided for testing. 
+However, Cartesian k-space should mostly be computed by FFT and this section is provided only for testing. 
 
-In the example, we generate a PyNUFFT object, make a plan using Cartesian k-space, followed by the NUFFT transform. 
+In the example, we generate a PyNUFFT object and make a plan using Cartesian k-space, followed by the NUFFT transform. 
 
 The data is created by NUFFT but on the Cartesian grid. 
 
-Last the Cartesian data are transformed back to image by IFFT (with two ifftshift before and after ifftn)::
+Last the Cartesian data are transformed back to image by IFFT (with two ifftshifts before and after ifftn)::
 
    # Generating trajectories for Cartesian k-space
    import numpy
@@ -66,7 +66,7 @@ Last the Cartesian data are transformed back to image by IFFT (with two ifftshif
    matplotlib.pyplot.title('Difference map')
    matplotlib.pyplot.show()
    
-As you can see the resulting images (:numref:`fake-Cartesian`) validate that NUFFT + IFFT can restore the original image. 
+As you can see, the resulting images (:numref:`fake-Cartesian`) confirm that NUFFT + IFFT can restore the original image. 
 
 .. _fake-Cartesian:
 
@@ -80,7 +80,7 @@ Radial k-space
 --------------
 
 We can generate the radial spokes on the 2D plane. 
-Each radial spoke spans across the range of  :math:`[-\pi, \pi]` at the angle :math:`\theta`, and each point is fully determined by the  polar coordinate (R, :math:`\theta`).
+Each radial spoke spans the range of  :math:`[-\pi, \pi]` at the angle :math:`\theta` and each point is fully determined by the  polar coordinate (R, :math:`\theta`).
 See :numref:`radial_spoke` for more information.
 
 .. _radial_spoke:

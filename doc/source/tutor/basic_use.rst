@@ -16,11 +16,7 @@ We can initiate a PyNUFFT by importing the NUFFT_cpu object::
    NufftObj = NUFFT_cpu()
 
 
-The NufftObj object has been created but it is still empty at this point.
-
-
-
-
+The NufftObj object has been created but at this point it is still empty.
 
 Now we have to plan the NufftObj by calling the plan() method. 
 The plan() method takes the input variables and plans for the object. 
@@ -53,13 +49,13 @@ See :py:class: `pynufft.NUFFT_cpu` and  :py:class: `pynufft.NUFFT_hsa`
 Forward NUFFT
 -------------
    
-The forward NUFFT transforms the image into the non-Cartesian samples. ::
+The forward NUFFT transforms the image into non-Cartesian samples. ::
 
    y = NufftObj.forward(image)
    
 If batch = None, the image.shape is equal to Nd. The returned y has a shape which is equal to (M, )
 
-If batch exists, the image.shape is equal to Nd + (batch, ). The returned y has a shape which is equal to (M, batch) 
+If a batch number is provided, the image.shape is equal to Nd + (batch, ). The returned y has a shape which is equal to (M, batch) 
    
 See :py:func:`pynufft.NUFFT_cpu.forward` :py:func: `pynufft.NUFFT_hsa.forward`
 
@@ -73,7 +69,7 @@ The adjoint NUFFT transforms the non-Cartesian samples into the image ::
    
 If batch = None, y has a shape which is equal to (M, ). The returned image.shape is equal to Nd. 
 
-If batch exists, y has a shape which is equal to (M, batch). The returned image.shape is equal to Nd + (batch, ). 
+If a batch number is provided, y has a shape which is equal to (M, batch). The returned image.shape is equal to Nd + (batch, ). 
  
    
 

@@ -1,5 +1,5 @@
-An 1D example
-=============
+The 1D example
+==============
 **Import pynufft module**
 
 In python environment, import pynufft module::
@@ -13,14 +13,14 @@ Create a pynufft object NufftObj::
 
 **Planning**
 
-The :math:`M` locations of non-uniform samples (:math:`om`) must be provided::
+The :math:`M` locations of the non-uniform samples (:math:`om`) must be provided::
 
     import numpy
     om = numpy.random.randn(1512,1) 
     # om is an M x 1 ndarray: locations of M points. *om* is normalized between [-pi, pi]
     # Here M = 1512
 
-Also, the size of time series (:math:`Nd`), oversampled grid (:math:`Kd`), and interpolatro size (:math:`Jd`) are:: 
+In addition, the size of time series (:math:`Nd`), oversampled grid (:math:`Kd`), and interpolatro size (:math:`Jd`) are:: 
     
     Nd = (256,)
     Kd = (512,)
@@ -60,7 +60,7 @@ NufftObj transform the time_data to non-Cartesian locations::
    pyplot.legend()
    pyplot.show()
 
-This display the non-Cartesian spectrum :numref:`non_Cartesian_spectrum`.
+This displays the non-Cartesian spectrum :numref:`non_Cartesian_spectrum`.
 
 .. _non_Cartesian_spectrum:
 
@@ -92,7 +92,7 @@ Now display the restored signals::
 .. figure:: ../figure/script_1D_solve.png
    :width: 75 %
 
-   Signals restored by "solve()". L1TVOLS and L1TVOLS are more close to :numref:`box_function` as cg suffers from distortions.
+   Signals restored by "solve()". L1TVOLS and L1TVOLS are close to :numref:`box_function`, whereas cg is subject to distortion.
    
 
 

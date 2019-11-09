@@ -1,11 +1,11 @@
 CPU and GPU (HSA)
 =================
 
-The PyNUFFT was originally running on Numpy/Scipy. Unfortunately the default Numpy/Scipy is most efficient on a single CPU core. 
+The PyNUFFT ran originally on Numpy/Scipy. Unfortunately the default Numpy/Scipy is most efficient on a single CPU core. 
 
 Later it was ported to PyCUDA and PyOpenCL, which allows us to leverage the speed of multi-core CPU and GPU.   
 
-Mixing NUFFT_cpu and NUFFT_hsa, or multiple NUFFT_cpu or multiple NUFFT_hsa is possible but no warranty. 
+Mixing NUFFT_cpu and NUFFT_hsa, or multiple NUFFT_cpu or multiple NUFFT_hsa is possible but has no warranty. 
 
 The class methods are listed in :numref:`dimension_table`
 
@@ -53,7 +53,7 @@ The class methods are listed in :numref:`dimension_table`
    * - reset_sense()
      - ✓                   
      - ✓
-     - (batch mode) reset the coil sensitivities to ones
+     - (batch mode) Reset the coil sensitivities to ones
    * - offload()
      - ×          
      - ✓
@@ -109,7 +109,7 @@ Parameters of PyNUFFT
 ---------------------
 
 
-Here we summarize the required variables in :numref:`parameter_table`
+Below we summarize the required variables in :numref:`parameter_table`
 
 
 .. _parameter_table:

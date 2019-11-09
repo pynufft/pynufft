@@ -1,7 +1,13 @@
 Version history
 ===============
 
-**v2019.2.1**
+**v2019.2.3**
+
+-Planned to be released soon.
+
+**v2019.2.1-2019.2.2**
+
+-Remove lsmr as scipy 1.13 has caused unknown error. 
 
 **v2019.2.0**
 
@@ -21,9 +27,9 @@ Version history
 
 - 0.4.0.0 is a beta version.
 
-- Major updates for the NUFFT_hsa class, including memory reduction and split-radix. Multiple NUFFT_hsa() using cuda backend become possible, by pushing the context to the top of the stack when a method is called upon. 
+- Major updates for the NUFFT_hsa class, including memory reduction and split-radix. Multiple NUFFT_hsa() using cuda backend becomes possible, by pushing the context to the top of the stack when a method is called. 
 
-- Tested in Windows 10 with PyCUDA 2018.1.1, nvidia-driver 417.35, CUDA 9.2, Visual Studio 2015 Community, and Anaconda Python 3.7 64-bit. PyOpenCL remains untested. 
+- Tested in Windows 10 with PyCUDA 2018.1.1, nvidia-driver 417.35, CUDA 9.2, Visual Studio 2015 Community, and Anaconda Python 3.7 64-bit. PyOpenCL in Windows is yet to be tested. 
 
 - Add batch mode.  
 
@@ -37,11 +43,11 @@ Version history
 
 **v0.3.3.8**
  
-- Bugfix: mm = numpy.tile(mm, [numpy.prod(Jd).astype(int), 1])  to fix wrong type when numpy.prod(Jd) is not casted as int
+- Bugfix: mm = numpy.tile(mm, [numpy.prod(Jd).astype(int), 1])  to fix the wrong type when numpy.prod(Jd) is not cast as int
 
 - Bugfix: fix rcond=None error in Anaconda 3.6.5 and Numpy 1.13.1 (the recommended None in Numpy 1.14 is backward incompatible with 1.13)
 
-- Bugfix:  indx1 = indx.copy() was replaced by indx1 = list(indx) for Python2 compatibility
+- Bugfix:  indx1 = indx.copy() is replaced by indx1 = list(indx) for Python2 compatibility
 
 **v0.3.3.7**
 
@@ -54,11 +60,11 @@ Version history
 
 **v0.3.3**
 
-- Note: GPU support is superseded by the Heterogeneous System Architecture (HSA). 
+- Note: GPU support is superseded by Heterogeneous System Architecture (HSA). 
 
-- A variety of nonlinear solvers are provided, including conjugate gradient method (cg), L1 total-variation ordinary least square (L1TVOLS), and L1 total-variation least absolute deviation (L1TVLAD).
+- A variety of nonlinear solvers are provided, including the conjugate gradient method (cg), L1 total-variation ordinary least square (L1TVOLS), and L1 total-variation least absolute deviation (L1TVLAD).
 
-- The CPU version support other nonlinear solvers,  lsmr, lsqr, gmr, cg, bicgstab, bicg, cgs, gmres, lgmres , apart from cg, L1TVOLS and L1TVLAD.
+- The CPU version support other nonlinear solvers, lsqr, gmr, cg, bicgstab, bicg, cgs, gmres, lgmres , apart from cg, L1TVOLS and L1TVLAD.
 
 - Support multi-dimensional transform and reconstruction (experimentally).
 
@@ -66,7 +72,7 @@ Version history
 
 - Experimental support of NVIDIA's graphic processing unit (GPU). 
 
-- The experimental class gpuNUFFT requires pycuda, scikit-cuda, and python-cuda-cffi. scikit-cuda could be installed from standard command.
+- The experimental class gpuNUFFT requires pycuda, scikit-cuda, and python-cuda-cffi. scikit-cuda can be installed from standard command.
 
 **v0.3.2.8**
 
