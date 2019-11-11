@@ -122,17 +122,17 @@ In Python environment, import pynufft::
     
 If the required data and functions are available, you will see that all the required files exist::
 
-   Does pynufft.py exist?  True
-   Does om1D.npz exist? True
-   Does om2D.npz exist? True
-   Does om3D.npz exist? True
-   Does phantom_3D_128_128_128.npz exist? True
-   Does phantom_256_256.npz exist? True
-   Does example_1D.py exist? True
-   Does example_2D.py exist? True
+   The om1D.npz exists. True
+   The om2D.npz exists. True
+   The om3D.npz exist. True
+   The phantom_3D_128_128_128.npz exist. True
+   The phantom_256_256.npz exists. True
+   The example_1D.py exists. True
+   The example_2D.py exist. True
    reikna  has been installed.
    pyopencl  has been installed.
    pycuda  has been installed.
+
     
 **Uninstall pynufft**
 
