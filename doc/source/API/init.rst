@@ -1,4 +1,4 @@
-API documentaiton
+API documentation
 =================
 
 .. inheritance-diagram:: pynufft.linalg.nufft_cpu
