@@ -16,8 +16,8 @@ PyNUFFT implements the min-max NUFFT of Fessler and Sutton, with the following f
 - Based on Python numerical libraries, such as Numpy, Scipy (matplotlib for displaying examples).
 - Provides the Python interface including forward transform, adjoint transform and other routines.
 - Provides 1D/2D/3D examples for further developments.
-- (Experimental) support of NVIDIA's graphic processing units (GPUs) and opencl devices (GPUs or a multi-core CPU)
-- Using tensor product so the memory on GPU can be reduced (patent pending)
+- Support of NVIDIA's graphic processing units (GPUs) and opencl devices (GPUs or a multi-core CPU)
+- Using tensor product so the memory on GPU can be reduced
 
 ### Acknowledgements
 
