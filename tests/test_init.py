@@ -1,5 +1,5 @@
-from pynufft import NUFFT_cpu, NUFFT_hsa, NUFFT_hsa_legacy
-
+from pynufft import NUFFT_cpu, NUFFT_hsa, NUFFT_hsa_legacy, NUFFT
+import pynufft
 import numpy
 dtype = numpy.complex64
 
@@ -31,9 +31,14 @@ def test_init():
     
     nfft.plan(om, Nd, Kd, Jd)
     try:
-        NufftObj = NUFFT_hsa('cuda',0,0)
+        device_list = pynufft.helper.device_list()
+        #NufftObj = NUFFT_hsa('ocl',0,0)
+        NufftObj = NUFFT(device_list[0])
+        print(NufftObj.device)
+        NufftObj.set_wavefront(4)
     except:
-        NufftObj = NUFFT_hsa('ocl',0,0)
+#         NufftObj = NUFFT_hsa('ocl',0,0)
+        pass
 #     NufftObj2 = NUFFT_hsa('cuda',0,0)
     NufftObj.debug = 1
     NufftObj.plan(om, Nd, Kd, Jd, radix=1)

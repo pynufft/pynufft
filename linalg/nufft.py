@@ -12,18 +12,10 @@ import scipy.signal
 import scipy.linalg
 import scipy.special
 from functools import wraps as _wraps
+from ..linalg.nufft_cpu import NUFFT_cpu
 
 from ..src._helper import helper, helper1
 
-
-class hypercube:
-    def __init__(self, shape, steps, invsteps, nelements, batch, dtype):
-        self.shape = shape
-        self.steps = steps
-        self.invsteps = invsteps
-        self.nelements = nelements
-        self.batch = batch
-        self.dtype = dtype
 
 
 def push_cuda_context(hsa_method):
@@ -41,14 +33,13 @@ def push_cuda_context(hsa_method):
     return wrapper
 
 
-class NUFFT_hsa:
+class NUFFT(NUFFT_cpu):
     """
-    NUFFT_hsa class.
+    The superclass NUFFT.
     Multi-coil or single-coil memory reduced NUFFT.
 
     """
-    def __init__(self, API=None, platform_number=None, device_number=None,
-                 verbosity=0):
+    def __init__(self, device_indx=None):
         """
         Constructor.
 
@@ -72,71 +63,76 @@ class NUFFT_hsa:
         """
         warnings.warn('In the future NUFFT_hsa and NUFFT_cpu api will'
                       ' be merged', FutureWarning)
-        self.dtype = numpy.complex64
-        self.verbosity = verbosity
-
-        import reikna.cluda as cluda
-        if self.verbosity > 0:
-            print('The choosen API by the user is ', API)
-        self.cuda_flag, self.ocl_flag = helper.diagnose(
-            verbosity=self.verbosity)
-        if None is API:
-            if self.cuda_flag is 1:
-                API = 'cuda'
-            elif self.ocl_flag is 1:
-                API = 'ocl'
-            else:
-                warnings.warn('No parallelization will be made since no GPU '
-                              'device has been detected.', UserWarning)
+        if device_indx is None:
+            print('use NUFFT_cpu()')
+            super().__init__()
         else:
-            api = API
-        if self.verbosity > 0:
-            print('The used API will be ', API)
-        if platform_number is None:
-            platform_number = 0
-        if device_number is None:
-            device_number = 0
-
-        from reikna import cluda
-        import reikna.transformations
-        from reikna.cluda import functions, dtypes
-        try:  # try to create api/platform/device using the given parameters
-            if 'cuda' == API:
-                api = cluda.cuda_api()
-            elif 'ocl' == API:
-                api = cluda.ocl_api()
-
-            platform = api.get_platforms()[platform_number]
-
-            device = platform.get_devices()[device_number]
-        except:  # if failed, find out what's going wrong?
-            warnings.warn('No parallelization will be made since no GPU '
-                          'device has been detected.', UserWarning)
-
-#             return 1
-
-#         Create context from device
-        self.thr = api.Thread(device)  # pyopencl.create_some_context()
-        self.device = device  # : device name
-        if self.verbosity > 0:
-            print('Using opencl or cuda = ', self.thr.api)
-
-#         """
-#         Wavefront: as warp in cuda. Can control the width in a workgroup
-#         Wavefront is required in spmv_vector as it improves data coalescence.
-#         see cCSR_spmv and zSparseMatVec
-#         """
-        self.wavefront = api.DeviceParameters(device).warp_size
-        if self.verbosity > 0:
-            print('Wavefront of OpenCL (as wrap of CUDA) = ', self.wavefront)
-
-        from ..src import re_subroutine  # import create_kernel_sets
-        kernel_sets = re_subroutine.create_kernel_sets(API)
-
-        prg = self.thr.compile(kernel_sets,
-                               render_kwds=dict(LL=str(self.wavefront)),
-                               fast_math=False)
-        self.prg = prg
+#             raise NotImplementedError
+            self.dtype = numpy.complex64
+            self.verbosity = 0#verbosity
+    
+    #         import reikna.cluda as cluda
+    #         if self.verbosity > 0:
+    #             print('The choosen API by the user is ', API)
+    #         self.cuda_flag, self.ocl_flag = helper.diagnose(
+    #             verbosity=self.verbosity)
+    #         if None is API:
+    #             if self.cuda_flag is 1:
+    #                 API = 'cuda'
+    #             elif self.ocl_flag is 1:
+    #                 API = 'ocl'
+    #             else:
+    #                 warnings.warn('No parallelization will be made since no GPU '
+    #                               'device has been detected.', UserWarning)
+    #         else:
+    #             api = API
+    #         if self.verbosity > 0:
+    #             print('The used API will be ', API)
+    #         if platform_number is None:
+    #             platform_number = 0
+    #         if device_number is None:
+    #             device_number = 0
+    
+            from reikna import cluda
+            import reikna.transformations
+            from reikna.cluda import functions, dtypes
+    #         try:  # try to create api/platform/device using the given parameters
+            API = device_indx[0]
+            
+#             if 'cuda' == API:
+#                 api = cluda.cuda_api()
+#             elif 'ocl' == API:
+#                 api = cluda.ocl_api()
+    #         api = device_indx[0]
+            platform_number = device_indx[1]
+            device_number = device_indx[2]
+            platform = device_indx[3]
+            device = device_indx[4]
+#             self.thr = api.Thread(device)
+            self.device = device
+            self.thr = device_indx[5]
+#             api = device_indx[6]
+#             self.thr = api.Thread(device)  # pyopencl.create_some_context()
+    #         self.device = device  # : device name
+    
+    #         """
+    #         Wavefront: as warp in cuda. Can control the width in a workgroup
+    #         Wavefront is required in spmv_vector as it improves data coalescence.
+    #         see cCSR_spmv and zSparseMatVec
+    #         """
+            self.wavefront = device_indx[6]
+    #         if self.verbosity > 0:
+    #             print('Wavefront of OpenCL (as wrap of CUDA) = ', self.wavefront)
+            print('API = ', API)
+            print('thr = ',  self.thr
+                  )
+            from ..src import re_subroutine  # import create_kernel_sets
+            kernel_sets = re_subroutine.create_kernel_sets(API)
+    
+            prg = self.thr.compile(kernel_sets,
+                                   render_kwds=dict(LL=str(self.wavefront)),
+                                   fast_math=False)
+            self.prg = prg
     def set_wavefront(self, wf):
         self.wavefront = int(wt)#api.DeviceParameters(device).warp_size
         if self.verbosity > 0:

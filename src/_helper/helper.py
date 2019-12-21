@@ -1487,6 +1487,64 @@ def crop_slice_ind(Nd):
     This function is superseded by preindex_copy(), which avoid run-time indexing.
     '''
     return [slice(0, Nd[ss]) for ss in range(0, len(Nd))]
+def device_list():
+    """
+    device_list() returns available devices for acceleration as a tuple.
+    If no device is available, it returns an empty tuple. 
+    """
+    from reikna import cluda
+    import reikna.transformations
+    from reikna.cluda import functions, dtypes
+    devices_list = ()
+    try:
+        api = cluda.cuda_api()
+        available_cuda_device = cluda.find_devices(api)
+        cuda_flag = 1
+    #         if verbosity > 0:
+    #             print("try to load cuda interface:")
+    #             print(api, available_cuda_device)
+    #     print(available_cuda_device.keys())
+        for api_n in available_cuda_device.keys():
+            cuda_gpus = available_cuda_device[api_n]
+    #         print('cuda_gpus = ', cuda_gpus)
+            for dev_num in cuda_gpus:
+                
+                id = available_cuda_device[api_n][dev_num]
+                platform = api.get_platforms()[api_n]
+                device = platform.get_devices()[id]
+                thr = api.Thread(device)
+                wavefront = api.DeviceParameters(device).warp_size
+                devices_list += (('cuda',  api_n, dev_num, platform, device, thr, wavefront),)
+    except:
+        pass
+    try:
+        api = cluda.ocl_api()
+        available_ocl_device = cluda.find_devices(api)
+        ocl_flag = 1
+    #         if verbosity > 0:
+    #             print("try to load cuda interface:")
+    #             print(api, available_cuda_device)
+    #     print(available_cuda_device.keys())
+        for api_n in available_ocl_device.keys():
+            ocl_gpus = available_ocl_device[api_n]
+    #         print('cuda_gpus = ', cuda_gpus)
+            for dev_num in ocl_gpus:
+                
+                id = available_ocl_device[api_n][dev_num]
+                platform = api.get_platforms()[api_n]
+                device = platform.get_devices()[id]
+                thr = api.Thread(device)
+                wavefront = api.DeviceParameters(device).warp_size
+                devices_list += (('ocl',  api_n, dev_num, platform, device, thr, wavefront),)
+    except:
+        pass    
+#             print("API='cuda',  ", "platform_number=", api_n,
+#                   ", device_number=", available_cuda_device[api_n][0])
+#     except:
+#         pass
+    
+    return devices_list
+
 def diagnose(verbosity=0):
     """
     Diagnosis function
@@ -1526,3 +1584,7 @@ def diagnose(verbosity=0):
         print('ocl interface is not available')
         ocl_flag = 0
     return cuda_flag, ocl_flag
+if __name__ == '__main__':
+    devices = device_list()
+    for pp in range(0, len(devices)):
+        print(devices[pp])
