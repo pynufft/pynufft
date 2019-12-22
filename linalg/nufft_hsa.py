@@ -149,7 +149,9 @@ class NUFFT_hsa:
                                render_kwds=dict(LL=str(self.wavefront)),
                                fast_math=False)
         self.prg = prg
-    def plan(self, om, Nd, Kd, Jd, ft_axes=None, batch=None, radix=None):
+    def plan(self, *args, **kwargs):
+        return self._plan(*args, **kwargs)
+    def _plan(self, om, Nd, Kd, Jd, ft_axes=None, batch=None):
         """
         Design the multi-coil or single-coil memory reduced interpolator.
 
@@ -197,7 +199,7 @@ class NUFFT_hsa:
         if ft_axes is None:
             ft_axes = range(0, self.ndims)
         self.ft_axes = ft_axes
-
+        radix = 1
         self.st = helper.plan(om, Nd, Kd, Jd, ft_axes=ft_axes,
                               format='pELL', radix=radix)
         if batch is None:

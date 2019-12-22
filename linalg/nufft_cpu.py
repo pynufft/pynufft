@@ -39,8 +39,9 @@ class NUFFT_cpu:
         self.ft_axes = ()  # : initial value: ()
         self.batch = None  # : initial value: None
         pass
-
-    def plan(self, om, Nd, Kd, Jd, ft_axes=None, batch=None):
+    def plan(self, *args, **kwargs):
+        return self._plan(*args, **kwargs)
+    def _plan(self, om, Nd, Kd, Jd, ft_axes=None, batch=None):
         """
         Plan the NUFFT_cpu object with the geometry provided.
 

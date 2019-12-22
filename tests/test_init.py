@@ -27,21 +27,23 @@ def test_init():
     # load k-space points
     om = numpy.load(DATA_PATH+'om2D.npz')['arr_0']
 
-    nfft = NUFFT_cpu()  # CPU
-    
+    nfft = NUFFT()  # CPU
+    print(nfft.processor)
     nfft.plan(om, Nd, Kd, Jd)
     try:
         device_list = pynufft.helper.device_list()
         #NufftObj = NUFFT_hsa('ocl',0,0)
-        NufftObj = NUFFT(device_list[0])
+        NufftObj = NUFFT(device_list[1])
+        print(NufftObj.processor)
         print(NufftObj.device)
-        NufftObj.set_wavefront(4)
+#         NufftObj.set_wavefront(4)
     except:
 #         NufftObj = NUFFT_hsa('ocl',0,0)
         pass
 #     NufftObj2 = NUFFT_hsa('cuda',0,0)
     NufftObj.debug = 1
-    NufftObj.plan(om, Nd, Kd, Jd, radix=1)
+    NufftObj.plan(om, Nd, Kd, Jd)
+    
 #     NufftObj2.plan(om, Nd, Kd, Jd)
     
 #     NufftObj.offload(API = 'cuda',   platform_number = 0, device_number = 0)
