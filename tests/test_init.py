@@ -30,54 +30,17 @@ def test_init():
     nfft = NUFFT()  # CPU
     print(nfft.processor)
     nfft.plan(om, Nd, Kd, Jd)
-    try:
-        device_list = pynufft.helper.device_list()
-        #NufftObj = NUFFT_hsa('ocl',0,0)
-        NufftObj = NUFFT(device_list[1])
-        print(NufftObj.processor)
-        print(NufftObj.device)
-#         NufftObj.set_wavefront(4)
-    except:
-#         NufftObj = NUFFT_hsa('ocl',0,0)
-        pass
-#     NufftObj2 = NUFFT_hsa('cuda',0,0)
-    NufftObj.debug = 1
+    y = nfft.forward(image)
+    x2 = nfft.adjoint(y)
+    x3 = nfft.selfadjoint(image)
+    print('error=', numpy.linalg.norm(x3 - x2)/numpy.linalg.norm(x2))
+    
+    device_list = pynufft.helper.device_list()
+    
+    NufftObj = NUFFT(device_list[0])
+
     NufftObj.plan(om, Nd, Kd, Jd)
-    
-#     NufftObj2.plan(om, Nd, Kd, Jd)
-    
-#     NufftObj.offload(API = 'cuda',   platform_number = 0, device_number = 0)
-#     NufftObj2.offload(API = 'cuda',   platform_number = 0, device_number = 0)
-#     NufftObj2.offload('cuda')
-#     NufftObj.offload(API = 'cuda',   platform_number = 0, device_number = 0)
-#     print('api=', NufftObj.thr.api_name())
-#     NufftObj.offload(API = 'ocl',   platform_number = 0, device_number = 0)
-    y = nfft.k2y(nfft.xx2k(nfft.x2xx(image)))
-    
-    NufftObj.x_Nd = NufftObj.thr.to_device( image.astype(dtype))
-    
-    gx = NufftObj.thr.copy_array(NufftObj.x_Nd)
-    
-    print('x close? = ', numpy.allclose(image, gx.get() , atol=1e-4))
-    gxx = NufftObj.x2xx(gx)    
-
-    print('xx close? = ', numpy.allclose(nfft.x2xx(image), gxx.get() , atol=1e-4))        
-
-    gk = NufftObj.xx2k(gxx)    
-
-    k = nfft.xx2k(nfft.x2xx(image))
-    
-    print('k close? = ', numpy.allclose(nfft.xx2k(nfft.x2xx(image)), gk.get(), atol=1e-3*numpy.linalg.norm(k)))   
-    gy = NufftObj.k2y(gk)    
-    k2 = NufftObj.y2k(gy)
-    print('y close? = ', numpy.allclose(y, gy.get() ,  atol=1e-3*numpy.linalg.norm(y)), numpy.linalg.norm((y - gy.get())/numpy.linalg.norm(y)))
-    y2 = y
-    print('k2 close? = ', numpy.allclose(nfft.y2k(y2), k2.get(), atol=1e-3*numpy.linalg.norm(nfft.y2k(y2)) ), numpy.linalg.norm(( nfft.y2k(y2)- k2.get())/numpy.linalg.norm(nfft.y2k(y2))))   
-    gxx2 = NufftObj.k2xx(k2)
-#     print('xx close? = ', numpy.allclose(nfft.k2xx(nfft.y2k(y2)), NufftObj.xx_Nd.get(queue=NufftObj.queue, async=False) , atol=0.1))
-    gx2 = NufftObj.xx2x(gxx2)
-    print('x close? = ', numpy.allclose(nfft.adjoint(y2), gx2.get() , atol=1e-3*numpy.linalg.norm(nfft.adjoint(y2))))
-    image3 = gx2.get() 
+    gx = NufftObj.to_device(image)
     import time
     t0 = time.time()
 #     k = nfft.xx2k(nfft.x2xx(image))
@@ -94,12 +57,12 @@ def test_init():
     
 #     del nfft
         
-    gy2=NufftObj.forward(gx)
+#     gy2=NufftObj.forward(gx)
 #     gk =     NufftObj.xx2k(NufftObj.x2xx(gx))
     t0= time.time()
     for pp in range(0,20):
 #         pass
-        gy2 = NufftObj.forward(gx)
+        gy = NufftObj.forward(gx)
 #         gy2 = NufftObj.k2y(gk)
 #             gx2 = NufftObj.adjoint(gy2)
 #             gk2 = NufftObj.y2k(gy2)
@@ -116,15 +79,15 @@ def test_init():
     maxiter =100
     import time
     t0= time.time()
-#     x2 =  nfft.solve(y2, 'cg',maxiter=maxiter)
-    x2 =  nfft.solve(y2, 'L1TVOLS',maxiter=maxiter, rho = 2)
+    x2 =  nfft.solve(y, 'cg',maxiter=maxiter)
+#     x2 =  nfft.solve(y, 'L1TVOLS',maxiter=maxiter, rho = 2)
     t1 = time.time()-t0 
 #     gy=NufftObj.thr.copy_array(NufftObj.thr.to_device(y2))
     
     t0= time.time()
 
-#     x = NufftObj.solve(gy,'cg', maxiter=maxiter)
-    x = NufftObj.solve(gy,'L1TVOLS', maxiter=maxiter, rho=2)
+    x = NufftObj.solve(gy,'cg', maxiter=maxiter)
+#     x = NufftObj.solve(gy,'L1TVOLS', maxiter=maxiter, rho=2)
     
     t2 = time.time() - t0
     print(t1, t2)
