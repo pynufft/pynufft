@@ -22,7 +22,7 @@ from ..src._helper import helper, helper1
 def push_cuda_context(hsa_method):
     """
     Decorator: Push cude context to the top of the stack for current use
-    Add @push_cuda_context before the methods of NUFFT_hsa()
+    Add @push_cuda_context before the methods of NUFFT_device()
     """
     @_wraps(hsa_method)
     def wrapper(*args, **kwargs):
@@ -46,7 +46,7 @@ class NUFFT:
             self.__init__cpu()
             self.processor = 'cpu'
         else:
-            self.__init__hsa(device_indx)
+            self.__init__device(device_indx)
             self.processor = 'hsa'
             
     def __init__cpu(self):
@@ -71,7 +71,7 @@ class NUFFT:
             self.ft_axes = ()  # : initial value: ()
             self.batch = None  # : initial value: None
             pass    
-    def __init__hsa(self, device_indx=None):
+    def __init__device(self, device_indx=None):
         """
         Constructor.
 
@@ -90,7 +90,7 @@ class NUFFT:
         :Example:
 
         >>> from pynufft import NUFFT_hsa
-        >>> NufftObj = NUFFT_hsa(API='cuda', platform_number=0,
+        >>> NufftObj = NUFFT_device(API='cuda', platform_number=0,
                                          device_number=0, verbosity=0)
         """
 
@@ -102,7 +102,7 @@ class NUFFT:
         from reikna.cluda import functions, dtypes
 #         try:  # try to create api/platform/device using the given parameters
         API = device_indx[0]
-        
+        self.API = API
 #             if 'cuda' == API:
 #                 api = cluda.cuda_api()
 #             elif 'ocl' == API:
@@ -134,98 +134,174 @@ class NUFFT:
 #             print('thr = ',  self.thr
 #                   )
         from ..src import re_subroutine  # import create_kernel_sets
-        kernel_sets = re_subroutine.create_kernel_sets(API)
+        kernel_sets = re_subroutine.create_kernel_sets(self.API)
 
         prg = self.thr.compile(kernel_sets,
                                render_kwds=dict(LL=str(self.wavefront)),
                                fast_math=False)
         self.prg = prg
         self.processor = 'hsa'
-        print('self is?', self.thr)
-    def _set_wavefront_hsa(self, wf):
-        try:
-            self.wavefront = int(wt)#api.DeviceParameters(device).warp_size
-            if self.verbosity > 0:
-                print('Wavefront of OpenCL (as wrap of CUDA) = ', self.wavefront)
-    
-            from ..src import re_subroutine  # import create_kernel_sets
-            kernel_sets = re_subroutine.create_kernel_sets(API)
-    
-            prg = self.thr.compile(kernel_sets,
-                                   render_kwds=dict(LL=str(self.wavefront)),
-                                   fast_math=False)
-            self.prg = prg
-        except:
-            print('Failled at set_wavefront found')
+
+    def _set_wavefront_device(self, wf):
+#         try:
+        self.wavefront = int(wf)#api.DeviceParameters(device).warp_size
+        if self.verbosity > 0:
+            print('Wavefront of OpenCL (as wrap of CUDA) = ', self.wavefront)
+
+        from ..src import re_subroutine  # import create_kernel_sets
+        kernel_sets = re_subroutine.create_kernel_sets(self.API)
+
+        prg = self.thr.compile(kernel_sets,
+                               render_kwds=dict(LL=str(self.wavefront)),
+                               fast_math=False)
+        self.prg = prg
+
     def plan(self,  *args, **kwargs):
         func = {'cpu': self._plan_cpu,
-                    'hsa': self._plan_hsa}
+                    'hsa': self._plan_device}
         return func.get(self.processor)(*args, **kwargs)
+    
     def forward(self, *args, **kwargs):
         func = {'cpu': self._forward_cpu, 
-                    'hsa': self._forward_hsa}
+                    'hsa': self._forward_host}
         return func.get(self.processor)(*args, **kwargs)
+    
     def adjoint(self, *args, **kwargs):
         func = {'cpu': self._adjoint_cpu,
-                'hsa': self._adjoint_hsa}
+                'hsa': self._adjoint_host}
         return func.get(self.processor)(*args, **kwargs)
+    
     def selfadjoint(self, *args, **kwargs):
         func = {'cpu': self._selfadjoint_cpu,
-                'hsa': self._selfadjoint_hsa}
+                'hsa': self._selfadjoint_host}
         return func.get(self.processor)(*args, **kwargs)
+    
     def solve(self, *args, **kwargs):
         func = {'cpu': self._solve_cpu,
-                'hsa': self._solve_hsa}
+                'hsa': self._solve_host}
         return func.get(self.processor)(*args, **kwargs)
     
     def xx2k(self, *args, **kwargs):
         func = {'cpu': self._xx2k_cpu,
-                'hsa': self._xx2k_hsa}
+                'hsa': self._xx2k_host}
         return func.get(self.processor)(*args, **kwargs)
     
     def k2xx(self, *args, **kwargs):
         func = {'cpu': self._k2xx_cpu,
-                'hsa': self._k2xx_hsa}
+                'hsa': self._k2xx_host}
         return func.get(self.processor)(*args, **kwargs)
     
     def x2xx(self, *args, **kwargs):
         func = {'cpu': self._x2xx_cpu,
-                'hsa': self._x2xx_hsa}
+                'hsa': self._x2xx_host}
         return func.get(self.processor)(*args, **kwargs)
     
     def x2xx(self, *args, **kwargs):
         func = {'cpu': self._x2xx_cpu,
-                'hsa': self._x2xx_hsa}
+                'hsa': self._x2xx_host}
         return func.get(self.processor)(*args, **kwargs)
     
     def k2y(self, *args, **kwargs):
         func = {'cpu': self._k2y_cpu,
-                'hsa': self._k2y_hsa}
+                'hsa': self._k2y_host}
         return func.get(self.processor)(*args, **kwargs)
+    
     def y2k(self, *args, **kwargs):
         func = {'cpu': self._y2k_cpu,
-                'hsa': self._y2k_hsa}
+                'hsa': self._y2k_host}
         return func.get(self.processor)(*args, **kwargs)
     
     def k2yk2(self, *args, **kwargs):
         func = {'cpu': self._k2yk2_cpu,
-                'hsa': self._k2yk2_hsa}
+                'hsa': self._k2yk2_host}
         return func.get(self.processor)(*args, **kwargs)
     
     def adjoint_many2one(self, *args, **kwargs):
         func = {'cpu': self._adjoint_many2one_cpu,
-                'hsa': self._adjoint_many2one_hsa}
+                'hsa': self._adjoint_many2one_host}
         return func.get(self.processor)(*args, **kwargs)
     
     def forward_one2many(self, *args, **kwargs):
         func = {'cpu': self._forward_one2many_cpu,
-                'hsa': self._forward_one2many_hsa}
+                'hsa': self._forward_one2many_host}
         return func.get(self.processor)(*args, **kwargs)
     
     def selfadjoint_one2many2one(self, *args, **kwargs):
         func = {'cpu': self._selfadjoint_one2many2one_cpu,
-                'hsa': self._selfadjoint_one2many2one_hsa}
+                'hsa': self._selfadjoint_one2many2one_host}
         return func.get(self.processor)(*args, **kwargs)
+    
+    ## host code
+    def _forward_host(self, x):
+        gx = self.to_device(x)
+        y = self._forward_device(gx).get()
+        return y
+    
+    def _adjoint_host(self, y):
+        gy = self.to_device(y)
+        gx = self._adjoint_device(gy)
+        return gx.get()
+        
+    def _selfadjoint_host(self, x):
+        gx = self.to_device(x)
+        gx2 = self._selfadjoint_device(gx)
+        return gx2.get()
+        
+    def _solve_host(self, y, *args, **kwargs):
+        gy = self.to_device(y)
+        x = self._solve_device(gy, *args, **kwargs)
+        return x.get()
+
+    
+    def _xx2k_host(self, xx):
+        gxx = self.to_device(xx)
+        gk = self._xx2k_device(gxx)
+        return gk.get()
+
+    
+    def _k2xx_host(self, k):
+        gk = self.to_device(k)
+        gxx = self._k2xx_device(gk)
+        return gxx.get()
+    
+    def _x2xx_host(self, x):
+        gx = self.to_device(x)
+        gxx = self._x2xx_device(gx)
+        return gxx.get()
+    
+    def _x2xx_host(self, x):
+        gx = self.to_device(x)
+        gxx = self._x2xx_device(gx)
+        return gxx.get()
+    
+    def _k2y_host(self, k):
+        gk = self.to_device(k)
+        gy = self._k2y_device(gk)
+        return gy.get()
+    
+    def _y2k_host(self, y):
+        gy = self.to_device(y)
+        gk = self._y2k_device(gy)
+        return gk.get()
+
+    def _adjoint_many2one_host(self, y):
+        gy  = self.to_device(y)
+        gx2 = self._adjoint_many2one_device(gy)
+        return gx2.get()
+    
+    def _forward_one2many_host(self, x):
+        gx = self.to_device(x)
+        gy = self._forward_one2many_device(gx)
+        return gy.get()
+
+    
+    def _selfadjoint_one2many2one_host(self, x):
+        gx = self.to_device(x)
+        gx2 = self._selfadjoint_one2many2one_device(gx) 
+        return gx2.get()   
+    
+    ## end of host code
+    
     def _plan_cpu(self, om, Nd, Kd, Jd, ft_axes=None, batch=None):
         """
         Plan the NUFFT_cpu object with the geometry provided.
@@ -327,7 +403,7 @@ class NUFFT:
 
         return 0
 
-    def _plan_hsa(self, om, Nd, Kd, Jd, ft_axes=None, batch=None, radix=None):
+    def _plan_device(self, om, Nd, Kd, Jd, ft_axes=None, batch=None, radix=None):
         """
         Design the multi-coil or single-coil memory reduced interpolator.
 
@@ -366,7 +442,7 @@ class NUFFT:
         :Example:
 
         >>> from pynufft import NUFFT_hsa
-        >>> NufftObj = NUFFT_hsa()
+        >>> NufftObj = NUFFT_device()
         >>> NufftObj.plan(om, Nd, Kd, Jd)
 
         """
@@ -415,12 +491,12 @@ class NUFFT:
         self.NdCPUorder, self.KdCPUorder, self.nelem = helper.preindex_copy(
                                                         self.st['Nd'],
                                                         self.st['Kd'])
-        self._offload_hsa()
+        self._offload_device()
 
         return 0
 
     @push_cuda_context
-    def _offload_hsa(self):  # API, platform_number=0, device_number=0):
+    def _offload_device(self):  # API, platform_number=0, device_number=0):
         """
         self.offload():
 
@@ -798,11 +874,11 @@ class NUFFT:
 ####################################
 
     @push_cuda_context
-    def _reset_sense_hsa(self):
+    def _reset_sense_device(self):
         self.volume['gpu_coil_profile'].fill(1.0)
 
     @push_cuda_context
-    def _set_sense_hsa(self, coil_profile):
+    def _set_sense_device(self, coil_profile):
         if coil_profile.shape != self.multi_Nd:
             print('The shape of coil_profile is ', coil_profile.shape)
             print('But it should be', self.Nd + (self.batch, ))
@@ -816,14 +892,18 @@ class NUFFT:
         # if coil_profile.shape == self.Nd + (self.batch, ):
 
     @push_cuda_context
-    def to_device(self, image, shape=None):
-
-        g_image = self.thr.array(image.shape, dtype=self.dtype)
-        self.thr.to_device(image.astype(self.dtype), dest=g_image)
-        return g_image    
+    def to_device(self, x, shape=None):
+        gx = self.thr.to_device(x.copy().astype(self.dtype))
+#         g_image = self.thr.array(image.shape, dtype=self.dtype)
+#         self.thr.to_device(image.astype(self.dtype), dest=g_image)
+        return gx
+     
+    @push_cuda_context
+    def to_host(self, data):
+        return data.get() 
     
     @push_cuda_context
-    def _s2x_hsa(self, s):
+    def _s2x_device(self, s):
         x = self.thr.array(self.multi_Nd, dtype=self.dtype)
 
         self.prg.cPopulate(
@@ -844,7 +924,7 @@ class NUFFT:
         return x    
     
     @push_cuda_context
-    def _x2xx_hsa(self, x):
+    def _x2xx_device(self, x):
 
         xx = self.thr.array(x.shape, dtype=self.dtype)
         self.thr.copy_array(x, dest=xx, )
@@ -863,7 +943,7 @@ class NUFFT:
         return xx    
     
     @push_cuda_context
-    def _xx2k_hsa(self, xx):
+    def _xx2k_device(self, xx):
 
         """
         Private: oversampled FFT on the heterogeneous device
@@ -892,7 +972,7 @@ class NUFFT:
         return k    
     
     @push_cuda_context
-    def _k2y_hsa(self, k):
+    def _k2y_device(self, k):
         """
         Private: interpolation by the Sparse Matrix-Vector Multiplication
         """
@@ -923,7 +1003,7 @@ class NUFFT:
         return y    
     
     @push_cuda_context
-    def _y2k_hsa(self, y):
+    def _y2k_device(self, y):
         """
         Private: gridding by the Sparse Matrix-Vector Multiplication
         However, serial atomic add is far too slow and inaccurate.
@@ -958,7 +1038,7 @@ class NUFFT:
     
     
     @push_cuda_context
-    def _k2xx_hsa(self, k):
+    def _k2xx_device(self, k):
         """
         Private: the inverse FFT and image cropping (which is the reverse of
         _xx2k() method)
@@ -984,7 +1064,7 @@ class NUFFT:
     
     
     @push_cuda_context
-    def _xx2x_hsa(self, xx):
+    def _xx2x_device(self, xx):
         x = self.thr.array(xx.shape, dtype=self.dtype)
         self.thr.copy_array(xx, dest=x, )
 
@@ -1003,7 +1083,7 @@ class NUFFT:
         return x    
     
     @push_cuda_context
-    def _x2s_hsa(self, x):
+    def _x2s_device(self, x):
         s = self.thr.array(self.st['Nd'], dtype=self.dtype)
 
         self.prg.cMultiplyConjVecInplace(
@@ -1024,7 +1104,7 @@ class NUFFT:
         return s    
     
     @push_cuda_context
-    def _selfadjoint_one2many2one_hsa(self, gx):
+    def _selfadjoint_one2many2one_device(self, gx):
         """
         selfadjoint_one2many2one NUFFT (Teplitz) on the heterogeneous device
 
@@ -1034,13 +1114,13 @@ class NUFFT:
         :rtype: reikna gpu array with dtype =numpy.complex64
         """
 
-        gy = self._forward_one2many_hsa(gx)
-        gx2 = self._adjoint_many2one_hsa(gy)
+        gy = self._forward_one2many_device(gx)
+        gx2 = self._adjoint_many2one_device(gy)
         del gy
         return gx2    
     
     @push_cuda_context
-    def _selfadjoint_hsa(self, gx):
+    def _selfadjoint_device(self, gx):
         """
         selfadjoint NUFFT (Toeplitz) on the heterogeneous device
 
@@ -1050,13 +1130,13 @@ class NUFFT:
         :rtype: reikna gpu array with dtype =numpy.complex64
         """
 
-        gy = self._forward_hsa(gx)
-        gx2 = self._adjoint_hsa(gy)
+        gy = self._forward_device(gx)
+        gx2 = self._adjoint_device(gy)
         del gy
         return gx2    
     
     @push_cuda_context
-    def _forward_hsa(self, gx):
+    def _forward_device(self, gx):
         """
         Forward NUFFT on the heterogeneous device
 
@@ -1066,7 +1146,7 @@ class NUFFT:
         :rtype: reikna gpu array with dtype = numpy.complex64
         """
         try:
-            xx = self._x2xx_hsa(gx)
+            xx = self._x2xx_device(gx)
         except:  # gx is not a gpu array
             try:
                 warnings.warn('The input array may not be a GPUarray '
@@ -1075,7 +1155,7 @@ class NUFFT:
                 px = self.to_device(gx, )
                 # pz = self.thr.to_device(numpy.asarray(gz.astype(self.dtype),
                 #                                       order = 'C' ))
-                xx = self._x2xx_hsa(px)
+                xx = self._x2xx_device(px)
             except:
                 if gx.shape != self.Nd + (self.batch, ):
                     warnings.warn('Shape of the input is ' + str(gx.shape) +
@@ -1083,16 +1163,16 @@ class NUFFT:
                                   str(self.Nd+(self.batch, )), UserWarning)
                 raise
 
-        k = self._xx2k_hsa(xx)
+        k = self._xx2k_device(xx)
         del xx
-        gy = self._k2y_hsa(k)
+        gy = self._k2y_device(k)
         del k
         return gy    
     
     @push_cuda_context
-    def _forward_one2many_hsa(self, s):
+    def _forward_one2many_device(self, s):
         try:
-            x = self._s2x_hsa(s)
+            x = self._s2x_device(s)
         except:  # gx is not a gpu array
             try:
                 warnings.warn('In s2x(): The input array may not be '
@@ -1102,7 +1182,7 @@ class NUFFT:
                 ps = self.to_device(s, )
                 # px = self.thr.to_device(numpy.asarray(x.astype(self.dtype),
                 #                                       order = 'C' ))
-                x = self._s2x_hsa(ps)
+                x = self._s2x_device(ps)
             except:
                 if s.shape != self.Nd:
                     warnings.warn('Shape of the input is ' + str(x.shape) +
@@ -1110,13 +1190,13 @@ class NUFFT:
                                   str(self.Nd), UserWarning)
                 raise
 
-        y = self._forward_hsa(x)
+        y = self._forward_device(x)
         return y    
     
     @push_cuda_context
-    def _adjoint_many2one_hsa(self, y):
+    def _adjoint_many2one_device(self, y):
         try:
-            x = self._adjoint_hsa(y)
+            x = self._adjoint_device(y)
         except:  # gx is not a gpu array
             try:
                 if self.verbosity > 0:
@@ -1128,17 +1208,17 @@ class NUFFT:
                 py = self.to_device(y, )
                 # py = self.thr.to_device(numpy.asarray(y.astype(self.dtype),
                 #                                       order = 'C' ))
-                x = self._adjoint_hsa(py)
+                x = self._adjoint_device(py)
             except:
                 print('Failed at self.adjoint_many2one! Please check the gy'
                       ' shape, type and stride.')
                 raise
         # z = self.adjoint(y)
-        s = self._x2s_hsa(x)
+        s = self._x2s_device(x)
         return s    
     
     @push_cuda_context
-    def _adjoint_hsa(self, gy):
+    def _adjoint_device(self, gy):
         """
         Adjoint NUFFT on the heterogeneous device
 
@@ -1148,7 +1228,7 @@ class NUFFT:
         :rtype: reikna gpu array with dtype =numpy.complex64
         """
         try:
-            k = self._y2k_hsa(gy)
+            k = self._y2k_device(gy)
         except:  # gx is not a gpu array
             try:
                 warnings.warn('In adjoint(): The input array may not '
@@ -1158,16 +1238,16 @@ class NUFFT:
                 py = self.to_device(gy, )
                 # py = self.thr.to_device(numpy.asarray(gy.astype(self.dtype),
                 #                         order = 'C' ))
-                k = self._y2k_hsa(py)
+                k = self._y2k_device(py)
             except:
                 print('Failed at self.adjont! Please check the gy shape, '
                       'type, stride.')
                 raise
 
 #             k = self.y2k(gy)
-        xx = self._k2xx_hsa(k)
+        xx = self._k2xx_device(k)
         del k
-        gx = self._xx2x_hsa(xx)
+        gx = self._xx2x_device(xx)
         del xx
         return gx   
     
@@ -1180,7 +1260,7 @@ class NUFFT:
         del self.thr     
         
     @push_cuda_context
-    def _solve_hsa(self, gy, solver=None, *args, **kwargs):
+    def _solve_device(self, gy, solver=None, *args, **kwargs):
         """
         The solver of NUFFT_hsa
 
@@ -1192,23 +1272,23 @@ class NUFFT:
         :type maxiter: int
         :return: reikna array with size Nd
         """
-        from ..linalg.solve_hsa import solve
-
-        try:
-            return solve(self,  gy,  solver, *args, **kwargs)
-        except:
-            try:
-                warnings.warn('In solve(): The input array may not '
-                              'be a GPUarray. Automatically moving the input'
-                              ' array to gpu, which is throttled by PCIe.',
-                              UserWarning)
-                py = self.to_device(gy, )
-                return solve(self,  py,  solver, *args, **kwargs)
-            except:
-                if numpy.ndarray == type(gy):
-                    print("Input gy must be a reikna array with dtype ="
-                          " numpy.complex64")
-                    raise  # TypeError
-                else:
-                    print("wrong")
-                    raise  # TypeError        
+        from ..linalg.solve_device import solve
+        return solve(self,  gy,  solver, *args, **kwargs)
+#         try:
+#             return solve(self,  gy,  solver, *args, **kwargs)
+#         except:
+#             try:
+#                 warnings.warn('In solve(): The input array may not '
+#                               'be a GPUarray. Automatically moving the input'
+#                               ' array to gpu, which is throttled by PCIe.',
+#                               UserWarning)
+#                 py = self.to_device(gy, )
+#                 return solve(self,  py,  solver, *args, **kwargs)
+#             except:
+#                 if numpy.ndarray == type(gy):
+#                     print("Input gy must be a reikna array with dtype ="
+#                           " numpy.complex64")
+#                     raise  # TypeError
+#                 else:
+#                     print("wrong")
+#                     raise  # TypeError        

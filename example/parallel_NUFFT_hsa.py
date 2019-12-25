@@ -7,7 +7,7 @@ nvidia-smi confirms that two python programs are using the GPU.
 """
 
 import numpy
-from pynufft import NUFFT_hsa, NUFFT_cpu
+from pynufft import NUFFT_hsa, NUFFT_cpu, NUFFT, helper
 import scipy.misc
 import matplotlib.pyplot
 import multiprocessing
@@ -49,7 +49,7 @@ class atomic_NUFFT:
         gx = NUFFT.to_device(x)
         
         # carry out 10000 forward transform
-        for pp in range(0, 100):
+        for pp in range(0, 10000):
             gy = NUFFT.forward(gx)
 
         # return the object
@@ -59,7 +59,7 @@ Nd = (256,256)
 Kd = (512,512)
 Jd = (6,6)
 om = numpy.random.randn(35636, 2) 
-x = scipy.misc.imresize(scipy.misc.ascent(), Nd)
+x = scipy.misc.ascent()[::2,::2]
 om1 = om[om[:,0]>0, :]
 om2 = om[om[:,0]<=0, :]
 
@@ -71,7 +71,7 @@ results = []
 
 # Now enter the first process
 # This is the standard multiprocessing Pool
-D = atomic_NUFFT(om1, Nd, Kd, Jd, 'cuda',0)
+D = atomic_NUFFT(om1, Nd, Kd, Jd, 'ocl',1)
 # async won't obstruct the next line of code
 result = pool.apply_async(D.run, args = (x, 0))
 # the result is appended

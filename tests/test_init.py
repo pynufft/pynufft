@@ -28,7 +28,8 @@ def test_init():
     om = numpy.load(DATA_PATH+'om2D.npz')['arr_0']
 
     nfft = NUFFT()  # CPU
-    print(nfft.processor)
+#     print(nfft.processor)
+    
     nfft.plan(om, Nd, Kd, Jd)
     y = nfft.forward(image)
     x2 = nfft.adjoint(y)
@@ -37,7 +38,9 @@ def test_init():
     
     device_list = pynufft.helper.device_list()
     
-    NufftObj = NUFFT(device_list[0])
+    NufftObj = NUFFT(device_list[2])
+    NufftObj._set_wavefront_device(32)
+    print('device name = ', NufftObj.device)
 
     NufftObj.plan(om, Nd, Kd, Jd)
     gx = NufftObj.to_device(image)
@@ -60,9 +63,9 @@ def test_init():
 #     gy2=NufftObj.forward(gx)
 #     gk =     NufftObj.xx2k(NufftObj.x2xx(gx))
     t0= time.time()
-    for pp in range(0,20):
+    for pp in range(0,50):
 #         pass
-        gy = NufftObj.forward(gx)
+        gy = NufftObj._forward_device(gx)
 #         gy2 = NufftObj.k2y(gk)
 #             gx2 = NufftObj.adjoint(gy2)
 #             gk2 = NufftObj.y2k(gy2)
@@ -71,7 +74,7 @@ def test_init():
 #         gy=NufftObj.forward(gx)        
         
     NufftObj.thr.synchronize()
-    t_cl = (time.time() - t0)/20
+    t_cl = (time.time() - t0)/50
     print(t_cl)
     
     print('gy close? = ', numpy.allclose(y, gy.get(),  atol=numpy.linalg.norm(y)*1e-3))
@@ -79,15 +82,15 @@ def test_init():
     maxiter =100
     import time
     t0= time.time()
-    x2 =  nfft.solve(y, 'cg',maxiter=maxiter)
-#     x2 =  nfft.solve(y, 'L1TVOLS',maxiter=maxiter, rho = 2)
+#     x2 =  nfft.solve(y, 'cg',maxiter=maxiter)
+    x2 =  nfft.solve(y, 'L1TVOLS',maxiter=maxiter, rho = 2)
     t1 = time.time()-t0 
 #     gy=NufftObj.thr.copy_array(NufftObj.thr.to_device(y2))
     
     t0= time.time()
 
-    x = NufftObj.solve(gy,'cg', maxiter=maxiter)
-#     x = NufftObj.solve(gy,'L1TVOLS', maxiter=maxiter, rho=2)
+#     x = NufftObj._solve_host(y,'cg', maxiter=maxiter)
+    x = NufftObj.solve(y,'L1TVOLS', maxiter=maxiter, rho=2)
     
     t2 = time.time() - t0
     print(t1, t2)
@@ -98,7 +101,7 @@ def test_init():
     try:
         import matplotlib.pyplot
         matplotlib.pyplot.subplot(1, 2, 1)
-        matplotlib.pyplot.imshow( x.get().real, cmap= matplotlib.cm.gray, vmin = 0, vmax = 1)
+        matplotlib.pyplot.imshow( x.real, cmap= matplotlib.cm.gray, vmin = 0, vmax = 1)
         matplotlib.pyplot.title("HSA reconstruction")
         matplotlib.pyplot.subplot(1, 2,2)
         matplotlib.pyplot.imshow(x2.real, cmap= matplotlib.cm.gray)
