@@ -28,7 +28,7 @@ setup(name='pynufft',
       license='LGPLv3',
       packages=['pynufft'],
       package_dir={'pynufft':'.'},
-      package_data={'pynufft':['src','tests','linalg','src/*','src/*/*','tests/*','example/*', 'linalg/*']},
+      package_data={'pynufft':['nufft','src','tests','linalg','nufft/*','src/*','src/*/*','tests/*','example/*', 'linalg/*']},
       include_package_data=True,
       zip_safe=False)
 	

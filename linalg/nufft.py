@@ -1,5 +1,5 @@
 """
-NUFFT HSA classes
+The NUFFT class
 =======================================
 
 """
@@ -863,8 +863,6 @@ class NUFFT:
         """
 
         Xk = self._k2vec_cpu(k)
-        # k = self.spHsp.dot(Xk)
-        # k = self.spH.dot(self.sp.dot(Xk))
         k = self._y2vec_cpu(self._vec2y_cpu(Xk))
         k = self._vec2k_cpu(k)
         return k
@@ -1145,23 +1143,24 @@ class NUFFT:
         :return: gy: The output gpu array, with size = (M,)
         :rtype: reikna gpu array with dtype = numpy.complex64
         """
-        try:
-            xx = self._x2xx_device(gx)
-        except:  # gx is not a gpu array
-            try:
-                warnings.warn('The input array may not be a GPUarray '
-                              'Automatically moving the input array to gpu, '
-                              'which is throttled by PCIe.', UserWarning)
-                px = self.to_device(gx, )
-                # pz = self.thr.to_device(numpy.asarray(gz.astype(self.dtype),
-                #                                       order = 'C' ))
-                xx = self._x2xx_device(px)
-            except:
-                if gx.shape != self.Nd + (self.batch, ):
-                    warnings.warn('Shape of the input is ' + str(gx.shape) +
-                                  ' while it should be ' +
-                                  str(self.Nd+(self.batch, )), UserWarning)
-                raise
+        xx = self._x2xx_device(gx)
+#         try:
+#             xx = self._x2xx_device(gx)
+#         except:  # gx is not a gpu array
+#             try:
+#                 warnings.warn('The input array may not be a GPUarray '
+#                               'Automatically moving the input array to gpu, '
+#                               'which is throttled by PCIe.', UserWarning)
+#                 px = self.to_device(gx, )
+#                 # pz = self.thr.to_device(numpy.asarray(gz.astype(self.dtype),
+#                 #                                       order = 'C' ))
+#                 xx = self._x2xx_device(px)
+#             except:
+#                 if gx.shape != self.Nd + (self.batch, ):
+#                     warnings.warn('Shape of the input is ' + str(gx.shape) +
+#                                   ' while it should be ' +
+#                                   str(self.Nd+(self.batch, )), UserWarning)
+#                 raise
 
         k = self._xx2k_device(xx)
         del xx
@@ -1171,48 +1170,50 @@ class NUFFT:
     
     @push_cuda_context
     def _forward_one2many_device(self, s):
-        try:
-            x = self._s2x_device(s)
-        except:  # gx is not a gpu array
-            try:
-                warnings.warn('In s2x(): The input array may not be '
-                              'a GPUarray. Automatically moving the input'
-                              ' array to gpu, which is throttled by PCIe.',
-                              UserWarning)
-                ps = self.to_device(s, )
-                # px = self.thr.to_device(numpy.asarray(x.astype(self.dtype),
-                #                                       order = 'C' ))
-                x = self._s2x_device(ps)
-            except:
-                if s.shape != self.Nd:
-                    warnings.warn('Shape of the input is ' + str(x.shape) +
-                                  ' while it should be ' +
-                                  str(self.Nd), UserWarning)
-                raise
+        x = self._s2x_device(s)
+#         try:
+#             x = self._s2x_device(s)
+#         except:  # gx is not a gpu array
+#             try:
+#                 warnings.warn('In s2x(): The input array may not be '
+#                               'a GPUarray. Automatically moving the input'
+#                               ' array to gpu, which is throttled by PCIe.',
+#                               UserWarning)
+#                 ps = self.to_device(s, )
+#                 # px = self.thr.to_device(numpy.asarray(x.astype(self.dtype),
+#                 #                                       order = 'C' ))
+#                 x = self._s2x_device(ps)
+#             except:
+#                 if s.shape != self.Nd:
+#                     warnings.warn('Shape of the input is ' + str(x.shape) +
+#                                   ' while it should be ' +
+#                                   str(self.Nd), UserWarning)
+#                 raise
 
         y = self._forward_device(x)
         return y    
     
     @push_cuda_context
     def _adjoint_many2one_device(self, y):
-        try:
-            x = self._adjoint_device(y)
-        except:  # gx is not a gpu array
-            try:
-                if self.verbosity > 0:
-                    print('y.shape = ', y.shape)
-                warnings.warn('In adjoint_many2one(): The input array may not '
-                              'be a GPUarray. Automatically moving the input'
-                              ' array to gpu, which is throttled by PCIe.',
-                              UserWarning)
-                py = self.to_device(y, )
-                # py = self.thr.to_device(numpy.asarray(y.astype(self.dtype),
-                #                                       order = 'C' ))
-                x = self._adjoint_device(py)
-            except:
-                print('Failed at self.adjoint_many2one! Please check the gy'
-                      ' shape, type and stride.')
-                raise
+        x = self._adjoint_device(y)
+#         try:
+#             x = self._adjoint_device(y)
+#         except:  # gx is not a gpu array
+#             try:
+#                 if self.verbosity > 0:
+#                     print('y.shape = ', y.shape)
+#                 warnings.warn('In adjoint_many2one(): The input array may not '
+#                               'be a GPUarray. Automatically moving the input'
+#                               ' array to gpu, which is throttled by PCIe.',
+#                               UserWarning)
+#                 py = self.to_device(y, )
+#                 # py = self.thr.to_device(numpy.asarray(y.astype(self.dtype),
+#                 #                                       order = 'C' ))
+#                 x = self._adjoint_device(py)
+#             except:
+#                 print('Failed at self.adjoint_many2one! Please check the gy'
+#                       ' shape, type and stride.')
+#                 raise
         # z = self.adjoint(y)
         s = self._x2s_device(x)
         return s    
@@ -1227,22 +1228,23 @@ class NUFFT:
         :return: gx: The output gpu array, with size=Nd
         :rtype: reikna gpu array with dtype =numpy.complex64
         """
-        try:
-            k = self._y2k_device(gy)
-        except:  # gx is not a gpu array
-            try:
-                warnings.warn('In adjoint(): The input array may not '
-                              'be a GPUarray. Automatically moving the input'
-                              ' array to gpu, which is throttled by PCIe.',
-                              UserWarning)
-                py = self.to_device(gy, )
-                # py = self.thr.to_device(numpy.asarray(gy.astype(self.dtype),
-                #                         order = 'C' ))
-                k = self._y2k_device(py)
-            except:
-                print('Failed at self.adjont! Please check the gy shape, '
-                      'type, stride.')
-                raise
+        k = self._y2k_device(gy)
+#         try:
+#             k = self._y2k_device(gy)
+#         except:  # gx is not a gpu array
+#             try:
+#                 warnings.warn('In adjoint(): The input array may not '
+#                               'be a GPUarray. Automatically moving the input'
+#                               ' array to gpu, which is throttled by PCIe.',
+#                               UserWarning)
+#                 py = self.to_device(gy, )
+#                 # py = self.thr.to_device(numpy.asarray(gy.astype(self.dtype),
+#                 #                         order = 'C' ))
+#                 k = self._y2k_device(py)
+#             except:
+#                 print('Failed at self.adjont! Please check the gy shape, '
+#                       'type, stride.')
+#                 raise
 
 #             k = self.y2k(gy)
         xx = self._k2xx_device(k)
@@ -1274,21 +1276,4 @@ class NUFFT:
         """
         from ..linalg.solve_device import solve
         return solve(self,  gy,  solver, *args, **kwargs)
-#         try:
-#             return solve(self,  gy,  solver, *args, **kwargs)
-#         except:
-#             try:
-#                 warnings.warn('In solve(): The input array may not '
-#                               'be a GPUarray. Automatically moving the input'
-#                               ' array to gpu, which is throttled by PCIe.',
-#                               UserWarning)
-#                 py = self.to_device(gy, )
-#                 return solve(self,  py,  solver, *args, **kwargs)
-#             except:
-#                 if numpy.ndarray == type(gy):
-#                     print("Input gy must be a reikna array with dtype ="
-#                           " numpy.complex64")
-#                     raise  # TypeError
-#                 else:
-#                     print("wrong")
-#                     raise  # TypeError        
+     
