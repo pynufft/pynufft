@@ -45,7 +45,7 @@ class NUFFT:
     from ._nufft_class_methods_device import _init__device, _plan_device,  _set_wavefront_device, _offload_device, _reset_sense_device, _set_sense_device, to_device, to_host, _s2x_device, _x2xx_device, _xx2k_device, _k2y_device, _y2k_device, _k2xx_device, _xx2x_device, _x2s_device, _selfadjoint_one2many2one_device,  _selfadjoint_device, _forward_device, _forward_one2many_device, _adjoint_many2one_device, _adjoint_device, release, _solve_device
     
     # legacy codes (csr format for device)
-    from ._nufft_class_methods_device import _y2k_legacy, _k2y_legacy, _forward_legacy, _adjoint_legacy, _plan_legacy, _offload_legacy, _solve_legacy
+    from ._nufft_class_methods_device import _y2k_legacy, _k2y_legacy, _forward_legacy, _adjoint_legacy, _selfadjoint_legacy, _plan_legacy, _offload_legacy, _solve_legacy
     from ._nufft_class_methods_cpu import _k2y_legacy_host,  _y2k_legacy_host, _selfadjoint_legacy_host, _forward_legacy_host, _adjoint_legacy_host, _solve_legacy_host
     
     def __init__(self, device_indx=None, legacy=None):

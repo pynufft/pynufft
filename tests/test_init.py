@@ -38,7 +38,7 @@ def test_init():
     
     device_list = pynufft.helper.device_list()
     
-    NufftObj = NUFFT(device_list[2], legacy=True)
+    NufftObj = NUFFT(device_list[0], legacy=True)
     NufftObj._set_wavefront_device(16)
     print('device name = ', NufftObj.device)
 
@@ -82,15 +82,15 @@ def test_init():
     maxiter =100
     import time
     t0= time.time()
-    x2 =  nfft.solve(y, 'cg',maxiter=maxiter)
-#     x2 =  nfft.solve(y, 'L1TVOLS',maxiter=maxiter, rho = 2)
+#     x2 =  nfft.solve(y, 'cg',maxiter=maxiter)
+    x2 =  nfft.solve(y, 'L1TVOLS',maxiter=maxiter, rho = 2)
     t1 = time.time()-t0 
 #     gy=NufftObj.thr.copy_array(NufftObj.thr.to_device(y2))
     
     t0= time.time()
 
-    x = NufftObj.solve(y,'cg', maxiter=maxiter)
-#     x = NufftObj.solve(y,'L1TVOLS', maxiter=maxiter, rho=2)
+#     x = NufftObj.solve(y,'cg', maxiter=maxiter)
+    x = NufftObj.solve(y,'L1TVOLS', maxiter=maxiter, rho=2)
     
     t2 = time.time() - t0
     print(t1, t2)
