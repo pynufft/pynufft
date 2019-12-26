@@ -777,7 +777,7 @@ def plan(om, Nd, Kd, Jd, ft_axes = None, format='CSR', radix = None):
         st['p'] = CSR
 #     st['ell'] = ELL
         st['sn'] = kronecker_scale(snd).real # only real scaling is relevant
-
+        st['tSN'] = Tensor_sn(snd, len(Kd))
 #     ud2, kd2, Jd2 = partial_combination(ud, kd, Jd)
     elif format is 'pELL':
         if radix is None:

@@ -1,7 +1,7 @@
 """
 Explicitly load the NUFFT_hsa to the 'ocl' backend.
 """
-from pynufft import NUFFT_cpu, NUFFT_hsa_legacy, NUFFT_hsa
+from pynufft import NUFFT_cpu, NUFFT_hsa_legacy, NUFFT_hsa, NUFFT, helper
 
 import numpy
 
@@ -36,22 +36,22 @@ def test_opencl_multicoils():
     batch = 8
 
     # initiating NUFFT_cpu object
-    nfft = NUFFT_cpu()  # CPU NUFFT class
+    nfft = NUFFT()  # CPU NUFFT class
     
     # Plan the nfft object
     nfft.plan(om, Nd, Kd, Jd, batch = batch)
-
+    device_list = helper.device_list()
     # initiating NUFFT_hsa object
-    try:
-        NufftObj = NUFFT_hsa('cuda', 0, 0)
-    except:
-        try:
-            NufftObj = NUFFT_hsa('ocl', 1, 0)
-        except:
-            NufftObj = NUFFT_hsa('ocl', 0, 0)
+#     try:
+    NufftObj = NUFFT(device_list[0])
+#     except:
+#         try:
+#             NufftObj = NUFFT_hsa('ocl', 1, 0)
+#         except:
+#             NufftObj = NUFFT_hsa('ocl', 0, 0)
 
     # Plan the NufftObj (similar to NUFFT_cpu)
-    NufftObj.plan(om, Nd, Kd, Jd, batch= batch, radix = 2)
+    NufftObj.plan(om, Nd, Kd, Jd, batch= batch, radix = 1)
     coil_sense = numpy.ones(Nd + (batch,), dtype = numpy.complex64)
     for cc in range(0, batch, 2):
         coil_sense[ int(256/batch)*cc:int(256/batch)*(cc+1), : ,cc].real *= 0.1
@@ -81,20 +81,20 @@ def test_opencl_multicoils():
         
         gxx = NufftObj.adjoint_many2one(gy)
     t_cu = (time.time() - t0)/10
-    print(y.shape, gy.get().shape)
+    print(y.shape, gy.shape)
     print('t_cpu = ', t_cpu)
     print('t_cuda =, ', t_cu)
     
-    print('gy close? = ', numpy.allclose(y, gy.get(),  atol=numpy.linalg.norm(y)*1e-6))
-    print('gy error = ', numpy.linalg.norm(y- gy.get())/numpy.linalg.norm(y))
-    print('gxx close? = ', numpy.allclose(xx, gxx.get(),  atol=numpy.linalg.norm(xx)*1e-6))
-    print('gxx error = ', numpy.linalg.norm(xx- gxx.get())/numpy.linalg.norm(xx))
+    print('gy close? = ', numpy.allclose(y, gy,  atol=numpy.linalg.norm(y)*1e-6))
+    print('gy error = ', numpy.linalg.norm(y- gy)/numpy.linalg.norm(y))
+    print('gxx close? = ', numpy.allclose(xx, gxx,  atol=numpy.linalg.norm(xx)*1e-6))
+    print('gxx error = ', numpy.linalg.norm(xx- gxx)/numpy.linalg.norm(xx))
 #     for bb in range(0, batch):
     matplotlib.pyplot.subplot(1,2,1)
     matplotlib.pyplot.imshow( xx[...].real, cmap= matplotlib.cm.gray)
     matplotlib.pyplot.title('Adjoint_cpu_coil')
     matplotlib.pyplot.subplot(1,2,2)
-    matplotlib.pyplot.imshow(gxx.get()[...].real, cmap= matplotlib.cm.gray)
+    matplotlib.pyplot.imshow(gxx[...].real, cmap= matplotlib.cm.gray)
     matplotlib.pyplot.title('Adjoint_hsa_coil')
 #         matplotlib.pyplot.subplot(2, 2, 3)
 #         matplotlib.pyplot.imshow( x_cpu_TV.real, cmap= matplotlib.cm.gray)
@@ -118,7 +118,7 @@ def test_opencl_multicoils():
     t0= time.time()
     x_cuda_cg = NufftObj.solve(gy,'cg', maxiter=maxiter)
 #     x = NufftObj.solve(gy,'L1TVLAD', maxiter=maxiter, rho=2)
-    print('shape of cg = ', x_cuda_cg.get().shape, x_cpu_cg.shape)
+    print('shape of cg = ', x_cuda_cg.shape, x_cpu_cg.shape)
     t2 = time.time() - t0
     print(t1, t2)
     print('acceleration of cg=', t1/t2 )
@@ -141,7 +141,7 @@ def test_opencl_multicoils():
         matplotlib.pyplot.imshow( x_cpu_cg[...,bb].real, cmap= matplotlib.cm.gray)
         matplotlib.pyplot.title('CG_cpu_coil_' + str(bb))
         matplotlib.pyplot.subplot(2, batch, 1 + batch + bb)
-        matplotlib.pyplot.imshow(x_cuda_cg.get()[...,bb].real, cmap= matplotlib.cm.gray)
+        matplotlib.pyplot.imshow(x_cuda_cg[...,bb].real, cmap= matplotlib.cm.gray)
         matplotlib.pyplot.title('CG_hsa_coil_' + str(bb))
 #         matplotlib.pyplot.subplot(2, 2, 3)
 #         matplotlib.pyplot.imshow( x_cpu_TV.real, cmap= matplotlib.cm.gray)

@@ -161,11 +161,7 @@ class NUFFT_hsa_legacy:
         self.ft_axes = ft_axes
 #     
         self.st = helper.plan(om, Nd, Kd, Jd, ft_axes = ft_axes, format = 'CSR')
-#         st_tmp = helper.plan0(om, Nd, Kd, Jd)
-#         if self.debug is 1:
-#             print('error between current and old interpolators=', scipy.sparse.linalg.norm(self.st['p'] - st_tmp['p'])/scipy.sparse.linalg.norm(self.st['p']))
-#             print('error between current and old scaling=', numpy.linalg.norm(self.st['sn'] - st_tmp['sn']))
-         
+
         self.Nd = self.st['Nd']  # backup
         self.Kd = self.st['Kd']
         self.sn = numpy.asarray(self.st['sn'].astype(self.dtype)  ,order='C')# backup
@@ -225,45 +221,7 @@ class NUFFT_hsa_legacy:
         :return: self: instance
  
         """
-#         from reikna import cluda
-#         import reikna.transformations
-#         from reikna.cluda import functions, dtypes
-#         try: # try to create api/platform/device using the given parameters
-#             if 'cuda' == API:
-#                 api = cluda.cuda_api()
-#             elif 'ocl' == API:
-#                 api = cluda.ocl_api()
-#      
-#             platform = api.get_platforms()[platform_number]
-#             
-#             device = platform.get_devices()[device_number]
-#         except: # if failed, find out what's going wrong?
-#             helper.diagnose()
-#             
-#             return 1
-# 
-# #         Create context from device
-#         self.thr = api.Thread(device, async_ = False) #pyopencl.create_some_context()
-#         print('Using opencl or cuda = ', self.thr.api)
-#         
-# #         print('Using opencl?  ', self.thr.api is reikna.cluda.ocl)
-# #         """
-# #         Wavefront: as warp in cuda. Can control the width in a workgroup
-# #         Wavefront is required in spmv_vector as it improves data coalescence.
-# #         see cCSR_spmv and zSparseMatVec
-# #         """
-#         self.wavefront = api.DeviceParameters(device).warp_size
-# 
-#         print('wavefront = ',self.wavefront)
-# 
-#         from ..src.re_subroutine import create_kernel_sets
-#         kernel_sets = create_kernel_sets(API)
-#                
-#         prg = self.thr.compile(kernel_sets, 
-#                                 render_kwds=dict(LL =  str(self.wavefront)), 
-#                                 fast_math=False)
-#         self.prg = prg
- 
+
         self.volume = {}
         self.volume['NdGPUorder'] =  self.thr.to_device( self.NdCPUorder)
         self.volume['KdGPUorder'] =  self.thr.to_device( self.KdCPUorder)

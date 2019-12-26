@@ -160,6 +160,9 @@ def _set_sense_cpu(self, coil_profile):
         print('coil_profile.shape = ', coil_profile.shape)
         print('shape of Nd + (batch, ) = ', self.Nd + (self.batch, ))
 
+
+
+        
 def _forward_one2many_cpu(self, x):
     """
     Assume x.shape = self.Nd
@@ -409,9 +412,19 @@ def _forward_host(self, x):
     y = self._forward_device(gx).get()
     return y
 
+def _forward_legacy_host(self, x):
+    gx = self.to_device(x)
+    y = self._forward_legacy(gx).get()
+    return y
+
 def _adjoint_host(self, y):
     gy = self.to_device(y)
     gx = self._adjoint_device(gy)
+    return gx.get()
+
+def _adjoint_legacy_host(self, y):
+    gy = self.to_device(y)
+    gx = self._adjoint_legacy(gy)
     return gx.get()
     
 def _selfadjoint_host(self, x):
@@ -419,11 +432,20 @@ def _selfadjoint_host(self, x):
     gx2 = self._selfadjoint_device(gx)
     return gx2.get()
     
+def _selfadjoint_legacy_host(self, x):
+    gx = self.to_device(x)
+    gx2 = self._selfadjoint_legacy(gx)
+    return gx2.get()
+    
 def _solve_host(self, y, *args, **kwargs):
     gy = self.to_device(y)
     x = self._solve_device(gy, *args, **kwargs)
     return x.get()
 
+def _solve_legacy_host(self, y, *args, **kwargs):
+    gy = self.to_device(y)
+    x = self._solve_legacy(gy, *args, **kwargs)
+    return x.get()
 
 def _xx2k_host(self, xx):
     gxx = self.to_device(xx)
@@ -456,6 +478,16 @@ def _y2k_host(self, y):
     gk = self._y2k_device(gy)
     return gk.get()
 
+def _k2y_legacy_host(self, k):
+    gk = self.to_device(k)
+    gy = self._k2y_legacy(gk)
+    return gy.get()
+
+def _y2k_legacy_host(self, y):
+    gy = self.to_device(y)
+    gk = self._y2k_legacy(gy)
+    return gk.get()
+
 def _adjoint_many2one_host(self, y):
     gy  = self.to_device(y)
     gx2 = self._adjoint_many2one_device(gy)
@@ -471,3 +503,18 @@ def _selfadjoint_one2many2one_host(self, x):
     gx = self.to_device(x)
     gx2 = self._selfadjoint_one2many2one_device(gx) 
     return gx2.get()   
+
+def _set_sense_host(self, coil_profile):
+    if coil_profile.shape != self.multi_Nd:
+        print('The shape of coil_profile is ', coil_profile.shape)
+        print('But it should be', self.Nd + (self.batch, ))
+        raise ValueError
+    else:
+        coil_profile_device = self.thr.to_device(
+            coil_profile.astype(self.dtype))
+        if self.verbosity > 0:
+            print('Successfully loading coil sensitivities!')
+    self._set_sense_device(coil_profile_device)
+
+def _reset_sense_host(self):
+    self._reset_sense_host()

@@ -187,6 +187,7 @@ def atomic_add(API):
     """
     Return the atomic_add for the given API. 
     Overcome the missing atomic_add_float for OpenCL-1.2. 
+    Note: will be checked if OpenCL 2.0 provided by all GPU vendors. 
     """
     
     ocl_add = """

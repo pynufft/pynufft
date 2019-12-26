@@ -38,8 +38,8 @@ def test_init():
     
     device_list = pynufft.helper.device_list()
     
-    NufftObj = NUFFT(device_list[1])
-    NufftObj._set_wavefront_device(8)
+    NufftObj = NUFFT(device_list[2], legacy=True)
+    NufftObj._set_wavefront_device(16)
     print('device name = ', NufftObj.device)
 
     NufftObj.plan(om, Nd, Kd, Jd)
@@ -65,7 +65,7 @@ def test_init():
     t0= time.time()
     for pp in range(0,50):
 #         pass
-        gy = NufftObj._forward_device(gx)
+        gy = NufftObj._forward_legacy(gx)
 #         gy2 = NufftObj.k2y(gk)
 #             gx2 = NufftObj.adjoint(gy2)
 #             gk2 = NufftObj.y2k(gy2)
@@ -89,7 +89,7 @@ def test_init():
     
     t0= time.time()
 
-    x = NufftObj._solve_host(y,'cg', maxiter=maxiter)
+    x = NufftObj.solve(y,'cg', maxiter=maxiter)
 #     x = NufftObj.solve(y,'L1TVOLS', maxiter=maxiter, rho=2)
     
     t2 = time.time() - t0
