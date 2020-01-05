@@ -44,3 +44,10 @@ Lin, Jyh-Miin. "Python Non-Uniform Fast Fourier Transform (PyNUFFT): An Accelera
   year={2018},
   publisher={Multidisciplinary Digital Publishing Institute}
 }
+
+
+### Responses
+
+1. "Scientists used different scripting languages (e.g., MATLAB, Python) and numerical libraries (e.g., PyNUFFT, BART, SigPy) to reproduce the original paper, and even some of the original authors welcomed the opportunity and reproduced their own work...."--Stikov, Nikola, Joshua D. Trzasko, and Matt A. Bernstein. "Reproducibility and the future of MRI research." Magnetic resonance in medicine (2019).
+
+

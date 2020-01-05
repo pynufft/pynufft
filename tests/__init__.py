@@ -3,6 +3,7 @@
 #from .example_2D import example_2D
 #from .example_1D import example_1D
 from .test_init import test_init
+from .test_init_device import test_init_device
 # from .test_init2 import test_init2
 # from .test_init3 import test_init3
 #from .test_cuda import test_cuda

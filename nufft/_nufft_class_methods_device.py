@@ -510,6 +510,22 @@ def _selfadjoint_one2many2one_device(self, gx):
     return gx2    
 
 @push_cuda_context
+def _selfadjoint_one2many2one_legacy(self, gx):
+    """
+    selfadjoint_one2many2one NUFFT (Teplitz) on the heterogeneous device
+
+    :param gx: The input gpu array, with size=Nd
+    :type gx: reikna gpu array with dtype =numpy.complex64
+    :return: gx: The output gpu array, with size=Nd
+    :rtype: reikna gpu array with dtype =numpy.complex64
+    """
+
+    gy = self._forward_one2many_legacy(gx)
+    gx2 = self._adjoint_many2one_legacy(gy)
+    del gy
+    return gx2    
+
+@push_cuda_context
 def _selfadjoint_device(self, gx):
     """
     selfadjoint NUFFT (Toeplitz) on the heterogeneous device
@@ -592,6 +608,18 @@ def _adjoint_many2one_device(self, y):
     return s    
 
 @push_cuda_context
+def _forward_one2many_legacy(self, s):
+    x = self._s2x_device(s)
+    y = self._forward_legacy(x)
+    return y    
+
+@push_cuda_context
+def _adjoint_many2one_legacy(self, y):
+    x = self._adjoint_legacy(y)
+    s = self._x2s_device(x)
+    return s    
+
+@push_cuda_context
 def _adjoint_device(self, gy):
     """
     Adjoint NUFFT on the heterogeneous device
@@ -630,10 +658,31 @@ def _adjoint_legacy(self, gy):
 @push_cuda_context
 def release(self):
     del self.volume
-    del self.prg
-    del self.pELL
-    self.thr.release()
-    del self.thr     
+    try:
+        del self.tSN
+    except:
+        pass
+    try:
+        del self.prg
+    except:
+        pass
+    try:
+        del self.pELL
+    except:
+        pass
+    try:
+        del self.csr 
+        del self.csrH
+    except:
+        pass
+    try:
+        self.thr.release()
+    except:
+        pass
+    try:
+        del self.thr     
+    except:
+        pass
     
 @push_cuda_context
 def _solve_device(self, gy, solver=None, *args, **kwargs):
@@ -844,7 +893,8 @@ def _k2y_legacy(self, k):
     Private: interpolation by the Sparse Matrix-Vector Multiplication
     """
     y =self.thr.array( self.multi_M, dtype=self.dtype).fill(0)
-    self.prg.cCSR_spmv_vector(                                
+    self.prg.cCSR_spmv_vector(    
+                     self.batch,                            
                        self.csr['numrow'], 
                        self.csr['indptr'],
                        self.csr['indices'],
@@ -852,7 +902,7 @@ def _k2y_legacy(self, k):
                        k,
                        y,
                        local_size=int(self.wavefront),
-                       global_size=int(self.csr['numrow']*self.wavefront) 
+                       global_size=int(self.csr['numrow']*self.wavefront*self.batch) 
                         )
 
 #     self.thr.synchronize()
@@ -865,6 +915,7 @@ def _y2k_legacy(self, y):
     k = self.thr.array(self.multi_Kd, dtype = self.dtype)
 
     self.prg.cCSR_spmv_vector(
+                        self.batch,
                        self.csrH['numrow'], 
                        self.csrH['indptr'],
                        self.csrH['indices'],
@@ -872,7 +923,7 @@ def _y2k_legacy(self, y):
                        y,
                        k,
                        local_size=int(self.wavefront),
-                       global_size=int(self.csrH['numrow']*self.wavefront) 
+                       global_size=int(self.csrH['numrow']*self.wavefront*self.batch) 
                         )#,g_times_l=int(csrnumrow))
 
     self.thr.synchronize()

@@ -16,7 +16,7 @@ import os
 
 
 class atomic_NUFFT:
-    def __init__(self, om, Nd, Kd, Jd, API, device_number):
+    def __init__(self, om, Nd, Kd, Jd, device_indx):
         """
         This caches the parameters only.
         Any other GPU related stuffs are carried out in run()
@@ -25,32 +25,34 @@ class atomic_NUFFT:
         self.Nd = Nd
         self.Kd = Kd
         self.Jd = Jd
-        self.API = API
-        self.device_number = device_number
+#         self.API = API
+        self.device_indx = device_indx
         
-    def run(self, x, cpu_core):
+    def run(self, x, cpu_cores):
         """
         In this method, the NUFFT_hsa are created and executed on a fixed CPU core.
         """
         pid= os.getpid()
         print('pid=', pid)
-        os.system("taskset -p -c %d %d" % (cpu_core, pid))
+        os.system("taskset -p -c %d-%d %d" % (cpu_cores[0], cpu_cores[1], pid))
         """
         Control the CPU affinity. Otherwise the process on one core can be switched to another core.
         """
 
         # create NUFFT
-        NUFFT = NUFFT_hsa(self.API, self.device_number,0)
+#         NUFFT = NUFFT(self.API, )
         
         # plan the NUFFT
-        NUFFT.plan(self.om, self.Nd, self.Kd, self.Jd)
-
+        
+        device_list = helper.device_list()  
+        self.NUFFT = NUFFT(device_list[self.device_indx])
+        self.NUFFT.plan(self.om, self.Nd, self.Kd, self.Jd)
         # send the image to device
-        gx = NUFFT.to_device(x)
+        gx = self.NUFFT.to_device(x)
         
         # carry out 10000 forward transform
         for pp in range(0, 10000):
-            gy = NUFFT.forward(gx)
+            gy = self.NUFFT._forward_device(gx)
 
         # return the object
         return gy.get()
@@ -71,17 +73,17 @@ results = []
 
 # Now enter the first process
 # This is the standard multiprocessing Pool
-D = atomic_NUFFT(om1, Nd, Kd, Jd, 'ocl',1)
+D = atomic_NUFFT(om1, Nd, Kd, Jd, 0)
 # async won't obstruct the next line of code
-result = pool.apply_async(D.run, args = (x, 0))
+result = pool.apply_async(D.run, args = (x, (0,3)))
 # the result is appended
 results.append(result)
 
 # Now enter the second process
 # This is the standard multiprocessing Pool
-D = atomic_NUFFT(om2, Nd, Kd, Jd, 'cuda',   0)
+D = atomic_NUFFT(om2, Nd, Kd, Jd, 0)
 # Non-obstructive
-result = pool.apply_async(D.run, args = (x, 1))
+result = pool.apply_async(D.run, args = (x, (4,7)))
 results.append(result)
 
 # closing the pool 

@@ -748,6 +748,7 @@ def cSpmv():
     
     R = """
         KERNEL void cCSR_spmv_vector(    
+        const     unsigned int   Reps,            // Number of coils
         const    unsigned int    numRow,
         GLOBAL_MEM const unsigned int *rowDelimiters, 
         GLOBAL_MEM const unsigned int *cols,
@@ -762,6 +763,8 @@ def cSpmv():
         // One row per wavefront
         unsigned int vecsPerBlock=get_local_size(0)/vecWidth;
         unsigned int myRow=(get_group_id(0)*vecsPerBlock) + (t/ vecWidth);
+        unsigned int m = myRow / Reps;
+        unsigned int nc = myRow - m * Reps;        
         LOCAL_MEM float2 partialSums[${LL}];
         float2 zero;
         zero.x = 0.0;
@@ -769,15 +772,16 @@ def cSpmv():
         
         partialSums[t] = zero;
         float2  y= zero;
-        if (myRow < numRow)
+        
+        if (myRow < numRow * Reps)
         {
-        const unsigned int vecStart = rowDelimiters[myRow];
-        const unsigned int vecEnd = rowDelimiters[myRow+1];            
+        const unsigned int vecStart = rowDelimiters[m];
+        const unsigned int vecEnd = rowDelimiters[m+1];            
         for (unsigned int j = vecStart+id;  j<vecEnd; j += vecWidth)
         {
         const unsigned int col = cols[j];
         const float2 spdata=val[j];
-        const float2 vecdata=vec[col];                        
+        const float2 vecdata=vec[col * Reps + nc];                        
         y.x=spdata.x*vecdata.x - spdata.y*vecdata.y;
         y.y=spdata.y*vecdata.x + spdata.x*vecdata.y;
         partialSums[t] = partialSums[t] + y;

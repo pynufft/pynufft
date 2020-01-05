@@ -43,7 +43,9 @@ def test_opencl_multicoils():
     device_list = helper.device_list()
     # initiating NUFFT_hsa object
 #     try:
-    NufftObj = NUFFT(device_list[0])
+    NufftObj = NUFFT(device_list[2], legacy=False)
+#     NufftObj._set_wavefront_device(4)
+    print(NufftObj.thr)
 #     except:
 #         try:
 #             NufftObj = NUFFT_hsa('ocl', 1, 0)
@@ -51,7 +53,7 @@ def test_opencl_multicoils():
 #             NufftObj = NUFFT_hsa('ocl', 0, 0)
 
     # Plan the NufftObj (similar to NUFFT_cpu)
-    NufftObj.plan(om, Nd, Kd, Jd, batch= batch, radix = 1)
+    NufftObj.plan(om, Nd, Kd, Jd, batch= batch)
     coil_sense = numpy.ones(Nd + (batch,), dtype = numpy.complex64)
     for cc in range(0, batch, 2):
         coil_sense[ int(256/batch)*cc:int(256/batch)*(cc+1), : ,cc].real *= 0.1
@@ -72,9 +74,9 @@ def test_opencl_multicoils():
     
     ## Moving image to gpu
     ## gx is an gpu array, dtype = complex64
-    gx = NufftObj.to_device(image)  
+#     gx = NufftObj.to_device(image)  
     
-    gy = NufftObj.forward_one2many(gx)
+    gy = NufftObj.forward_one2many(image)
     
     t0= time.time()
     for pp in range(0,10):
@@ -103,7 +105,7 @@ def test_opencl_multicoils():
 #         matplotlib.pyplot.imshow(x_cuda_TV.get().real, cmap= matplotlib.cm.gray)
 #         matplotlib.pyplot.title('TV_cuda')    
     matplotlib.pyplot.show(block=False)
-    matplotlib.pyplot.pause(1)
+    matplotlib.pyplot.pause(4)
     matplotlib.pyplot.close()
         
     print("acceleration=", t_cpu/t_cu)

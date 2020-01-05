@@ -463,9 +463,9 @@ def _x2xx_host(self, x):
     gxx = self._x2xx_device(gx)
     return gxx.get()
 
-def _x2xx_host(self, x):
+def _xx2x_host(self, x):
     gx = self.to_device(x)
-    gxx = self._x2xx_device(gx)
+    gxx = self._xx2x_device(gx)
     return gxx.get()
 
 def _k2y_host(self, k):
@@ -502,6 +502,22 @@ def _forward_one2many_host(self, x):
 def _selfadjoint_one2many2one_host(self, x):
     gx = self.to_device(x)
     gx2 = self._selfadjoint_one2many2one_device(gx) 
+    return gx2.get()   
+
+def _adjoint_many2one_legacy_host(self, y):
+    gy  = self.to_device(y)
+    gx2 = self._adjoint_many2one_legacy(gy)
+    return gx2.get()
+
+def _forward_one2many_legacy_host(self, x):
+    gx = self.to_device(x)
+    gy = self._forward_one2many_legacy(gx)
+    return gy.get()
+
+
+def _selfadjoint_one2many2one_legacy_host(self, x):
+    gx = self.to_device(x)
+    gx2 = self._selfadjoint_one2many2one_legacy(gx) 
     return gx2.get()   
 
 def _set_sense_host(self, coil_profile):

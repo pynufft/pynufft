@@ -3,7 +3,7 @@ import pynufft
 import numpy
 dtype = numpy.complex64
 
-def test_init(device_indx=0):
+def test_init_device(device_indx=0):
     
 #     cm = matplotlib.cm.gray
     # load example image
@@ -38,8 +38,8 @@ def test_init(device_indx=0):
     
     device_list = pynufft.helper.device_list()
     
-    NufftObj = NUFFT(device_list[device_indx], legacy=True)
-#     NufftObj._set_wavefront_device(32)
+    NufftObj = NUFFT(device_list[device_indx], legacy=False)
+#     NufftObj._set_wavefront_device(4)
     print('device name = ', NufftObj.device)
 
     NufftObj.plan(om, Nd, Kd, Jd)
@@ -49,7 +49,7 @@ def test_init(device_indx=0):
 #     k = nfft.xx2k(nfft.x2xx(image))
     for pp in range(0,50):
 #         y = nfft.k2y(nfft.xx2k(nfft.x2xx(image)))    
-            y = nfft.forward(image)
+#             y = nfft.forward(image)
 #             y = nfft.k2y(k)
 #                 k = nfft.y2k(y)
             x2 = nfft.adjoint(y)
@@ -59,15 +59,15 @@ def test_init(device_indx=0):
     print(t_cpu)
     
 #     del nfft
-    gy = NufftObj._forward_legacy(gx)
+    gy = NufftObj._forward_device(gx)
 #     gy2=NufftObj.forward(gx)
 #     gk =     NufftObj.xx2k(NufftObj.x2xx(gx))
     t0= time.time()
     for pp in range(0,50):
 #         pass
-            gy = NufftObj._forward_legacy(gx)
+#         gy = NufftObj._forward_legacy(gx)
 #         gy2 = NufftObj.k2y(gk)
-            gx2 = NufftObj._adjoint_legacy(gy)
+            gx2 = NufftObj._adjoint_device(gy)
 #             gk2 = NufftObj.y2k(gy2)
 #         del gy2
 #     c = gx2.get()
@@ -86,15 +86,15 @@ def test_init(device_indx=0):
     maxiter =100
     import time
     t0= time.time()
-#     x2 =  nfft.solve(y, 'cg',maxiter=maxiter)
-    x2 =  nfft.solve(y, 'L1TVOLS',maxiter=maxiter, rho = 2)
+    x2 =  nfft.solve(y, 'cg',maxiter=maxiter)
+#     x2 =  nfft.solve(y, 'L1TVOLS',maxiter=maxiter, rho = 2)
     t1 = time.time()-t0 
 #     gy=NufftObj.thr.copy_array(NufftObj.thr.to_device(y2))
     
     t0= time.time()
 
-#     x = NufftObj.solve(y,'cg', maxiter=maxiter)
-    x = NufftObj.solve(y,'L1TVOLS', maxiter=maxiter, rho=2)
+    x = NufftObj.solve(y,'cg', maxiter=maxiter)
+#     x = NufftObj.solve(y,'L1TVOLS', maxiter=maxiter, rho=2)
     
     t2 = time.time() - t0
     print(t1, t2)
@@ -120,4 +120,4 @@ def test_init(device_indx=0):
         print("no graphics")
         
 if __name__ == '__main__':
-    test_init(0)    
+    test_init_device()    

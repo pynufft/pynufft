@@ -45,14 +45,14 @@ def fake_Cartesian(Nd):
 def test_batch_NUFFT():
     
     import scipy.misc
-    from pynufft import NUFFT_cpu, NUFFT_hsa
+    from pynufft import NUFFT
     
     Nd = (256,256)
     Kd = (512,512)
     Jd = (6,6)
     
-    image = scipy.misc.ascent()
-    image = scipy.misc.imresize(image, Nd).astype(numpy.complex64)
+    image = scipy.misc.ascent()[::2, ::2]
+#     image = scipy.misc.imresize(image, Nd).astype(numpy.complex64)
     om = fake_Cartesian(Nd)
     
     batch = 3
@@ -63,14 +63,14 @@ def test_batch_NUFFT():
     print('Jd = ', Jd)
      
 #     NufftObj = NUFFT_cpu()
-    NufftObj = NUFFT_hsa()
+    NufftObj = NUFFT()
     NufftObj.plan(om, Nd, Kd, Jd, ft_axes = (0,1),  batch=batch)
     
     # Now transform 1 image to multiple channels using forward_one2many() method
 #     y = NufftObj.forward_one2many(image) # for NUFFT_cpu()
     multi_image = numpy.broadcast_to(numpy.reshape(image, Nd + (1,)), Nd + (batch,))
     y0 = NufftObj.forward(multi_image)
-    y = y0.get()
+    y = y0
 
 #     y = NufftObj.forward_one2many(image).get() # for NUFFT_hsa()
     
@@ -85,7 +85,7 @@ def test_batch_NUFFT():
 #                 ), axes = (0,1)
 #             )
     
-    x2 = NufftObj.adjoint(y0).get()
+    x2 = NufftObj.adjoint(y0)
     
     
     # display the result
@@ -107,14 +107,14 @@ def test_batch_NUFFT():
 def test_senselike_NUFFT():
     
     import scipy.misc
-    from pynufft import NUFFT_cpu, NUFFT_hsa
+    from pynufft import NUFFT, helper
     
     Nd = (256,256)
     Kd = (512,512)
     Jd = (6,6)
     
-    image = scipy.misc.ascent()
-    image = scipy.misc.imresize(image, Nd).astype(numpy.complex64)
+    image = scipy.misc.ascent()[::2,::2]
+#     image = scipy.misc.imresize(image, Nd).astype(numpy.complex64)
     om = fake_Cartesian(Nd)
     
     batch = 3
@@ -125,7 +125,8 @@ def test_senselike_NUFFT():
     print('Jd = ', Jd)
      
 #     NufftObj = NUFFT_cpu()
-    NufftObj = NUFFT_hsa()
+    device_list = helper.device_list()
+    NufftObj = NUFFT(device_list[0], legacy=True)
     NufftObj.plan(om, Nd, Kd, Jd, ft_axes = (0,1),batch=batch)
     
     # Now create fake coil sensitivity profiles
@@ -143,7 +144,7 @@ def test_senselike_NUFFT():
 #     y = NufftObj.forward(multi_image).get()
 
     y0 = NufftObj.forward_one2many(image)# for NUFFT_hsa()
-    y = y0.get()
+    y = y0
     # Now reshape the data for IFFT
 #     y2 = y.reshape(Nd +(batch, ) , order='C') 
 #     
@@ -155,7 +156,7 @@ def test_senselike_NUFFT():
 #                 ), axes = (0,1)
 #             )
     
-    x2 = NufftObj.adjoint(y0).get()
+    x2 = NufftObj.adjoint(y0)
     
     # display the result
     for pp in range(0, batch):
