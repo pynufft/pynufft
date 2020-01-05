@@ -3,7 +3,11 @@ Version history
 
 **v2019.2.3**
 
--Planned to be released soon.
+-(experimental) Add the unified NUFFT() class. Now CPU, GPU, and legacy GPU mode are encapsuled in a single class. 
+
+-Tested using Intel Neo OpenCL driver (see https://github.com/intel/compute-runtime) and IntelPython3.
+
+-The old NUFFT_cpu() and NUFFT_legacy() will be kept in the system for compatibility.
 
 **v2019.2.1-2019.2.2**
 
