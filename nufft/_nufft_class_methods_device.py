@@ -161,7 +161,7 @@ def _plan_device(self, om, Nd, Kd, Jd, ft_axes=None, batch=None, radix=None):
     self.Kd = self.st['Kd']
     #  self.sn = numpy.asarray(self.st['sn'].astype(self.dtype),
     #                            order='C')# backup
-    if self.batch == 1 and (self.parallel_flag == 0):
+    if self.batch == 1:
         self.multi_Nd = self.Nd
         self.multi_Kd = self.Kd
         self.multi_M = (self.st['M'], )
@@ -657,7 +657,10 @@ def _adjoint_legacy(self, gy):
 
 @push_cuda_context
 def release(self):
-    del self.volume
+    try:
+        del self.volume
+    except:
+        pass
     try:
         del self.tSN
     except:
@@ -759,7 +762,7 @@ def _plan_legacy(self, om, Nd, Kd, Jd, ft_axes = None, batch = None):
     self.Kd = self.st['Kd']
     #  self.sn = numpy.asarray(self.st['sn'].astype(self.dtype),
     #                            order='C')# backup
-    if self.batch == 1 and (self.parallel_flag == 0):
+    if self.batch == 1:
         self.multi_Nd = self.Nd
         self.multi_Kd = self.Kd
         self.multi_M = (self.st['M'], )

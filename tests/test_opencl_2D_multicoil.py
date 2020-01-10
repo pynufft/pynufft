@@ -43,7 +43,7 @@ def test_opencl_multicoils():
     device_list = helper.device_list()
     # initiating NUFFT_hsa object
 #     try:
-    NufftObj = NUFFT(device_list[2], legacy=False)
+    NufftObj = NUFFT(device_list[0], legacy=False)
 #     NufftObj._set_wavefront_device(4)
     print(NufftObj.thr)
 #     except:

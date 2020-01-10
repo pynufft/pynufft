@@ -1,17 +1,3 @@
-#from setuptools import setup
-#try:
-#    from pypandoc import convert
-#    read_md = lambda f: convert(f, 'rst')
-#except ImportError:
-#    print("warning: pypandoc module not found, could not convert Markdown to RST")
-#    read_md = lambda f: open(f, 'r').read()
-
-
-
-#import os
-#long_description = 'A pythonic non-uniform FFT'
-#if os.path.exists('README.txt'):
-#    long_description = open('README.txt').read()
 
 from setuptools import setup
 
@@ -19,7 +5,7 @@ import sys
 #if sys.version_info[0] == 2:
 #    sys.exit("Sorry, Python 2 is not supported yet")
 setup(name='pynufft',
-      version='2019.2.3rc4',
+      version='2019.2.3',
       description='Python non-uniform fast Fourier transform (PyNUFFT)',
       author='Jyh-Miin Lin',
       author_email='jyhmiinlin@gmail.com',

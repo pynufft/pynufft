@@ -73,7 +73,7 @@ results = []
 
 # Now enter the first process
 # This is the standard multiprocessing Pool
-D = atomic_NUFFT(om1, Nd, Kd, Jd, 0)
+D = atomic_NUFFT(om1, Nd, Kd, Jd, 3)
 # async won't obstruct the next line of code
 result = pool.apply_async(D.run, args = (x, (0,3)))
 # the result is appended
@@ -81,7 +81,7 @@ results.append(result)
 
 # Now enter the second process
 # This is the standard multiprocessing Pool
-D = atomic_NUFFT(om2, Nd, Kd, Jd, 0)
+D = atomic_NUFFT(om2, Nd, Kd, Jd, 3)
 # Non-obstructive
 result = pool.apply_async(D.run, args = (x, (4,7)))
 results.append(result)
