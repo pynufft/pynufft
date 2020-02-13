@@ -11,7 +11,7 @@ PyNUFFT attempts to implement the min-max NUFFT of Fessler and Sutton, with the 
 - Provides 1D/2D/3D examples for further developments.
 - Support of PyCUDA and PyOpenCL. 
 [//]: # NVIDIA's graphic processing units (GPUs) and opencl devices (Intel OpenCL SDK, Intel OpenCL NEO or multi-core CPU). 
-- LGPLv3
+- LGPL-v3
 
 [//]: # ### Acknowledgements
 
