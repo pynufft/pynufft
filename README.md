@@ -8,10 +8,9 @@ A minimal "getting start" tutorial is available at http://jyhmiinlin.github.io/p
 PyNUFFT attempts to implement the min-max NUFFT of Fessler and Sutton, with the following features:
 
 - Based on Python numerical libraries, such as Numpy, Scipy (matplotlib for displaying examples).
-- Provides 1D/2D/3D examples for further developments.
+- Multi-dimensional NUFFT.
 - Support of PyCUDA and PyOpenCL. 
 - LGPLv3
-
 
 ```
 @article{lin2018python,
