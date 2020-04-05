@@ -66,7 +66,9 @@ class NUDFT_cpu:
 #         self.ft_axes = ()  # : initial value: ()
         self.batch = None  # : initial value: None
         pass
-    def plan(self, om, Nd):
+    def plan(self, om, Nd, batch=None):
+        if batch != None:
+            self.batch = numpy.int(batch)
         self.Nd = Nd
         self.ndims = len(Nd)
         self.F_matrix = []
@@ -76,15 +78,22 @@ class NUDFT_cpu:
             self.F_matrix += [DFT_matrix((Nd[dimid],), om[:, dimid:dimid+1]),]
             compute_str_x += lower_case[dimid]
             F_str += ', m' + lower_case[dimid]
-        self.compute_str_forward = compute_str_x + F_str + '-> m'
-        self.compute_str_adj = 'm' + F_str + '->' + compute_str_x 
+        
+        if type(batch)==numpy.int:
+            print('here')
+            self.compute_str_forward = compute_str_x +'z' + F_str + '-> mz'
+            self.compute_str_adj = 'm' + F_str + '->' + compute_str_x +'z'
+        else: 
+            self.compute_str_forward = compute_str_x + F_str + '-> m'
+            self.compute_str_adj = 'm' + F_str + '->' + compute_str_x
         
         self.scale = numpy.prod(Nd)
     def forward(self, x):
-        
-        y = numpy.einsum(self.compute_str_forward, x, *self.F_matrix)
+        print(self.compute_str_forward)
+        y = numpy.einsum(self.compute_str_forward, x, *self.F_matrix,optimize='optimal')
         return y
     def adjoint(self, y):
-        x = numpy.einsum(self.compute_str_adj, y, *[self.F_matrix[dimid].conj() for dimid in range(0, self.ndims)])
+        print(self.compute_str_adj)
+        x = numpy.einsum(self.compute_str_adj, y, *[self.F_matrix[dimid].conj() for dimid in range(0, self.ndims)],optimize='optimal')
         x /= self.scale
         return x.reshape(self.Nd)
