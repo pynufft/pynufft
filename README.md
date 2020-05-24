@@ -24,11 +24,14 @@ PyNUFFT attempts to implement the min-max NUFFT of Fessler and Sutton, with the 
 }
 ```
 
-### Contributors
-
-The project is still alive and we are grateful for the following contributors:
-
-
-
-
 ### Acknowledgements
+
+I would be more than grateful for what 
+contributors/partners have done (either contributing codes or fixing bugs in pynufft). 
+However, The information of contributors and partners are kept anonymized without 
+their prior express informed consent. 
+If anyone would like to be identified as a contributors/partners, please contact pynufft@gmail.com.
+
+
+
+
