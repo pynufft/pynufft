@@ -16,7 +16,7 @@ Users of PyNUFFT should be familiar with discrete Fourier transform (DFT).
 
 **The min-max interpolator**
 
-- PyNUFFT reimplements the min-max interpolator, which is described in the literature:
+- PyNUFFT translates the min-max interpolator to Python. The min-max interpolator is described in the literature:
 
 *Fessler JA, Sutton BP. Nonuniform fast Fourier transforms using min-max interpolation. IEEE Trans Signal Process 2003;51(2):560-574.*
 
@@ -31,20 +31,14 @@ Users of PyNUFFT should be familiar with discrete Fourier transform (DFT).
  
 **Current status of PyNUFFT**
 
+- PyNUFFT was created for fun. 
+
+- The content may not reflect the views of funding bodies, former or current partners, and contributors.
+
 - The current PyNUFFT relies on Numpy/Scipy (NUFFT_cpu) and Reikan/PyCUDA/PyOpenCL (NUFFT_hsa). 
 
-- PyNUFFT provides two NUFFT classes: (1) NUFFT_cpu and (2) NUFFT_hsa (HSA: heterogeneous system architecture). 
+- PyNUFFT provides 3 NUFFT classes: (1) NUFFT_cpu, (2) NUFFT_hsa (HSA: heterogeneous system architecture), (3) NUFFT (mixed CPU/HSA classes without warranty)
 
-- Unlike TensorFlow for AI, the current PyNUFFT does NOT recommend any single solver for a wide range of reconstruction problems, especially in medical imaging applications.
+- LGPLv3.
+ 
 
-- However, it does provide some referenced solvers for a limited number of problems, but without any warranty.
-
-**Technology overview**
-
-- NUFFT_cpu is the generic NUFFT class built on Numpy/Scipy. 
-
-- NUFFT_hsa transplants the NUFFT class to  PyCUDA/PyOpenCL, using the Reikna package to support both platforms. 
-The full toolchain is open-source. 
-The FFT kernel is from Reikna, which is independent of CUDA. 
-PyNUFFT has its own multi-dimensional interpolator and scaling factor, which are also independent of CUDA. 
-  
