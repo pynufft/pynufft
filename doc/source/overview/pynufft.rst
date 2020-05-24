@@ -7,9 +7,15 @@ The Python Non-uniform fast Fourier transform (PyNUFFT)
 
 The PyNUFFT user manual documents the *Python non-uniform fast Fourier transform*, a Python package for non-uniform fast Fourier transform.
 
+PyNUFFT was created for fun. The content may not reflect the views of funding bodies, former or current partners, and contributors.
+
 If you find PyNUFFT useful, please cite:
 
 *Lin, Jyh-Miin. "Python Non-Uniform Fast Fourier Transform (PyNUFFT): An Accelerated Non-Cartesian MRI Package on a Heterogeneous Platform (CPU/GPU)." Journal of Imaging 4.3 (2018): 51.*
+
+or
+
+*J.-M. Lin and H.-W. Chung, Pynufft: python non-uniform fast Fourier transform for MRI Building Bridges in Medical Sciences 2017, St John's College, CB2 1TP Cambridge, UK*
 
 Users of PyNUFFT should be familiar with discrete Fourier transform (DFT). 
 
@@ -30,10 +36,6 @@ Users of PyNUFFT should be familiar with discrete Fourier transform (DFT).
 
  
 **Current status of PyNUFFT**
-
-- PyNUFFT was created for fun. 
-
-- The content may not reflect the views of funding bodies, former or current partners, and contributors.
 
 - The current PyNUFFT relies on Numpy/Scipy (NUFFT_cpu) and Reikan/PyCUDA/PyOpenCL (NUFFT_hsa). 
 
