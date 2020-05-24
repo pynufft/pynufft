@@ -11,18 +11,13 @@ PyNUFFT is for fun and it attempts to implement the min-max NUFFT of Fessler and
 - Support of PyCUDA and PyOpenCL. 
 - LGPLv3
 
-```
-@article{lin2018python,
-  title={Python Non-Uniform Fast {F}ourier Transform ({PyNUFFT}): An Accelerated Non-{C}artesian {MRI} Package on a Heterogeneous Platform ({CPU/GPU})},
-  author={Lin, Jyh-Miin},
-  journal={Journal of Imaging},
-  volume={4},
-  number={3},
-  pages={51},
-  year={2018},
-  publisher={Multidisciplinary Digital Publishing Institute}
-}
-```
+If you find PyNUFFT useful, please cite:
+
+Lin, Jyh-Miin. “Python Non-Uniform Fast Fourier Transform (PyNUFFT): An Accelerated Non-Cartesian MRI Package on a Heterogeneous Platform (CPU/GPU).” Journal of Imaging 4.3 (2018): 51.
+
+and/or
+
+J.-M. Lin and H.-W. Chung, Pynufft: python non-uniform fast Fourier transform for MRI Building Bridges in Medical Sciences 2017, St John’s College, CB2 1TP Cambridge, UK
 
 ### Acknowledgements
 
