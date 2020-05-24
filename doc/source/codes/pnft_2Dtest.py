@@ -31,8 +31,7 @@ NufftObj.plan(om, Nd, Kd, Jd)
 # load image from scipy.misc.face()
 import scipy.misc
 import matplotlib.cm as cm
-image = scipy.misc.face(gray=True)
-image = scipy.misc.imresize(image, (256,256))
+image = scipy.misc.ascent()[::2,::2]
 image=image.astype(numpy.float)/numpy.max(image[...])
 pyplot.imshow(image, cmap=cm.gray)
 pyplot.show()

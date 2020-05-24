@@ -89,8 +89,11 @@ class NUDFT_cpu:
         
         self.scale = numpy.prod(Nd)
     def forward(self, x):
-        print(self.compute_str_forward)
-        y = numpy.einsum(self.compute_str_forward, x, *self.F_matrix,optimize='optimal')
+        try:
+            y = numpy.einsum(self.compute_str_forward, x, *self.F_matrix,optimize=self.path)
+        except:
+            self.path = numpy.einsum_path(self.compute_str_forward, x, *self.F_matrix,optimize='optimal')[0]
+            y = numpy.einsum(self.compute_str_forward, x, *self.F_matrix,optimize=self.path)
         return y
     def adjoint(self, y):
         print(self.compute_str_adj)

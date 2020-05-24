@@ -533,21 +533,20 @@ def solve(nufft,gy, solver=None,  maxiter=30, *args, **kwargs):
 #         x2 = nufft.thr.copy_array(nufft.x_Nd)
         return x2
     elif 'dc'   ==  solver:
-         """
-         Density compensation method
-         nufft.st['W'] will be computed if doesn't exist
-         If nufft.st['W'] exist then x2 = nufft.adjoint(nufft.st['W']*y)
-         input: 
-             y: (M,) array
-         output:
-             x2: Nd array
-         """
-         print(solver, ":density compensation method. I won't recommend it as the GPU version is not needed! Try the CPU version")
-
-#          nufft.st['W'] = nufft._pipe_density(maxiter=maxiter,*args, **kwargs)
+        """
+        Density compensation method
+        nufft.st['W'] will be computed if doesn't exist
+        If nufft.st['W'] exist then x2 = nufft.adjoint(nufft.st['W']*y)
+        input: 
+            y: (M,) array
+        output:
+            x2: Nd array
+        """
+#         print(solver, ":density compensation method. I won't recommend it as the GPU version is not needed! Try the CPU version")
+        nufft.st['W'] = _pipe_density(nufft, maxiter=maxiter,*args, **kwargs)
 #  
-#          x2 = nufft.adjoint(nufft.st['W']*gy)
-         return x2
+        x2 = nufft.adjoint(nufft.st['W']*gy)
+        return x2
 #             return gx        
     elif 'cg' == solver:
  

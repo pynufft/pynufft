@@ -38,8 +38,7 @@ Last the Cartesian data are transformed back to image by IFFT (with two ifftshif
    Kd = (512,512)
    Jd = (6,6)
    
-   image = scipy.misc.ascent()
-   image = scipy.misc.imresize(image, Nd).astype(numpy.complex64)
+   image = scipy.misc.ascent()[::2,::2]
    om = fake_Cartesian(Nd)
    
    

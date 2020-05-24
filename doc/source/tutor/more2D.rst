@@ -77,8 +77,7 @@ Now we can plan NufftObj with these parameters::
 
 Now NufftObj has been prepared and is ready for computations. We continue with an example.::
    
-   image = scipy.misc.ascent()
-   image = scipy.misc.imresize(image, (256,256))
+   image = scipy.misc.ascent()[::2, ::2]
    image=image/numpy.max(image[...])
    
    print('loading image...')
