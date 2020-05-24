@@ -1,6 +1,14 @@
 Version history
 ===============
 
+**v2020.1.0**
+
+- add batch mode to nudft_cpu
+
+**v2020.0.0**
+
+- fix batch=1. This can cause error in Riekna fft.
+
 **v2019.2.3**
 
 -(experimental) Add the unified NUFFT() class. Now CPU, GPU, and legacy GPU mode are encapsuled in a single class. 
