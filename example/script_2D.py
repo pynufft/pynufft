@@ -35,8 +35,8 @@ print('setting interpolation size Jd...', Jd)
 
 NufftObj.plan(om, Nd, Kd, Jd)
 
-image = scipy.misc.ascent()
-image = scipy.misc.imresize(image, (256,256))
+image = scipy.misc.ascent()[::2, ::2]
+# image = scipy.misc.imresize(image, (256,256))
 image=image*1.0/numpy.max(image[...])
 
 print('loading image...')

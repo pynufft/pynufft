@@ -7,7 +7,8 @@ Nd = (256,256)
 Kd = (512,512)
 Jd = (6,6)
 om = numpy.random.randn(65536, 2) 
-x = scipy.misc.imresize(scipy.misc.ascent(), Nd)
+# x = scipy.misc.imresize(scipy.misc.ascent(), Nd)
+x = scipy.misc.ascent()[::2, ::2]
 om1 = om[om[:,0]>0, :]
 om2 = om[om[:,0]<=0, :]
 
