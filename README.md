@@ -4,7 +4,7 @@ A minimal "getting start" tutorial is available at http://jyhmiinlin.github.io/p
  
 ### Summary
 
-PyNUFFT attempts to implement the min-max NUFFT of Fessler and Sutton, with the following features:
+PyNUFFT is for fun and it attempts to implement the min-max NUFFT of Fessler and Sutton, with the following features:
 
 - Based on Python numerical libraries, such as Numpy, Scipy (matplotlib for displaying examples).
 - Multi-dimensional NUFFT.
