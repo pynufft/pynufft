@@ -637,7 +637,7 @@ def cSpmvh():
                                 {
                                 J = Jd[dimid];
                                 index =   index_shift + meshindex[dim*j + dimid];   // the index of the partial ELL arrays *kindx and *udata
-                                col += kindx[index] + 1  ;                                            // the column index of the current j
+                                col += kindx[index];// + 1  ;                                            // the column index of the current j
                                 float tmp_x = spdata.x;
                                 float2 tmp_udata = udata[index];
                                 spdata.x = tmp_x * tmp_udata.x - spdata.y * tmp_udata.y;                            // the spdata of the current j
@@ -695,7 +695,7 @@ def cSpmvh():
                     for (unsigned int dimid = 1; dimid < dim; dimid ++ ){
                             J = Jd[dimid];
                             index =   index_shift + meshindex[dim*j + dimid];   // the index of the partial ELL arrays *kindx and *udata
-                            col += kindx[index] + 1  ;                                            // the column index of the current j
+                            col += kindx[index];// + 1  ;                                            // the column index of the current j
                             float tmp_x = spdata.x;
                             float2 tmp_udata = udata[index];
                             spdata.x = tmp_x * tmp_udata.x - spdata.y * tmp_udata.y;                            // the spdata of the current j
@@ -861,7 +861,7 @@ def cSpmv():
         {
         unsigned int J = Jd[dimid];
         unsigned int index =  index_shift + meshindex[dim*j + dimid];   // the index of the partial ELL arrays *kindx and *udata
-        col += kindx[index] + 1;                                            // the column index of the current j
+        col += kindx[index] ;//+ 1;                                            // the column index of the current j
         float tmp_x= spdata.x;
         float2 tmp_udata = udata[index];
         spdata.x = spdata.x * tmp_udata.x - spdata.y * tmp_udata.y;                            // the spdata of the current j
