@@ -197,7 +197,7 @@ def OMEGA_k(J,K, omd, Kd, dimid, dd, ft_flag):
     if dimid < dd - 1:  # trick: pre-convert these indices into offsets!
         #            ('trick: pre-convert these indices into offsets!')
         k_indx = k_indx * numpy.prod(Kd[dimid+1:dd])# - 1
-    print(dimid, k_indx[0,0])
+#     print(dimid, k_indx[0,0])
     """
     Note: F-order matrices must be reshaped into an 1D array before sparse matrix-vector multiplication.
     The original F-order (in Fessler and Sutton 2003) is not suitable for GPU array (C-order).
