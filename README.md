@@ -27,7 +27,7 @@ However, The information of contributors and partners are kept anonymized withou
 their prior express informed consent. 
 If anyone would like to be identified as contributors/partners, please contact pynufft@gmail.com.
 
-Special thanks to the authors of MIRT and gpuNUFFT, which have largely inspired this package. 
+Special thanks to the authors of MIRT, gpuNUFFT and BART, which have largely inspired this package. 
 
 ### Related projects
 
