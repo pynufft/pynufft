@@ -31,7 +31,7 @@ Special thanks to the authors of MIRT, gpuNUFFT and BART, which have largely ins
 
 ### Related projects
 
-The PyNUFFT package has currently been used by signal processing experts, astronomers, and physicists to develop their applications. 
+The PyNUFFT package has currently been used by signal processing experts, astronomers, and physicists for building their applications. 
 
 1. Real-time PySAP-MRI reconstruction (https://github.com/CEA-COSMIC/pysap-mri)
 2. Accelerated tomography
