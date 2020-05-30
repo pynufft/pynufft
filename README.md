@@ -4,7 +4,7 @@ A minimal "getting start" tutorial is available at http://jyhmiinlin.github.io/p
  
 ### Summary
 
-PyNUFFT is for fun and it attempts to implement the min-max NUFFT of Fessler and Sutton, with the following features:
+PyNUFFT is developed for fun and it attempts to implement the min-max NUFFT of Fessler and Sutton, with the following features:
 
 - Based on Python numerical libraries, such as Numpy, Scipy (matplotlib for displaying examples).
 - Multi-dimensional NUFFT.
@@ -22,11 +22,23 @@ J.-M. Lin and H.-W. Chung, Pynufft: python non-uniform fast Fourier transform fo
 ### Acknowledgements
 
 I would be more than grateful for what 
-contributors/partners have done (either contributing codes or fixing bugs in pynufft). 
+contributors/partners have done (either contributing codes or providing testing results). 
 However, The information of contributors and partners are kept anonymized without 
 their prior express informed consent. 
-If anyone would like to be identified as a contributors/partners, please contact pynufft@gmail.com.
+If anyone would like to be identified as contributors/partners, please contact pynufft@gmail.com.
 
+Special thanks to the authors of MIRT and gpuNUFFT, which have largely inspired this package. 
 
+### Related projects
 
+The PyNUFFT package has currently been used by signal processing experts, astronomers, and physicists to develop their applications. 
+
+1. Real-time PySAP-MRI reconstruction (https://github.com/CEA-COSMIC/pysap-mri)
+2. Accelerated tomography
+3. Radiation distribution
+4. Machine learning in MRI reconstruction 
+5. Spiral off-resonance correction
+6. For motion estimation (NUFFT adjoint + SPyNET) (https://pubmed.ncbi.nlm.nih.gov/32408295/)
+
+Open-source Python software is nice for delivering your products. So try PyNUFFT today!
 
