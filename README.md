@@ -39,6 +39,7 @@ The PyNUFFT package has currently been used by signal processing experts, astron
 4. Machine learning in MRI reconstruction 
 5. Spiral off-resonance correction
 6. For motion estimation (NUFFT adjoint + SPyNET) (https://pubmed.ncbi.nlm.nih.gov/32408295/)
+7. PyNUFFT was used in ISMRM reproducible group and was mentioned in "Stikov, Nikola, Joshua D. Trzasko, and Matt A. Bernstein. "Reproducibility and the future of MRI research." Magnetic resonance in medicine 82.6 (2019): 1981-1983."
 
 Open-source Python software is nice for delivering your products. So try PyNUFFT today!
 
