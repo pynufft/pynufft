@@ -34,10 +34,10 @@ Special thanks to the authors of MIRT, gpuNUFFT and BART, which have largely ins
 
 The PyNUFFT package has currently been used by signal processing experts, astronomers, and physicists for building their applications. 
 
-1. Real-time PySAP-MRI reconstruction (https://github.com/CEA-COSMIC/pysap-mri)
+1. Online PySAP-MRI reconstruction (https://github.com/CEA-COSMIC/pysap-mri)
 2. Accelerated tomography
 3. Radiation distribution
-4. Machine learning in MRI reconstruction 
+4. Machine learning in MRI reconstruction (https://www.researchgate.net/publication/335473585_A_deep_learning_approach_for_reconstruction_of_undersampled_Cartesian_and_Radial_data)
 5. Spiral off-resonance correction
 6. For motion estimation (NUFFT adjoint + SPyNET) (https://pubmed.ncbi.nlm.nih.gov/32408295/)
 7. PyNUFFT was used in ISMRM reproducible study group and was mentioned in "Stikov, Nikola, Joshua D. Trzasko, and Matt A. Bernstein. "Reproducibility and the future of MRI research." Magnetic resonance in medicine 82.6 (2019): 1981-1983."
