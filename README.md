@@ -14,7 +14,7 @@ PyNUFFT is developed for fun and it attempts to implement the min-max NUFFT of F
 
 If you find PyNUFFT useful, please cite:
 
-Lin, Jyh-Miin. “Python Non-Uniform Fast Fourier Transform (PyNUFFT): An Accelerated Non-Cartesian MRI Package on a Heterogeneous Platform (CPU/GPU).” Journal of Imaging 4.3 (2018): 51.
+Lin, Jyh-Miin. “Python Non-Uniform Fast Fourier Transform (PyNUFFT): An Accelerated Non-Cartesian MRI Package on a Heterogeneous Platform (CPU/GPU).” Journal of Imaging 4.3 (2018): 51. (Available at https://www.mdpi.com/2313-433X/4/3/51)
 
 and/or
 
