@@ -22,13 +22,9 @@ J.-M. Lin and H.-W. Chung, Pynufft: python non-uniform fast Fourier transform fo
 
 ### Acknowledgements
 
-I would be more than grateful for what 
-contributors/partners have done (either contributing codes or providing testing results). 
-However, The information of contributors and partners are kept anonymized without 
-their prior express informed consent. 
-If anyone would like to be identified as contributors/partners, please contact pynufft@gmail.com.
+Special thanks to the authors of MIRT, gpuNUFFT and BART, which have largely inspired the development of this package. 
 
-Special thanks to the authors of MIRT, gpuNUFFT and BART, which have largely inspired this package. 
+The project also thanks contributors for providing testing results and patches. 
 
 ### Related projects
 
@@ -36,8 +32,8 @@ The PyNUFFT package has currently been used by signal processing experts, astron
 
 1. Online PySAP-MRI reconstruction (https://github.com/CEA-COSMIC/pysap-mri)
 2. Accelerated tomography
-3. Radiation distribution
-4. Machine learning in MRI reconstruction (https://www.researchgate.net/publication/335473585_A_deep_learning_approach_for_reconstruction_of_undersampled_Cartesian_and_Radial_data)
+3. Radiation distribution 
+4. Machine learning based MRI reconstruction (https://www.researchgate.net/publication/335473585_A_deep_learning_approach_for_reconstruction_of_undersampled_Cartesian_and_Radial_data)
 5. Spiral off-resonance correction
 6. For motion estimation (NUFFT adjoint + SPyNET) (https://pubmed.ncbi.nlm.nih.gov/32408295/)
 7. PyNUFFT was used in ISMRM reproducible study group and was mentioned in "Stikov, Nikola, Joshua D. Trzasko, and Matt A. Bernstein. "Reproducibility and the future of MRI research." Magnetic resonance in medicine 82.6 (2019): 1981-1983."
