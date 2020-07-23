@@ -30,7 +30,7 @@ The project also thanks contributors for providing testing results and patches.
 
 The PyNUFFT package has currently been used by signal processing experts, astronomers, and physicists for building their applications. 
 
-1. Online PySAP-MRI reconstruction (https://github.com/CEA-COSMIC/pysap-mri)
+1. Online PySAP-MRI reconstruction (https://github.com/CEA-COSMIC/pysap-mri, which was accomplished under the assitance of the services.) 
 2. Accelerated tomography
 3. Radiation distribution 
 4. Machine learning based MRI reconstruction (https://www.researchgate.net/publication/335473585_A_deep_learning_approach_for_reconstruction_of_undersampled_Cartesian_and_Radial_data)
