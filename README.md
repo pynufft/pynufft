@@ -37,7 +37,6 @@ The PyNUFFT package has currently been used by signal processing experts, astron
 5. Spiral off-resonance correction
 6. For motion estimation (NUFFT adjoint + SPyNET) (https://pubmed.ncbi.nlm.nih.gov/32408295/)
 7. PyNUFFT was used in ISMRM reproducible study group and was mentioned in "Stikov, Nikola, Joshua D. Trzasko, and Matt A. Bernstein. "Reproducibility and the future of MRI research." Magnetic resonance in medicine 82.6 (2019): 1981-1983."
-8. The Cine FSE used the NUFFT idea (Lin, J. M., Patterson, A. J., Chao, T. C., Zhu, C., Chang, H. C., Mendes, J., ... & Graves, M. J. (2017). Free-breathing black-blood CINE fast-spin echo imaging for measuring abdominal aortic wall distensibility: a feasibility study. Physics in Medicine & Biology, 62(10), N204.) (the legacy project site is at https://github.com/jyhmiinlin/cineFSE) 
 
 Open-source Python software is nice for delivering your products. So try PyNUFFT today!
 
