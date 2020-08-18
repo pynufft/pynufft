@@ -41,3 +41,5 @@ The PyNUFFT package has currently been used by signal processing experts, astron
 
 Open-source Python software is nice for delivering your products. So try PyNUFFT today!
 
+speed_accuracy_comparisons.png
+
