@@ -26,6 +26,8 @@ Special thanks to the authors of MIRT, gpuNUFFT and BART, which have largely ins
 
 The project also thanks contributors for providing testing results and patches. 
 
+<!--
+
 ### Related projects
 
 The PyNUFFT package has currently been used by signal processing experts, astronomers, and physicists for building their applications. 
@@ -41,3 +43,4 @@ The PyNUFFT package has currently been used by signal processing experts, astron
 Open-source Python software is nice for delivering your products. So try PyNUFFT today!
 
 
+-->
