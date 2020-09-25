@@ -496,7 +496,7 @@ def _x2s_device(self, x):
 @push_cuda_context
 def _selfadjoint_one2many2one_device(self, gx):
     """
-    selfadjoint_one2many2one NUFFT (Teplitz) on the heterogeneous device
+    selfadjoint_one2many2one NUFFT (Toeplitz) on the heterogeneous device
 
     :param gx: The input gpu array, with size=Nd
     :type gx: reikna gpu array with dtype =numpy.complex64

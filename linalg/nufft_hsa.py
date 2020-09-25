@@ -28,7 +28,7 @@ class hypercube:
 
 def push_cuda_context(hsa_method):
     """
-    Decorator: Push cude context to the top of the stack for current use
+    Decorator to push up CUDA context to the top of the stack for current use
     Add @push_cuda_context before the methods of NUFFT_hsa()
     """
     @_wraps(hsa_method)
@@ -658,7 +658,7 @@ class NUFFT_hsa:
     @push_cuda_context
     def selfadjoint_one2many2one(self, gx):
         """
-        selfadjoint_one2many2one NUFFT (Teplitz) on the heterogeneous device
+        selfadjoint_one2many2one NUFFT (Toeplitz) on the heterogeneous device
 
         :param gx: The input gpu array, with size=Nd
         :type gx: reikna gpu array with dtype =numpy.complex64
