@@ -658,7 +658,7 @@ class NUFFT_hsa:
     @push_cuda_context
     def selfadjoint_one2many2one(self, gx):
         """
-        selfadjoint_one2many2one NUFFT (Toeplitz) on the heterogeneous device
+        selfadjoint_one2many2one NUFFT on the heterogeneous device
 
         :param gx: The input gpu array, with size=Nd
         :type gx: reikna gpu array with dtype =numpy.complex64
@@ -673,7 +673,7 @@ class NUFFT_hsa:
 
     def selfadjoint(self, gx):
         """
-        selfadjoint NUFFT (Toeplitz) on the heterogeneous device
+        selfadjoint NUFFT on the heterogeneous device
 
         :param gx: The input gpu array, with size=Nd
         :type gx: reikna gpu array with dtype =numpy.complex64

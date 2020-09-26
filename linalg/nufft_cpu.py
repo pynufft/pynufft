@@ -256,7 +256,7 @@ class NUFFT_cpu:
 
     def selfadjoint(self, x):
         """
-        selfadjoint NUFFT (Toeplitz) on CPU
+        selfadjoint NUFFT on CPU
 
         :param x: The input numpy array, with size=Nd
         :type: numpy array with dtype =numpy.complex64

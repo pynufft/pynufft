@@ -244,7 +244,7 @@ def _selfadjoint_one2many2one_cpu(self, x):
 
 def _selfadjoint_cpu(self, x):
     """
-    selfadjoint NUFFT (Toeplitz) on CPU
+    selfadjoint NUFFT on CPU
 
     :param x: The input numpy array, with size=Nd
     :type: numpy array with dtype =numpy.complex64

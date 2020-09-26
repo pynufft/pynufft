@@ -362,7 +362,8 @@ class NUFFT_hsa_legacy:
     @push_cuda_context
     def selfadjoint2(self, gx):
         """
-        selfadjoint NUFFT (Toeplitz) on the heterogeneous device
+        The Toeplitz on the heterogeneous device using the diaognal matrix to compute the convolution. 
+        It is an approximation to the fully selfadjoint but in some cases the accuracy is high enough.
          
         :param gx: The input gpu array, with size=Nd
         :type: reikna gpu array with dtype =numpy.complex64
@@ -385,9 +386,8 @@ class NUFFT_hsa_legacy:
     @push_cuda_context
     def selfadjoint(self, gx):
         """
-        inverse method (Toeplitz) on the heterogeneous device using the diaognal matrix to compute the convolution. 
-        It is an approximation to the fully selfadjoint but in some cases the accuracy is high enough.
-         
+        selfadjoint.
+        
         :param gx: The input gpu array, with size=Nd
         :type: reikna gpu array with dtype =numpy.complex64
         :return: gx: The output gpu array, with size=Nd
