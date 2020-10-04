@@ -163,7 +163,7 @@ def _set_sense_cpu(self, coil_profile):
 
 
         
-def _forward_one2many_cpu(self, x):
+def _forward_one2many_cpu_deprecated(self, x):
     """
     Assume x.shape = self.Nd
 
@@ -177,7 +177,7 @@ def _forward_one2many_cpu(self, x):
 
     return y2
 
-def _adjoint_many2one_cpu(self, y):
+def _adjoint_many2one_cpu_deprecated(self, y):
     """
     Assume y.shape = self.multi_M
     """
@@ -236,7 +236,7 @@ def _adjoint_cpu(self, y):
 
     return x
 
-def _selfadjoint_one2many2one_cpu(self, x):
+def _selfadjoint_one2many2one_cpu_deprecated(self, x):
     y2 = self._forward_one2many_cpu(x)
     x2 = self._adjoint_many2one_cpu(y2)
     del y2
@@ -488,34 +488,34 @@ def _y2k_legacy_host(self, y):
     gk = self._y2k_legacy(gy)
     return gk.get()
 
-def _adjoint_many2one_host(self, y):
+def _adjoint_many2one_host_deprecated(self, y):
     gy  = self.to_device(y)
     gx2 = self._adjoint_many2one_device(gy)
     return gx2.get()
 
-def _forward_one2many_host(self, x):
+def _forward_one2many_host_deprecated(self, x):
     gx = self.to_device(x)
     gy = self._forward_one2many_device(gx)
     return gy.get()
 
 
-def _selfadjoint_one2many2one_host(self, x):
+def _selfadjoint_one2many2one_host_deprecated(self, x):
     gx = self.to_device(x)
     gx2 = self._selfadjoint_one2many2one_device(gx) 
     return gx2.get()   
 
-def _adjoint_many2one_legacy_host(self, y):
+def _adjoint_many2one_legacy_host_deprecated(self, y):
     gy  = self.to_device(y)
     gx2 = self._adjoint_many2one_legacy(gy)
     return gx2.get()
 
-def _forward_one2many_legacy_host(self, x):
+def _forward_one2many_legacy_host_deprecated(self, x):
     gx = self.to_device(x)
     gy = self._forward_one2many_legacy(gx)
     return gy.get()
 
 
-def _selfadjoint_one2many2one_legacy_host(self, x):
+def _selfadjoint_one2many2one_legacy_host_deprecated(self, x):
     gx = self.to_device(x)
     gx2 = self._selfadjoint_one2many2one_legacy(gx) 
     return gx2.get()   

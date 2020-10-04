@@ -494,7 +494,7 @@ def _x2s_device(self, x):
     return s    
 
 @push_cuda_context
-def _selfadjoint_one2many2one_device(self, gx):
+def _selfadjoint_one2many2one_device_deprecated(self, gx):
     """
     selfadjoint_one2many2one NUFFT on the heterogeneous device
 
@@ -510,7 +510,7 @@ def _selfadjoint_one2many2one_device(self, gx):
     return gx2    
 
 @push_cuda_context
-def _selfadjoint_one2many2one_legacy(self, gx):
+def _selfadjoint_one2many2one_legacy_deprecated(self, gx):
     """
     selfadjoint_one2many2one NUFFT (Teplitz) on the heterogeneous device
 
@@ -596,25 +596,25 @@ def _forward_legacy(self, gx):
     return gy    
 
 @push_cuda_context
-def _forward_one2many_device(self, s):
+def _forward_one2many_device_deprecated(self, s):
     x = self._s2x_device(s)
     y = self._forward_device(x)
     return y    
 
 @push_cuda_context
-def _adjoint_many2one_device(self, y):
+def _adjoint_many2one_device_deprecated(self, y):
     x = self._adjoint_device(y)
     s = self._x2s_device(x)
     return s    
 
 @push_cuda_context
-def _forward_one2many_legacy(self, s):
+def _forward_one2many_legacy_deprecated(self, s):
     x = self._s2x_device(s)
     y = self._forward_legacy(x)
     return y    
 
 @push_cuda_context
-def _adjoint_many2one_legacy(self, y):
+def _adjoint_many2one_legacy_deprecated(self, y):
     x = self._adjoint_legacy(y)
     s = self._x2s_device(x)
     return s    
