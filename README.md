@@ -9,8 +9,11 @@ PyNUFFT is developed for fun and it attempts to implement the min-max NUFFT of F
 
 - Based on Python numerical libraries, such as Numpy, Scipy (matplotlib for displaying examples).
 - Multi-dimensional NUFFT.
-- Support of PyCUDA and PyOpenCL. 
+- Support of PyCUDA and PyOpenCL.
+- Tested on the Intel OpenCL device, the Nvidia CUDA device, and AMD FirePro.
 - LGPLv3
+- The double precision CPU/GPU version is available on request.
+- Under the same degree of accuracy, the min-max kernel on OpenCL is generally 2x faster than the semicricle-kernel on modern multi-core Intel CPUs. Benchmarking is available on request.
 
 If you find PyNUFFT useful, please cite:
 
