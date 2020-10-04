@@ -40,7 +40,7 @@ class NUFFT_cpu:
         self.batch = None  # : initial value: None
         pass
 
-    def plan(self, om, Nd, Kd, Jd, ft_axes=None, batch=None):
+    def plan(self, om, Nd, Kd, Jd, ft_axes=None):
         """
         Plan the NUFFT_cpu object with the geometry provided.
 
