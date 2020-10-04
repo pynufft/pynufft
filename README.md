@@ -12,17 +12,13 @@ PyNUFFT is developed to reimplement the min-max NUFFT of Fessler and Sutton, wit
 - Support of PyCUDA and PyOpenCL with single Python source.
 - Tested on the Intel OpenCL device, the Nvidia CUDA device, and AMD FirePro.
 - LGPLv3
-- The double-precision CPU/GPU version is available on request.
-- Under the same level of precision (1e-6 ~ 1e-9), the min-max kernel on OpenCL is generally 2x faster than the semicircle-kernel on modern multi-core Intel CPUs. Benchmarking is available on request.
-- The feature of "_many_" has destroyed the elegancy of the NUFFT design, which will be removed in the next release. Users are recommended to develop their own parallel mechanism, such as multiprocessing, MPI, etc.
+- The single/double-precision CPU/GPU NUFFT. (fp64 is available on request)
+- Under the same level of precision (1e-6 ~ 1e-9), the min-max kernel on OpenCL is generally 2x faster than the semicircle-kernel on modern Intel multi-core CPUs (Benchmarking is available on request.)
+- The feature of "_many_" functionality is deprecated. Users are recommended to develop their own parallel mechanism, such as multiprocessing, MPI, etc.
 
 If you find PyNUFFT useful, please cite:
 
 Lin, Jyh-Miin. “Python Non-Uniform Fast Fourier Transform (PyNUFFT): An Accelerated Non-Cartesian MRI Package on a Heterogeneous Platform (CPU/GPU).” Journal of Imaging 4.3 (2018): 51. (Available at https://www.mdpi.com/2313-433X/4/3/51)
-
-and/or
-
-J.-M. Lin and H.-W. Chung, Pynufft: python non-uniform fast Fourier transform for MRI Building Bridges in Medical Sciences 2017, St John’s College, CB2 1TP Cambridge, UK
 
 ### Acknowledgements
 
