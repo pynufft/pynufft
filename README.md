@@ -24,7 +24,7 @@ Lin, Jyh-Miin. “Python Non-Uniform Fast Fourier Transform (PyNUFFT): An Accele
 
 Special thanks to the authors of MIRT, gpuNUFFT and BART, which have largely inspired the development of this package. 
 
-The project also thanks contributors for providing testing results and patches. 
+The project also thanks contributors for providing their testing results and patches. 
 
 <!--
 
