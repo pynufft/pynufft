@@ -12,8 +12,8 @@ PyNUFFT is developed for fun and it attempts to implement the min-max NUFFT of F
 - Support of PyCUDA and PyOpenCL.
 - Tested on the Intel OpenCL device, the Nvidia CUDA device, and AMD FirePro.
 - LGPLv3
-- The double precision CPU/GPU version is available on request.
-- Under the same degree of accuracy, the min-max kernel on OpenCL is generally 2x faster than the semicricle-kernel on modern multi-core Intel CPUs. Benchmarking is available on request.
+- The double-precision CPU/GPU version is available on request.
+- Under the same degree of accuracy (1e-6 ~ 1e-10), the min-max kernel on OpenCL is generally 2x faster than the semicricle-kernel on modern multi-core Intel CPUs. Benchmarking is available on request.
 
 If you find PyNUFFT useful, please cite:
 
