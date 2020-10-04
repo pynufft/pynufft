@@ -14,7 +14,7 @@ PyNUFFT is developed to reimplement the min-max NUFFT of Fessler and Sutton, wit
 - LGPLv3
 - The double-precision CPU/GPU version is available on request.
 - Under the same level of precision (1e-6 ~ 1e-9), the min-max kernel on OpenCL is generally 2x faster than the semicircle-kernel on modern multi-core Intel CPUs. Benchmarking is available on request.
-- The feature of "many" destroy the elegancy of the NUFFT design, which will be removed in the next release. Users are recommended to develop their own parallel mechanism, such as multiprocessing, MPI, etc.
+- The feature of "_many_" has destroyed the elegancy of the NUFFT design, which will be removed in the next release. Users are recommended to develop their own parallel mechanism, such as multiprocessing, MPI, etc.
 
 If you find PyNUFFT useful, please cite:
 
