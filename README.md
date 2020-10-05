@@ -12,8 +12,9 @@ PyNUFFT is developed to reimplement the min-max NUFFT of Fessler and Sutton, wit
 - Support of PyCUDA and PyOpenCL with single Python source.
 - Tested on the Intel OpenCL device, the Nvidia CUDA device, and AMD FirePro.
 - LGPLv3
+<!--
 - The single/double-precision CPU/GPU NUFFT. (fp64 is available on request)
-- Under the same level of precision (1e-6 ~ 1e-9), the min-max kernel on OpenCL is generally 2x faster than the semicircle-kernel on modern Intel multi-core CPUs (Benchmarking is available on request.)
+- Under the same level of precision (1e-6 ~ 1e-9), the min-max kernel on OpenCL is generally 2x faster than the semicircle-kernel on modern Intel multi-core CPUs (Benchmarking is available on request.) -->
 - The feature of "_many_" functionality is deprecated. 
 
 If you find PyNUFFT useful, please cite:
