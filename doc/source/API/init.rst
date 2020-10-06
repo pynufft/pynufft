@@ -18,7 +18,11 @@ API documentation
     :members:
     :private-members:
     :special-members:        
-    
+
+.. automodule:: pynufft.linalg.nudft_cpu
+    :members:
+    :private-members:
+    :special-members:            
 
 .. automodule:: pynufft.src._helper.helper    
     :members:
