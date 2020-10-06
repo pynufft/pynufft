@@ -11,8 +11,8 @@ def _init__cpu(self):
         :rtype: NUFFT: the pynufft_hsa.NUFFT class
         :Example:
  
-        >>> from pynufft import NUFFT_cpu
-        >>> NufftObj = NUFFT_cpu()
+        >>> from pynufft import NUFFT
+        >>> NufftObj = NUFFT()
         """
         self.dtype = numpy.complex64  # : initial value: numpy.complex64
         self.debug = 0  #: initial value: 0

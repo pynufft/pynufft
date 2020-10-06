@@ -17,14 +17,14 @@ context to pop up to the top of the stack of the contexts.
 PyOpenCL does not have the context pop-up issue but please always use the newest version. 
 
 
-**Multiple NUFFT_cpu instances**
+**Multiple NUFFT instances**
 
 Multiple instances can be planned after all the instances have been created::
 
-   # Create the first NUFFT_cpu
-   NufftObj1 = NUFFT_cpu()
-   # Create the second NUFFT_cpu
-   NufftObj2 = NUFFT_cpu()
+   # Create the first NUFFT
+   NufftObj1 = NUFFT()
+   # Create the second NUFFT
+   NufftObj2 = NUFFT()
    # Plan the first instance
    NufftObj1.plan(om1, Nd, Kd, Jd)
    NufftObj2.plan(om2, Nd, Kd, Jd)
@@ -32,12 +32,12 @@ Multiple instances can be planned after all the instances have been created::
    
 or each instance can be planned once it has been created::
 
-   # Create the first NUFFT_cpu
-   NufftObj1 = NUFFT_cpu()
+   # Create the first NUFFT
+   NufftObj1 = NUFFT()
    NufftObj1.plan(om1, Nd, Kd, Jd)
    
-   # Create the second NUFFT_cpu
-   NufftObj2 = NUFFT_cpu()
+   # Create the second NUFFT
+   NufftObj2 = NUFFT()
    NufftObj2.plan(om2, Nd, Kd, Jd)  
    
    y1 = NufftObj1.forward(x)
@@ -49,31 +49,17 @@ Like NUFFT_cpu, each instance can be planned immediately after being created:
 
 ::
 
-   # Create the first NUFFT_hsa
-   NufftObj1 = NUFFT_hsa('cuda')
+   # Create the first NUFFT
+   NufftObj1 = NUFFT(helper.device_list()[0])
    NufftObj1.plan(om1, Nd, Kd, Jd)
    
    # Create the second NUFFT_hsa
-   NufftObj2 = NUFFT_hsa('cuda')
+   NufftObj2 = NUFFT(helper.device_list()[0])
    NufftObj2.plan(om2, Nd, Kd, Jd)
    
    y1 = NufftObj1.forward(x)
    y2 = NufftObj2.forward(x)
 
-Mixing cuda and opencl is also possible.
-
-::
-
-   # Create the first NUFFT_hsa
-   NufftObj1 = NUFFT_hsa('ocl')
-   NufftObj1.plan(om1, Nd, Kd, Jd)
-   
-   # Create the second NUFFT_hsa
-   NufftObj2 = NUFFT_hsa('cuda')
-   NufftObj2.plan(om2, Nd, Kd, Jd)
-   
-   y1 = NufftObj1.forward(x)
-   y2 = NufftObj2.forward(x)
 
 Multiprocessing (experimental)
 ==============================
@@ -98,5 +84,4 @@ One example of working with multiprocessing (mixed CUDA and OpenCL backends) is 
 In this example, an "atomic_NUFFT" class is created as a high-level wrapper for the creation and execution of NUFFT_hsa.
 This example has only been tested in Linux because parallel computing is highly platform dependent.
 
-.. literalinclude::  ../../../example/parallel_NUFFT_hsa.py
  
