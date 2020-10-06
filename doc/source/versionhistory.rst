@@ -1,11 +1,19 @@
 Version history
 ===============
 
+**v2020.2.1**
+
+- tested with an AMD card.
+- Deprecate batch as this is not the most essential function in NUFFT.
+- Deprecate NUFFT_cpu, NUFFT_hsa
+- Update some docs.
+
 **v2020.1.2**
 
 - new_index: change the khatri_rao_k(), OMEGA_k() in helper.py; col += kindx[index];// + 1  
 - Add code of conduct of Contributor Covenant v2.0
 - Update some documentations
+
 
 **v2020.1.0**
 
