@@ -8,4 +8,4 @@ from .test_init_device import test_init_device
 # from .test_init3 import test_init3
 #from .test_cuda import test_cuda
 #from .test_2D import test_2D
-from .test_installation import test_installation
+#from .test_installation import test_installation

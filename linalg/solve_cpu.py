@@ -46,11 +46,11 @@ def L1TVOLS(nufft, y, maxiter, rho ): # main function of solver
     LMBD = rho*mu
 
     def AHA(x):
-        x2 = nufft.selfadjoint_one2many2one(x)
+        x2 = nufft.selfadjoint(x)
         return x2
     def AH(y):
         
-        x2 = nufft.adjoint_many2one(y.reshape(nufft.multi_M, order='C'))
+        x2 = nufft.adjoint(y.reshape(nufft.multi_M, order='C'))
         return x2
     
         
