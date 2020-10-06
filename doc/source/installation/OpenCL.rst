@@ -200,12 +200,11 @@ NVIDIA also supports OpenCL 1.2. A successful installation made use of nvidia-dr
  
 **AMD GPU**
 
-AMD has very good support for OpenCL but I haven't had an AMD GPU for testing. 
+AMD has very good support for OpenCL. See AMDGPU-PRO driver.
 
-**Open-source Intel Compute OpenCL (Beignet and NEO)**
+**Open-source Intel Compute OpenCL (Intel-NEO and Intel SDK)**
 
-Benoit provides some instructions for using the open-source opencl driver `beignet`. A recent open-source Intel OpenCL `neo` (see `https://github.com/intel/compute-runtime`) may be useful. 
-
+Try to install Intel's proprietary OpenCL sdk.
  
 
 
