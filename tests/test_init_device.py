@@ -49,7 +49,7 @@ def test_init_device(device_indx=0):
 #     k = nfft.xx2k(nfft.x2xx(image))
     for pp in range(0,50):
 #         y = nfft.k2y(nfft.xx2k(nfft.x2xx(image)))    
-#             y = nfft.forward(image)
+            y = nfft.forward(image)
 #             y = nfft.k2y(k)
 #                 k = nfft.y2k(y)
             x2 = nfft.adjoint(y)
@@ -59,13 +59,14 @@ def test_init_device(device_indx=0):
     print(t_cpu)
     
 #     del nfft
-    gy = NufftObj._forward_device(gx)
+    gx = NufftObj.to_device(image)
+#     gy = NufftObj._forward_device(gx)
 #     gy2=NufftObj.forward(gx)
 #     gk =     NufftObj.xx2k(NufftObj.x2xx(gx))
     t0= time.time()
     for pp in range(0,50):
 #         pass
-#         gy = NufftObj._forward_legacy(gx)
+            gy = NufftObj._forward_device(gx)
 #         gy2 = NufftObj.k2y(gk)
             gx2 = NufftObj._adjoint_device(gy)
 #             gk2 = NufftObj.y2k(gy2)
@@ -86,15 +87,15 @@ def test_init_device(device_indx=0):
     maxiter =100
     import time
     t0= time.time()
-    x2 =  nfft.solve(y, 'cg',maxiter=maxiter)
-#     x2 =  nfft.solve(y, 'L1TVOLS',maxiter=maxiter, rho = 2)
+    xcpu =  nfft.solve(y, 'cg',maxiter=maxiter)
+    x2 =  nfft.solve(y, 'L1TVOLS',maxiter=maxiter, rho = 2)
     t1 = time.time()-t0 
 #     gy=NufftObj.thr.copy_array(NufftObj.thr.to_device(y2))
     
     t0= time.time()
 
-    x = NufftObj.solve(y,'cg', maxiter=maxiter)
-#     x = NufftObj.solve(y,'L1TVOLS', maxiter=maxiter, rho=2)
+    xgpu = NufftObj.solve(y,'cg', maxiter=maxiter)
+    x = NufftObj.solve(y,'L1TVOLS', maxiter=maxiter, rho=2)
     
     t2 = time.time() - t0
     print(t1, t2)
@@ -104,12 +105,18 @@ def test_init_device(device_indx=0):
 #     return
     try:
         import matplotlib.pyplot
-        matplotlib.pyplot.subplot(1, 2, 1)
+        matplotlib.pyplot.subplot(2, 2, 1)
         matplotlib.pyplot.imshow( x.real, cmap= matplotlib.cm.gray, vmin = 0, vmax = 1)
-        matplotlib.pyplot.title("HSA reconstruction")
-        matplotlib.pyplot.subplot(1, 2,2)
+        matplotlib.pyplot.title("HSA reconstruction (L1 TV OLS)")
+        matplotlib.pyplot.subplot(2, 2,2)
         matplotlib.pyplot.imshow(x2.real, cmap= matplotlib.cm.gray)
-        matplotlib.pyplot.title("CPU reconstruction")
+        matplotlib.pyplot.title("CPU reconstruction (L1 TV OLS)")
+        matplotlib.pyplot.subplot(2, 2, 3)
+        matplotlib.pyplot.imshow( xgpu.real, cmap= matplotlib.cm.gray, vmin = 0, vmax = 1)
+        matplotlib.pyplot.title("HSA reconstruction (CG)")
+        matplotlib.pyplot.subplot(2, 2,4)
+        matplotlib.pyplot.imshow(xcpu.real, cmap= matplotlib.cm.gray)
+        matplotlib.pyplot.title("CPU reconstruction (CG)")        
         matplotlib.pyplot.show()
 #         matplotlib.pyplot.show(block = False)
 #         matplotlib.pyplot.pause(3)

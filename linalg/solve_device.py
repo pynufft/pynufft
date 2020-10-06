@@ -352,7 +352,7 @@ def solve(nufft,gy, solver=None,  maxiter=30, *args, **kwargs):
  
         from reikna.algorithms import Reduce, Predicate, predicate_sum
          
-        nufft.reduce_sum = Reduce(numpy.zeros(nufft.multi_Kd, dtype = nufft.dtype), predicate_sum(dtype)).compile(nufft.thr)      
+        nufft.reduce_sum = Reduce(numpy.zeros(nufft.Kd, dtype = nufft.dtype), predicate_sum(dtype)).compile(nufft.thr)      
 #         nufft.reduce_sum  = nufft.reduce_sum.compile(nufft.thr)        
          
         

@@ -24,7 +24,7 @@ def _init__cpu(self):
         self.batch = None  # : initial value: None
         pass    
 
-def _plan_cpu(self, om, Nd, Kd, Jd, ft_axes=None, batch=None):
+def _plan_cpu(self, om, Nd, Kd, Jd, ft_axes=None):
     """
     Plan the NUFFT_cpu object with the geometry provided.
 
@@ -62,13 +62,13 @@ def _plan_cpu(self, om, Nd, Kd, Jd, ft_axes=None, batch=None):
 
     :Example:
 
-    >>> from pynufft import NUFFT_cpu
-    >>> NufftObj = NUFFT_cpu()
+    >>> from pynufft import NUFFT
+    >>> NufftObj = NUFFT()
     >>> NufftObj.plan(om, Nd, Kd, Jd)
 
     or
 
-    >>> NufftObj.plan(om, Nd, Kd, Jd, ft_axes, batch)
+    >>> NufftObj.plan(om, Nd, Kd, Jd, ft_axes)
 
     """
 
@@ -85,28 +85,28 @@ def _plan_cpu(self, om, Nd, Kd, Jd, ft_axes=None, batch=None):
     # backup
     self.sn = numpy.asarray(self.st['sn'].astype(self.dtype), order='C')
 
-    if batch is None:  # single-coil
-        self.parallel_flag = 0
-        self.batch = 1
+#     if batch is None:  # single-coil
+    self.parallel_flag = 0
+    self.batch = 1
 
-    else:  # multi-coil
-        self.parallel_flag = 1
-        self.batch = batch
+#     else:  # multi-coil
+#         self.parallel_flag = 1
+#         self.batch = batch
 
-    if self.parallel_flag is 1:
-        self.multi_Nd = self.Nd + (self.batch, )
-        self.uni_Nd = self.Nd + (1, )
-        self.multi_Kd = self.Kd + (self.batch, )
-        self.multi_M = (self.st['M'], ) + (self.batch, )
-        self.multi_prodKd = (numpy.prod(self.Kd), self.batch)
-        self.sn = numpy.reshape(self.sn, self.Nd + (1,))
+#     if self.parallel_flag is 1:
+#         self.multi_Nd = self.Nd + (self.batch, )
+#         self.uni_Nd = self.Nd + (1, )
+#         self.multi_Kd = self.Kd + (self.batch, )
+#         self.multi_M = (self.st['M'], ) + (self.batch, )
+#         self.multi_prodKd = (numpy.prod(self.Kd), self.batch)
+#         self.sn = numpy.reshape(self.sn, self.Nd + (1,))
 
-    elif self.parallel_flag is 0:
-        self.multi_Nd = self.Nd  # + (self.Reps, )
-        self.uni_Nd = self.Nd
-        self.multi_Kd = self.Kd  # + (self.Reps, )
-        self.multi_M = (self.st['M'], )
-        self.multi_prodKd = (numpy.prod(self.Kd), )
+#     elif self.parallel_flag is 0:
+    self.multi_Nd = self.Nd  # + (self.Reps, )
+    self.uni_Nd = self.Nd
+    self.multi_Kd = self.Kd  # + (self.Reps, )
+    self.multi_M = (self.st['M'], )
+    self.multi_prodKd = (numpy.prod(self.Kd), )
 
     # Calculate the density compensation function
     self.sp = self.st['p'].copy().tocsr()
@@ -120,8 +120,8 @@ def _plan_cpu(self, om, Nd, Kd, Jd, ft_axes=None, batch=None):
     self.NdCPUorder, self.KdCPUorder, self.nelem = helper.preindex_copy(
         self.st['Nd'],
         self.st['Kd'])
-    self.volume = {}
-    self.volume['cpu_coil_profile'] = numpy.ones(self.multi_Nd)
+#     self.volume = {}
+#     self.volume['cpu_coil_profile'] = numpy.ones(self.multi_Nd)
 
     return 0
 
@@ -146,10 +146,10 @@ def _precompute_sp_cpu(self):
         print("errors occur in self.precompute_sp()")
         raise
 
-def _reset_sense_cpu(self):
+def _reset_sense_cpu_deprecated(self):
     self.volume['cpu_coil_profile'].fill(1.0)
 
-def _set_sense_cpu(self, coil_profile):
+def _set_sense_cpu_deprecated(self, coil_profile):
 
     self.volume = {}
 
@@ -520,7 +520,7 @@ def _selfadjoint_one2many2one_legacy_host_deprecated(self, x):
     gx2 = self._selfadjoint_one2many2one_legacy(gx) 
     return gx2.get()   
 
-def _set_sense_host(self, coil_profile):
+def _set_sense_host_deprecated(self, coil_profile):
     if coil_profile.shape != self.multi_Nd:
         print('The shape of coil_profile is ', coil_profile.shape)
         print('But it should be', self.Nd + (self.batch, ))
@@ -532,5 +532,5 @@ def _set_sense_host(self, coil_profile):
             print('Successfully loading coil sensitivities!')
     self._set_sense_device(coil_profile_device)
 
-def _reset_sense_host(self):
+def _reset_sense_host_deprecated(self):
     self._reset_sense_host()

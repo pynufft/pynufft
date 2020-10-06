@@ -9,7 +9,7 @@ In python environment, import pynufft module and other packages::
    import scipy.misc
    import matplotlib.pyplot 
    
-   from pynufft import NUFFT_cpu
+   from pynufft import NUFFT
    
 
   
@@ -55,7 +55,7 @@ As can be seen in :numref:`propeller_trajectory`:
 **Planning**
 Create a pynufft object NufftObj::
 
-   NufftObj = NUFFT_cpu()
+   NufftObj = NUFFT()
    
 Provided :math:`om`, the size of time series (:math:`Nd`), oversampled grid (:math:`Kd`), and interpolatro size (:math:`Jd`) :: 
     
@@ -107,27 +107,24 @@ The image can be restored from non-Cartesian samples y::
 
    image0 = NufftObj.solve(y, solver='cg',maxiter=50)
    image3 = NufftObj.solve(y, solver='L1TVOLS',maxiter=50,rho=0.1)
-   image4 = NufftObj.solve(y, solver='L1TVLAD',maxiter=50,rho=0.1)
+   
    image2 = NufftObj.adjoint(y ) # adjoint
    
    
-   matplotlib.pyplot.subplot(2,2,1)
+   matplotlib.pyplot.subplot(1,3,1)
    matplotlib.pyplot.title('Restored image (cg)')
    matplotlib.pyplot.imshow(image0.real, cmap=matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1))
    
    
-   matplotlib.pyplot.subplot(2,2,2)
+   matplotlib.pyplot.subplot(1,3,2)
    matplotlib.pyplot.imshow(image2.real, cmap=matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=5))
    matplotlib.pyplot.title('Adjoint transform')
    
    
-   matplotlib.pyplot.subplot(2,2,3)
+   matplotlib.pyplot.subplot(1,3,3)
    matplotlib.pyplot.title('L1TV OLS')
    matplotlib.pyplot.imshow(image3.real, cmap=matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1))
    
-   matplotlib.pyplot.subplot(2,2,4)
-   matplotlib.pyplot.title('L1TV LAD')
-   matplotlib.pyplot.imshow(image4.real, cmap=matplotlib.cm.gray, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1))
    matplotlib.pyplot.show()
    
 .. _2D_restore:

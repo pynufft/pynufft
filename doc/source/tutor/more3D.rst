@@ -10,7 +10,7 @@ In python environment, import pynufft module and other packages::
    import scipy.misc
    import matplotlib.pyplot 
    
-   from pynufft import NUFFT_cpu
+   from pynufft import NUFFT
    
 
   
@@ -21,8 +21,8 @@ In python environment, import pynufft module and other packages::
 
 Create a pynufft object NufftObj::
 
-   from pynufft import NUFFT_cpu, NUFFT_hsa
-   NufftObj = NUFFT_cpu()
+   from pynufft import NUFFT
+   NufftObj = NUFFT()
    
 
    
@@ -72,19 +72,16 @@ The image can be restored from non-Cartesian samples y::
 
    restore_image = NufftObj.solve(kspace,'cg', maxiter=500)
    
-   restore_image1 = NufftObj.solve(kspace,'L1TVLAD', maxiter=500,rho=0.1)
    # 
    restore_image2 = NufftObj.solve(kspace,'L1TVOLS', maxiter=500,rho=0.1)
-   pyplot.subplot(2,2,1)
+   pyplot.subplot(1,3,1)
    pyplot.imshow(numpy.real(image[:,:,32]), label='original signal',cmap=gray)
    pyplot.title('original')    
-   pyplot.subplot(2,2,2)
-   pyplot.imshow(numpy.real(restore_image1[:,:,32]), label='L1TVLAD',cmap=gray)
-   pyplot.title('L1TVLAD')
-   pyplot.subplot(2,2,3)
+   
+   pyplot.subplot(1,3,2)
    pyplot.imshow(numpy.real(restore_image2[:,:,32]), label='L1TVOLS',cmap=gray)
    pyplot.title('L1TVOLS')
-   pyplot.subplot(2,2,4)
+   pyplot.subplot(1,3,3)
    pyplot.imshow(numpy.real(restore_image[:,:,32]), label='CG',cmap=gray)
    pyplot.title('CG')
    
@@ -95,7 +92,7 @@ The image can be restored from non-Cartesian samples y::
 .. figure:: ../figure/3D_ restore.png
    :width: 100 %
 
-   Image restoration using'cg', 'L1TVOLS', 'L1TVLAD'.
+   Image restoration using'cg', 'L1TVOLS'.
    
    
 

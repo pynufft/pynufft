@@ -25,7 +25,7 @@ def _create_kspace_sampling_density(nufft):
         """
         Compute k-space sampling density
         """    
-        y = numpy.ones(nufft.multi_M,dtype = numpy.complex64)
+        y = numpy.ones(nufft.st['M'],dtype = numpy.complex64)
 #         w = numpy.abs(nufft.xx2k(nufft.adjoint(y)))
         
         if nufft.parallel_flag is 1:
@@ -50,7 +50,7 @@ def L1TVOLS(nufft, y, maxiter, rho ): # main function of solver
         return x2
     def AH(y):
         
-        x2 = nufft.adjoint(y.reshape(nufft.multi_M, order='C'))
+        x2 = nufft.adjoint(y.reshape(nufft.st['M'], order='C'))
         return x2
     
         
@@ -169,7 +169,7 @@ def _pipe_density(nufft, maxiter):
 #         W = pipe_density(self.st['p'])
     # sampling density function
               
-    W = numpy.ones(nufft.multi_M,dtype=nufft.dtype)
+    W = numpy.ones(nufft.st['M'],dtype=nufft.dtype)
 #         V1= self.st['p'].getH()
     #     VVH = V.dot(V.getH()) 
          
@@ -230,10 +230,10 @@ def solve(nufft,   y,  solver=None, *args, **kwargs):
             """
 #                 A = nufft.sp
             def sp(k):
-                k2 = k.reshape(nufft.multi_Kd, order='C')
+                k2 = k.reshape(nufft.Kd, order='C')
                 return nufft.k2y(k2).ravel()
             def spH(y):
-                y2 = y.reshape(nufft.multi_M, order='C')
+                y2 = y.reshape(nufft.st['M'], order='C')
                 return nufft.y2k(y2).ravel()                
 #                 return nufft.spH.dot(nufft.sp.dot(x))
 #                 print('shape', (nufft.st['M']*nufft.batch, nufft.Kdprod*nufft.batch))
@@ -263,7 +263,7 @@ def solve(nufft,   y,  solver=None, *args, **kwargs):
             """
 #             A = nufft.spHsp#nufft.st['p'].getH().dot(nufft.st['p'])
             def spHsp(x):
-                k = x.reshape(nufft.multi_Kd, order='C')
+                k = x.reshape(nufft.Kd, order='C')
                 return nufft.k2y2k(k).ravel()
 #                 return nufft.spH.dot(nufft.sp.dot(x))
             
@@ -282,6 +282,6 @@ def solve(nufft,   y,  solver=None, *args, **kwargs):
             k2 = methods[solver](A,  nufft.y2k(y).ravel(), *args, **kwargs)#,show=True)
     
     
-            xx = nufft.k2xx(k2[0].reshape(nufft.multi_Kd))
+            xx = nufft.k2xx(k2[0].reshape(nufft.Kd))
             x= xx/nufft.sn
             return x#     , k2[1:]       

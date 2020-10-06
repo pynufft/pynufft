@@ -95,7 +95,7 @@ def _init__device(self, device_indx=None):
 
 
 
-def _plan_device(self, om, Nd, Kd, Jd, ft_axes=None, batch=None, radix=None):
+def _plan_device(self, om, Nd, Kd, Jd, ft_axes=None, radix=None):
     """
     Design the multi-coil or single-coil memory reduced interpolator.
 
@@ -146,31 +146,31 @@ def _plan_device(self, om, Nd, Kd, Jd, ft_axes=None, batch=None, radix=None):
 
     self.st = helper.plan(om, Nd, Kd, Jd, ft_axes=ft_axes,
                           format='pELL', radix=radix)
-    if batch is None:
-        self.parallel_flag = 0
-    else:
-        self.parallel_flag = 1
+#     if batch is None:
+    self.parallel_flag = 0
+#     else:
+#         self.parallel_flag = 1
 
-    if batch is None:
-        self.batch = numpy.uint32(1)
+#     if batch is None:
+    self.batch = numpy.uint32(1)
 
-    else:
-        self.batch = numpy.uint32(batch)
+#     else:
+#         self.batch = numpy.uint32(batch)
 
     self.Nd = self.st['Nd']  # backup
     self.Kd = self.st['Kd']
     #  self.sn = numpy.asarray(self.st['sn'].astype(self.dtype),
     #                            order='C')# backup
-    if self.batch == 1:
-        self.multi_Nd = self.Nd
-        self.multi_Kd = self.Kd
-        self.multi_M = (self.st['M'], )
-        # Broadcasting the sense and scaling factor (Roll-off)
-        # self.sense2 = self.sense*numpy.reshape(self.sn, self.Nd + (1, ))
-    else:  # self.batch is 0:
-        self.multi_Nd = self.Nd + (self.batch, )
-        self.multi_Kd = self.Kd + (self.batch, )
-        self.multi_M = (self.st['M'], ) + (self.batch, )
+#     if self.batch == 1:
+#         self.multi_Nd = self.Nd
+#         self.multi_Kd = self.Kd
+#         self.multi_M = (self.st['M'], )
+#         # Broadcasting the sense and scaling factor (Roll-off)
+#         # self.sense2 = self.sense*numpy.reshape(self.sn, self.Nd + (1, ))
+#     else:  # self.batch is 0:
+#         self.multi_Nd = self.Nd + (self.batch, )
+#         self.multi_Kd = self.Kd + (self.batch, )
+#         self.multi_M = (self.st['M'], ) + (self.batch, )
 
     self.Kdprod = numpy.uint32(numpy.prod(self.st['Kd']))
     self.Jdprod = numpy.uint32(numpy.prod(self.st['Jd']))
@@ -228,8 +228,8 @@ def _offload_device(self):  # API, platform_number=0, device_number=0):
         self.invNd_elements.astype(numpy.float32))
     self.volume['Nd'] = self.thr.to_device(numpy.asarray(
         self.st['Nd'], dtype=numpy.uint32))
-    self.volume['gpu_coil_profile'] = self.thr.array(
-        self.multi_Nd, dtype=self.dtype).fill(1.0)
+#     self.volume['gpu_coil_profile'] = self.thr.array(
+#         self.multi_Nd, dtype=self.dtype).fill(1.0)
 
     Nd = self.st['Nd']
 
@@ -250,7 +250,7 @@ def _offload_device(self):  # API, platform_number=0, device_number=0):
 
     import reikna.fft
     self.fft = reikna.fft.FFT(
-            numpy.empty(self.multi_Kd, dtype=self.dtype),
+            numpy.empty(self.Kd, dtype=self.dtype),
             self.ft_axes).compile(self.thr, fast_math=False)
 
     self.zero_scalar = self.dtype(0.0+0.0j)
@@ -273,13 +273,13 @@ def _set_wavefront_device(self, wf):
                            fast_math=False)
     self.prg = prg
 
-@push_cuda_context
-def _reset_sense_device(self):
-    self.volume['gpu_coil_profile'].fill(1.0)
-
-@push_cuda_context
-def _set_sense_device(self, coil_profile_device):
-    self.volume['gpu_coil_profile'] = coil_profile_device
+# @push_cuda_context
+# def _reset_sense_device_deprecated(self):
+#     self.volume['gpu_coil_profile'].fill(1.0)
+# 
+# @push_cuda_context
+# def _set_sense_device_deprecated(self, coil_profile_device):
+#     self.volume['gpu_coil_profile'] = coil_profile_device
 
 
     # if coil_profile.shape == self.Nd + (self.batch, ):
@@ -295,26 +295,26 @@ def to_device(self, x, shape=None):
 def to_host(self, data):
     return data.get() 
 
-@push_cuda_context
-def _s2x_device(self, s):
-    x = self.thr.array(self.multi_Nd, dtype=self.dtype)
-
-    self.prg.cPopulate(
-        self.batch,
-        self.Ndprod,
-        s,
-        x,
-        local_size=None,
-        global_size=int(self.batch * self.Ndprod))
-
-    self.prg.cMultiplyVecInplace(
-        numpy.uint32(1),
-        self.volume['gpu_coil_profile'],
-        x,
-        local_size=None,
-        global_size=int(self.batch*self.Ndprod))
-
-    return x    
+# @push_cuda_context
+# def _s2x_device(self, s):
+#     x = self.thr.array(self.multi_Nd, dtype=self.dtype)
+# 
+#     self.prg.cPopulate(
+#         self.batch,
+#         self.Ndprod,
+#         s,
+#         x,
+#         local_size=None,
+#         global_size=int(self.batch * self.Ndprod))
+# 
+#     self.prg.cMultiplyVecInplace(
+#         numpy.uint32(1),
+#         self.volume['gpu_coil_profile'],
+#         x,
+#         local_size=None,
+#         global_size=int(self.batch*self.Ndprod))
+# 
+#     return x    
 
 @push_cuda_context
 def _x2xx_device(self, x):
@@ -344,7 +344,7 @@ def _xx2k_device(self, xx):
     Second, copy self.x_Nd array to self.k_Kd array by cSelect
     Third, inplace FFT
     """
-    k = self.thr.array(self.multi_Kd, dtype=self.dtype)
+    k = self.thr.array(self.Kd, dtype=self.dtype)
     
     k.fill(0)
 
@@ -369,7 +369,7 @@ def _k2y_device(self, k):
     Private: interpolation by the Sparse Matrix-Vector Multiplication
     """
 
-    y = self.thr.array(self.multi_M, dtype=self.dtype).fill(0)
+    y = self.thr.array(self.M, dtype=self.dtype).fill(0)
     self.prg.pELL_spmv_mCoil(
                         self.batch,
                         self.pELL['nRow'],
@@ -401,8 +401,8 @@ def _y2k_device(self, y):
 
 #         kx = self.thr.array(self.multi_Kd, dtype=numpy.float32).fill(0.0)
 #         ky = self.thr.array(self.multi_Kd, dtype=numpy.float32).fill(0.0)
-    k = self.thr.array(self.multi_Kd, dtype=numpy.complex64).fill(0.0)
-    res = self.thr.array(self.multi_Kd, dtype=numpy.complex64).fill(0.0)
+    k = self.thr.array(self.Kd, dtype=numpy.complex64).fill(0.0)
+    res = self.thr.array(self.Kd, dtype=numpy.complex64).fill(0.0)
     # array which saves the residue of two sum
     
     self.prg.pELL_spmvh_mCoil(
@@ -420,7 +420,7 @@ def _y2k_device(self, y):
                         res,
                         y,
                         local_size=None,
-                        global_size=int(self.pELL['nRow']*self.batch )#*
+                        global_size=int(self.pELL['nRow'] )#*
 #                                             int(self.pELL['prodJd']) * int(self.batch))
                         )
 
@@ -436,7 +436,7 @@ def _k2xx_device(self, k):
 
     self.fft(k, k, inverse=True)
 
-    xx = self.thr.array(self.multi_Nd, dtype=self.dtype)
+    xx = self.thr.array(self.Nd, dtype=self.dtype)
     xx.fill(0)
 
     self.prg.cTensorCopy(
@@ -472,58 +472,58 @@ def _xx2x_device(self, xx):
     
     return x    
 
-@push_cuda_context
-def _x2s_device(self, x):
-    s = self.thr.array(self.st['Nd'], dtype=self.dtype)
+# @push_cuda_context
+# def _x2s_device(self, x):
+#     s = self.thr.array(self.st['Nd'], dtype=self.dtype)
+# 
+#     self.prg.cMultiplyConjVecInplace(
+#         numpy.uint32(1),
+#         self.volume['gpu_coil_profile'],
+#         x,
+#         local_size=None,
+#         global_size=int(self.batch*self.Ndprod))
+# 
+#     self.prg.cAggregate(
+#         self.batch,
+#         self.Ndprod,
+#         x,
+#         s,
+#         local_size=int(self.wavefront),
+#         global_size=int(self.batch*self.Ndprod*self.wavefront))
+# 
+#     return s    
 
-    self.prg.cMultiplyConjVecInplace(
-        numpy.uint32(1),
-        self.volume['gpu_coil_profile'],
-        x,
-        local_size=None,
-        global_size=int(self.batch*self.Ndprod))
-
-    self.prg.cAggregate(
-        self.batch,
-        self.Ndprod,
-        x,
-        s,
-        local_size=int(self.wavefront),
-        global_size=int(self.batch*self.Ndprod*self.wavefront))
-
-    return s    
-
-@push_cuda_context
-def _selfadjoint_one2many2one_device_deprecated(self, gx):
-    """
-    selfadjoint_one2many2one NUFFT on the heterogeneous device
-
-    :param gx: The input gpu array, with size=Nd
-    :type gx: reikna gpu array with dtype =numpy.complex64
-    :return: gx: The output gpu array, with size=Nd
-    :rtype: reikna gpu array with dtype =numpy.complex64
-    """
-
-    gy = self._forward_one2many_device(gx)
-    gx2 = self._adjoint_many2one_device(gy)
-    del gy
-    return gx2    
-
-@push_cuda_context
-def _selfadjoint_one2many2one_legacy_deprecated(self, gx):
-    """
-    selfadjoint_one2many2one NUFFT (Teplitz) on the heterogeneous device
-
-    :param gx: The input gpu array, with size=Nd
-    :type gx: reikna gpu array with dtype =numpy.complex64
-    :return: gx: The output gpu array, with size=Nd
-    :rtype: reikna gpu array with dtype =numpy.complex64
-    """
-
-    gy = self._forward_one2many_legacy(gx)
-    gx2 = self._adjoint_many2one_legacy(gy)
-    del gy
-    return gx2    
+# @push_cuda_context
+# def _selfadjoint_one2many2one_device_deprecated(self, gx):
+#     """
+#     selfadjoint_one2many2one NUFFT on the heterogeneous device
+# 
+#     :param gx: The input gpu array, with size=Nd
+#     :type gx: reikna gpu array with dtype =numpy.complex64
+#     :return: gx: The output gpu array, with size=Nd
+#     :rtype: reikna gpu array with dtype =numpy.complex64
+#     """
+# 
+#     gy = self._forward_one2many_device(gx)
+#     gx2 = self._adjoint_many2one_device(gy)
+#     del gy
+#     return gx2    
+# 
+# @push_cuda_context
+# def _selfadjoint_one2many2one_legacy_deprecated(self, gx):
+#     """
+#     selfadjoint_one2many2one NUFFT (Teplitz) on the heterogeneous device
+# 
+#     :param gx: The input gpu array, with size=Nd
+#     :type gx: reikna gpu array with dtype =numpy.complex64
+#     :return: gx: The output gpu array, with size=Nd
+#     :rtype: reikna gpu array with dtype =numpy.complex64
+#     """
+# 
+#     gy = self._forward_one2many_legacy(gx)
+#     gx2 = self._adjoint_many2one_legacy(gy)
+#     del gy
+#     return gx2    
 
 @push_cuda_context
 def _selfadjoint_device(self, gx):
@@ -719,7 +719,7 @@ def _solve_legacy(self, gy, solver=None, *args, **kwargs):
     from ..linalg.solve_legacy import solve as solve2
     return solve2(self,  gy,  solver, *args, **kwargs)
 
-def _plan_legacy(self, om, Nd, Kd, Jd, ft_axes = None, batch = None):
+def _plan_legacy(self, om, Nd, Kd, Jd, ft_axes = None):
     """
     Design the min-max interpolator.
      
@@ -747,31 +747,31 @@ def _plan_legacy(self, om, Nd, Kd, Jd, ft_axes = None, batch = None):
 
     self.st = helper.plan(om, Nd, Kd, Jd, ft_axes=ft_axes,
                           format='CSR')
-    if batch is None:
-        self.parallel_flag = 0
-    else:
-        self.parallel_flag = 1
+#     if batch is None:
+    self.parallel_flag = 0
+#     else:
+#         self.parallel_flag = 1
 
-    if batch is None:
-        self.batch = numpy.uint32(1)
+#     if batch is None:
+    self.batch = numpy.uint32(1)
 
-    else:
-        self.batch = numpy.uint32(batch)
+#     else:
+#         self.batch = numpy.uint32(batch)
 
     self.Nd = self.st['Nd']  # backup
     self.Kd = self.st['Kd']
     #  self.sn = numpy.asarray(self.st['sn'].astype(self.dtype),
     #                            order='C')# backup
-    if self.batch == 1:
-        self.multi_Nd = self.Nd
-        self.multi_Kd = self.Kd
-        self.multi_M = (self.st['M'], )
+#     if self.batch == 1:
+#         self.multi_Nd = self.Nd
+#         self.multi_Kd = self.Kd
+#         self.multi_M = (self.st['M'], )
         # Broadcasting the sense and scaling factor (Roll-off)
         # self.sense2 = self.sense*numpy.reshape(self.sn, self.Nd + (1, ))
-    else:  # self.batch is 0:
-        self.multi_Nd = self.Nd + (self.batch, )
-        self.multi_Kd = self.Kd + (self.batch, )
-        self.multi_M = (self.st['M'], ) + (self.batch, )
+#     else:  # self.batch is 0:
+#         self.multi_Nd = self.Nd + (self.batch, )
+#         self.multi_Kd = self.Kd + (self.batch, )
+#         self.multi_M = (self.st['M'], ) + (self.batch, )
 
     self.Kdprod = numpy.uint32(numpy.prod(self.st['Kd']))
     self.Jdprod = numpy.uint32(numpy.prod(self.st['Jd']))
@@ -834,8 +834,8 @@ def _offload_legacy(self):
         self.invNd_elements.astype(numpy.float32))
     self.volume['Nd'] = self.thr.to_device(numpy.asarray(
         self.st['Nd'], dtype=numpy.uint32))
-    self.volume['gpu_coil_profile'] = self.thr.array(
-        self.multi_Nd, dtype=self.dtype).fill(1.0)
+#     self.volume['gpu_coil_profile'] = self.thr.array(
+#         self.multi_Nd, dtype=self.dtype).fill(1.0)
 
     Nd = self.st['Nd']
 
@@ -856,13 +856,13 @@ def _offload_legacy(self):
 
     import reikna.fft
     self.fft = reikna.fft.FFT(
-            numpy.empty(self.multi_Kd, dtype=self.dtype),
+            numpy.empty(self.Kd, dtype=self.dtype),
             self.ft_axes).compile(self.thr, fast_math=False)
 
     self.zero_scalar = self.dtype(0.0+0.0j)
 #     del self.st['pELL']
-    if self.verbosity > 0:
-        print('End of offload')
+#     if self.verbosity > 0:
+#         print('End of offload')
      
 #         self.SnGPUArray = self.thr.to_device(  self.sn)
     self.csr = {}
@@ -882,7 +882,7 @@ def _offload_legacy(self):
     self.csrH['numrow'] = self.Kdprod
      
     del self.spH
-
+    
 #     import reikna.fft
 # 
 #     self.fft = reikna.fft.FFT(numpy.empty(self.st['Kd'], dtype=self.dtype), self.ft_axes).compile(self.thr, fast_math=False)
@@ -895,7 +895,7 @@ def _k2y_legacy(self, k):
     """
     Private: interpolation by the Sparse Matrix-Vector Multiplication
     """
-    y =self.thr.array( self.multi_M, dtype=self.dtype).fill(0)
+    y =self.thr.array( self.st['M'], dtype=self.dtype).fill(0)
     self.prg.cCSR_spmv_vector(    
                      self.batch,                            
                        self.csr['numrow'], 
@@ -915,7 +915,7 @@ def _y2k_legacy(self, y):
     """
     Private: gridding by the Sparse Matrix-Vector Multiplication
     """
-    k = self.thr.array(self.multi_Kd, dtype = self.dtype)
+    k = self.thr.array(self.Kd, dtype = self.dtype)
 
     self.prg.cCSR_spmv_vector(
                         self.batch,
@@ -926,7 +926,7 @@ def _y2k_legacy(self, y):
                        y,
                        k,
                        local_size=int(self.wavefront),
-                       global_size=int(self.csrH['numrow']*self.wavefront*self.batch) 
+                       global_size=int(self.csrH['numrow']*self.wavefront) 
                         )#,g_times_l=int(csrnumrow))
 
     self.thr.synchronize()

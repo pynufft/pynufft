@@ -10,7 +10,7 @@ Mixing NUFFT_cpu and NUFFT_hsa, or multiple NUFFT_cpu or multiple NUFFT_hsa is p
 The class methods are listed in :numref:`dimension_table`
 
 .. _dimension_table:
-.. list-table:: Methods implemented in NUFFT_cpu and NUFFT_hsa
+.. list-table:: Methods implemented in NUFFT
    :widths: 25 12 12 30
    :header-rows: 1
 
@@ -93,15 +93,15 @@ The class methods are listed in :numref:`dimension_table`
    * - k2xx()
      - ✓          
      - ✓
-     - (Normal and batch mode) Inverse FFT (excessive parts are cropped)
+     - (Normal ) Inverse FFT (excessive parts are cropped)
    * - xx2x()
      - ✓          
      - ✓
-     - (Normal and batch mode) Apply the scaling factor      
+     - (Normal) Apply the scaling factor      
    * - _precompute
      - ✓          
      - ✓
-     - (Normal and batch mode) Apply the scaling factor                   
+     - (Normal) Apply the scaling factor                   
 
      
 ---------------------

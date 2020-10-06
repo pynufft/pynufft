@@ -86,30 +86,36 @@ def test_init(device_indx=0):
     maxiter =100
     import time
     t0= time.time()
-#     x2 =  nfft.solve(y, 'cg',maxiter=maxiter)
+    xcpu =  nfft.solve(y, 'cg',maxiter=maxiter)
     x2 =  nfft.solve(y, 'L1TVOLS',maxiter=maxiter, rho = 2)
     t1 = time.time()-t0 
 #     gy=NufftObj.thr.copy_array(NufftObj.thr.to_device(y2))
     
     t0= time.time()
 
-#     x = NufftObj.solve(y,'cg', maxiter=maxiter)
+    xgpu = NufftObj.solve(y,'cg', maxiter=maxiter)
     x = NufftObj.solve(y,'L1TVOLS', maxiter=maxiter, rho=2)
     
     t2 = time.time() - t0
     print(t1, t2)
-    print('acceleration=', t1/t2 )
+    print('acceleration in solver=', t1/t2 )
 #     k = x.get()
 #     x = nfft.k2xx(k)/nfft.st['sn']
 #     return
     try:
         import matplotlib.pyplot
-        matplotlib.pyplot.subplot(1, 2, 1)
+        matplotlib.pyplot.subplot(2, 2, 1)
         matplotlib.pyplot.imshow( x.real, cmap= matplotlib.cm.gray, vmin = 0, vmax = 1)
-        matplotlib.pyplot.title("HSA reconstruction")
-        matplotlib.pyplot.subplot(1, 2,2)
+        matplotlib.pyplot.title("HSA reconstruction (L1 TV OLS)")
+        matplotlib.pyplot.subplot(2, 2,2)
         matplotlib.pyplot.imshow(x2.real, cmap= matplotlib.cm.gray)
-        matplotlib.pyplot.title("CPU reconstruction")
+        matplotlib.pyplot.title("CPU reconstruction (L1 TV OLS)")
+        matplotlib.pyplot.subplot(2, 2, 3)
+        matplotlib.pyplot.imshow( xgpu.real, cmap= matplotlib.cm.gray, vmin = 0, vmax = 1)
+        matplotlib.pyplot.title("HSA reconstruction (CG)")
+        matplotlib.pyplot.subplot(2, 2,4)
+        matplotlib.pyplot.imshow(xcpu.real, cmap= matplotlib.cm.gray)
+        matplotlib.pyplot.title("CPU reconstruction (CG)")    
         matplotlib.pyplot.show()
 #         matplotlib.pyplot.show(block = False)
 #         matplotlib.pyplot.pause(3)

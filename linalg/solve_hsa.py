@@ -516,9 +516,9 @@ def solve(nufft,gy, solver=None,  maxiter=30, *args, **kwargs):
     The current version supports solvers = 'cg' or 'L1TVOLS'. 
     
     :param nufft: NUFFT_hsa object
-    :param y: (M,) or (M, batch) array, non-uniform data. If batch is provided, 'cg' and 'L1TVOLS' returns different image shape.
+    :param y: (M,) array, non-uniform data. If batch is provided, 'cg' and 'L1TVOLS' returns different image shape.
     :type y: numpy.complex64 reikna array
-    :return: x: Nd or Nd + (batch, ) image. L1TVOLS always returns Nd. 'cg' returns Nd + (batch, ) in batch mode. 
+    :return: x: Nd image. L1TVOLS always returns Nd. 'cg' returns Nd. 
     :rtype: x: reikna array, complex64. 
     """
     # define the reduction kernel on the device
