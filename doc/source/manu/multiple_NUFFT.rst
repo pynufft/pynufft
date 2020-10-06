@@ -1,8 +1,7 @@
 Multiple NUFFT instances
 ========================
 
-Multiple NUFFT_cpu instances, NUFFT_hsa instances, 
-or mixed types of instances can exist at the same time.
+Multiple NUFFT instances (of mixed types) can coexist at the same time.
 Each instance has its own memory. 
 However,  multiple instances  may be penalized by hardware and reduced runtime speed.
 

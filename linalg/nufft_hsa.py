@@ -1,5 +1,5 @@
 """
-NUFFT HSA classes
+NUFFT HSA classes (deprecated)
 =======================================
 
 """

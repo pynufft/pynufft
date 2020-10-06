@@ -1,5 +1,5 @@
-NUFFT_hsa
-=========
+NUFFT_hsa (deprecated)
+======================
 
 **The NUFFT_hsa class**
 

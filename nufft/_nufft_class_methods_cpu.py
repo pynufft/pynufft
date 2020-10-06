@@ -50,7 +50,6 @@ def _plan_cpu(self, om, Nd, Kd, Jd, ft_axes=None):
     :type Kd: tuple, ndims integer elements.
     :type Jd: tuple, ndims integer elements.
     :type ft_axes: None, or tuple with optional integer elements.
-    :type batch: None, or integer
     :returns: 0
     :rtype: int, float
 
@@ -58,7 +57,6 @@ def _plan_cpu(self, om, Nd, Kd, Jd, ft_axes=None):
     :ivar Kd: initial value: Kd
     :ivar Jd: initial value: Jd
     :ivar ft_axes: initial value: None
-    :ivar batch: initial value: None
 
     :Example:
 
@@ -102,11 +100,11 @@ def _plan_cpu(self, om, Nd, Kd, Jd, ft_axes=None):
 #         self.sn = numpy.reshape(self.sn, self.Nd + (1,))
 
 #     elif self.parallel_flag is 0:
-    self.multi_Nd = self.Nd  # + (self.Reps, )
-    self.uni_Nd = self.Nd
-    self.multi_Kd = self.Kd  # + (self.Reps, )
-    self.multi_M = (self.st['M'], )
-    self.multi_prodKd = (numpy.prod(self.Kd), )
+    self.Nd = self.Nd  # + (self.Reps, )
+    self.Nd = self.Nd
+    self.Kd = self.Kd  # + (self.Reps, )
+    self.M = (self.st['M'], )
+    self.prodKd = (numpy.prod(self.Kd), )
 
     # Calculate the density compensation function
     self.sp = self.st['p'].copy().tocsr()
@@ -146,50 +144,8 @@ def _precompute_sp_cpu(self):
         print("errors occur in self.precompute_sp()")
         raise
 
-def _reset_sense_cpu_deprecated(self):
-    self.volume['cpu_coil_profile'].fill(1.0)
-
-def _set_sense_cpu_deprecated(self, coil_profile):
-
-    self.volume = {}
-
-    if coil_profile.shape == self.Nd + (self.batch, ):
-        self.volume['cpu_coil_profile'] = coil_profile
-    else:
-        print('The shape of coil_profile might be wrong')
-        print('coil_profile.shape = ', coil_profile.shape)
-        print('shape of Nd + (batch, ) = ', self.Nd + (self.batch, ))
 
 
-
-        
-def _forward_one2many_cpu_deprecated(self, x):
-    """
-    Assume x.shape = self.Nd
-
-    """
-
-#         try:
-    x2 = x.reshape(self.uni_Nd, order='C')*self.volume['cpu_coil_profile']
-#         except:
-#         x2 = x
-    y2 = self.forward(x2)
-
-    return y2
-
-def _adjoint_many2one_cpu_deprecated(self, y):
-    """
-    Assume y.shape = self.multi_M
-    """
-    x2 = self.adjoint(y)
-    x = x2*self.volume['cpu_coil_profile'].conj()
-    try:
-        x3 = numpy.mean(x, axis=self.ndims)
-    except:
-        x3 = x
-    del x
-
-    return x3
 
 def _solve_cpu(self, y, solver=None, *args, **kwargs):
     """
@@ -202,7 +158,7 @@ def _solve_cpu(self, y, solver=None, *args, **kwargs):
     :type solver: string
     :type maxiter: int
     :return: numpy array with size.
-            The shape = Nd ('L1TVOLS') or  Nd + (batch,)
+            The shape = Nd ('L1TVOLS') or  Nd 
             ('lsmr', 'lsqr', 'dc','bicg','bicgstab','cg', 'gmres','lgmres')
     """
     from ..linalg.solve_cpu import solve
@@ -213,9 +169,9 @@ def _forward_cpu(self, x):
     """
     Forward NUFFT on CPU
 
-    :param x: The input numpy array, with the size of Nd or Nd + (batch,)
+    :param x: The input numpy array, with the size of Nd
     :type: numpy array with the dtype of numpy.complex64
-    :return: y: The output numpy array, with the size of (M,) or (M, batch)
+    :return: y: The output numpy array, with the size of (M,)
     :rtype: numpy array with the dtype of numpy.complex64
     """
     y = self._k2y_cpu(self._xx2k_cpu(self._x2xx_cpu(x)))
@@ -226,10 +182,10 @@ def _adjoint_cpu(self, y):
     """
     Adjoint NUFFT on CPU
 
-    :param y: The input numpy array, with the size of (M,) or (M, batch)
+    :param y: The input numpy array, with the size of (M,) 
     :type: numpy array with the dtype of numpy.complex64
     :return: x: The output numpy array,
-                with the size of Nd or Nd + (batch, )
+                with the size of Nd or Nd 
     :rtype: numpy array with the dtype of numpy.complex64
     """
     x = self._xx2x_cpu(self._k2xx_cpu(self._y2k_cpu(y)))
@@ -282,7 +238,7 @@ def _xx2k_cpu(self, xx):
     Third, inplace FFT
     """
     
-    output_x = numpy.zeros(self.multi_Kd, dtype=self.dtype, order='C')
+    output_x = numpy.zeros(self.Kd, dtype=self.dtype, order='C')
 
     for bat in range(0, self.batch):
         output_x.ravel()[self.KdCPUorder * self.batch + bat] = xx.ravel()[
@@ -311,7 +267,7 @@ def _xx2k_one2one_cpu(self, xx):
     return k
 
 def _k2vec_cpu(self, k):
-    k_vec = numpy.reshape(k, self.multi_prodKd, order='C')
+    k_vec = numpy.reshape(k, self.prodKd, order='C')
     return k_vec
 
 def _vec2y_cpu(self, k_vec):
@@ -345,7 +301,7 @@ def _vec2k_cpu(self, k_vec):
     '''
     Sorting the vector to k-spectrum Kd array
     '''
-    k = numpy.reshape(k_vec, self.multi_Kd, order='C')
+    k = numpy.reshape(k_vec, self.Kd, order='C')
 
     return k
 
@@ -365,7 +321,7 @@ def _k2xx_cpu(self, k):
 #         dd = numpy.size(self.Kd)
 
     k = numpy.fft.ifftn(k, axes=self.ft_axes)
-    xx = numpy.zeros(self.multi_Nd, dtype=self.dtype, order='C')
+    xx = numpy.zeros(self.Nd, dtype=self.dtype, order='C')
     for bat in range(0, self.batch):
         xx.ravel()[self.NdCPUorder * self.batch + bat] = k.ravel()[
             self.KdCPUorder * self.batch + bat]
@@ -487,50 +443,3 @@ def _y2k_legacy_host(self, y):
     gy = self.to_device(y)
     gk = self._y2k_legacy(gy)
     return gk.get()
-
-def _adjoint_many2one_host_deprecated(self, y):
-    gy  = self.to_device(y)
-    gx2 = self._adjoint_many2one_device(gy)
-    return gx2.get()
-
-def _forward_one2many_host_deprecated(self, x):
-    gx = self.to_device(x)
-    gy = self._forward_one2many_device(gx)
-    return gy.get()
-
-
-def _selfadjoint_one2many2one_host_deprecated(self, x):
-    gx = self.to_device(x)
-    gx2 = self._selfadjoint_one2many2one_device(gx) 
-    return gx2.get()   
-
-def _adjoint_many2one_legacy_host_deprecated(self, y):
-    gy  = self.to_device(y)
-    gx2 = self._adjoint_many2one_legacy(gy)
-    return gx2.get()
-
-def _forward_one2many_legacy_host_deprecated(self, x):
-    gx = self.to_device(x)
-    gy = self._forward_one2many_legacy(gx)
-    return gy.get()
-
-
-def _selfadjoint_one2many2one_legacy_host_deprecated(self, x):
-    gx = self.to_device(x)
-    gx2 = self._selfadjoint_one2many2one_legacy(gx) 
-    return gx2.get()   
-
-def _set_sense_host_deprecated(self, coil_profile):
-    if coil_profile.shape != self.multi_Nd:
-        print('The shape of coil_profile is ', coil_profile.shape)
-        print('But it should be', self.Nd + (self.batch, ))
-        raise ValueError
-    else:
-        coil_profile_device = self.thr.to_device(
-            coil_profile.astype(self.dtype))
-        if self.verbosity > 0:
-            print('Successfully loading coil sensitivities!')
-    self._set_sense_device(coil_profile_device)
-
-def _reset_sense_host_deprecated(self):
-    self._reset_sense_host()

@@ -56,7 +56,7 @@ Optionally, user can provide additional variables:
 
 ft_axes the NUFFT_cpu to operate the FFT on the given axes.
  
-**batch (default = None)**
+**batch (deprecated)**
 
 Batch mode allows NUFFT to operate on the additional axis. 
  

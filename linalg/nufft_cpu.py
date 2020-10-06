@@ -1,5 +1,5 @@
 """
-NUFFT CPU class
+NUFFT CPU class (deprecated)
 =======================================
 """
 

@@ -115,20 +115,14 @@ def _plan_device(self, om, Nd, Kd, Jd, ft_axes=None, radix=None):
                Example: ft_axes = (0, 1) for 2D,
                ft_axes = (0, 1, 2) for 3D;
                ft_axes = None for all dimensions.
-    :param batch: Batch NUFFT.
-                If provided, the shape is Nd + (batch, ).
+    :param radix: expert mode.
+                If provided, the shape is Nd.
                 The last axis is the number of parallel coils.
-                batch = None for single coil.
-    :param radix: ????.
-                If provided, the shape is Nd + (batch, ).
-                The last axis is the number of parallel coils.
-                batch = None for single coil.
     :type om: numpy.float array, matrix size = (M, ndims)
     :type Nd: tuple, ndims integer elements.
     :type Kd: tuple, ndims integer elements.
     :type Jd: tuple, ndims integer elements.
     :type ft_axes: tuple, selected axes to be transformed.
-    :type batch: int or None
     :returns: 0
     :rtype: int, float
     :Example:

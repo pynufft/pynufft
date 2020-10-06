@@ -1,5 +1,5 @@
 """
-NUFFT HSA legacy classes
+NUFFT HSA legacy classes (deprecated)
 =======================================
 """
 from __future__ import absolute_import

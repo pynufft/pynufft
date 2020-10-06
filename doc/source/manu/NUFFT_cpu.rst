@@ -1,5 +1,5 @@
-NUFFT_cpu
-=========
+NUFFT_cpu (deprecated)
+======================
 
 **The NUFFT_cpu class**
 
