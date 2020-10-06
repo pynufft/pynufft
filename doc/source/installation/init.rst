@@ -8,8 +8,10 @@ System requirements
 **CPU**
 
 Each PyNUFFT instance is designed to be executed on a single node. 
-PyNUFFT is not designed for distributed computing on multiple nodes, 
-but the user may install PyNUFFT on multiple nodes and control them through the network.  
+PyNUFFT has no built-in distributed computing on multiple nodes, 
+but the users can design their own one. 
+
+For example, users may install PyNUFFT on multiple nodes and control them through the network.  
 
 Multple NUFFT_cpu instances on a single node provided that the total memory is sufficient to keep all instances. 
 
@@ -60,7 +62,7 @@ Software
 **Python**
    
 Users must be familiar with Python and its pip packaging system.  
-Python 2.7 and Python 3.6-3.7 are currently supported. 
+Python 3.6-3.7 are currently supported (Python 2 will not be supported since 1, Jan, 2020). 
 
 To run the NUFFT_cpu, the basic CPython, Numpy and Scipy packages must be available on the system.
 IronPython is compatible with CPython so ipython might be useful. 
@@ -70,12 +72,12 @@ Optionally, users can clone the github repository and build the package from the
 
 **Compiler**
 
-NUFFT_cpu class does not require a compiler. 
+NUFFT class does not require a compiler. 
 
-However, NUFFT_hsa relies on the JIT (just-in-time) compilation mechanism of Reikna/PyCUDA/PyOpenCL. 
+However, NUFFT relies on the JIT (just-in-time) compilation mechanism of Reikna/PyCUDA/PyOpenCL. 
 The supporting compiler may be:
 
-- gcc-7.3.0
+- gcc-7.3.0, gcc-8.4.0
 
 - Microsoft (R) Visual Studio 2015 community edition. 
 (Please refer to the following section: special topic: Installation under Windows 10). 
@@ -113,32 +115,16 @@ git_ is a version control program, which allows you to clone the latest code bas
 .. _git: https://en.wikipedia.org/wiki/Git
 .. _pynufft: https://github.com/jyhmiinlin/pynufft
 
-**Test whether the installation is successful**
-
-In Python environment, import pynufft::
-
-    >>> import pynufft.tests as tests
-    >>> tests.test_installation()
-    
-If the required data and functions are available, you will see that all the required files exist::
-
-   The om1D.npz exists. True
-   The om2D.npz exists. True
-   The om3D.npz exist. True
-   The phantom_3D_128_128_128.npz exist. True
-   The phantom_256_256.npz exists. True
-   The example_1D.py exists. True
-   The example_2D.py exist. True
-   reikna  has been installed.
-   pyopencl  has been installed.
-   pycuda  has been installed.
-
-    
 **Uninstall pynufft**
 
 Simply use "pip uninstall" to remove pynufft::
 
     $ pip uninstall pynufft
+
+
+**Test whether the installation is successful (deprecated)**
+
+- Ask pynufft@gmail.com for technical support.
 
 --------------
 Special topics

@@ -12,8 +12,8 @@ The Nvidia related packages are: Nvidia-driver Version: 410.78       CUDA Versio
 **Gentoo**
 
 PyNUFF works with the package in Gentoo system: 
-dev-util/nvidia-cuda-sdk-9.2.88, dev-util/nvidia-cuda-toolkit-9.2.88, 
-dev-util/intel-ocl-sdk-4.4.0.117-r1, and x11-drivers/nvidia-drivers-430.40.
+dev-util/nvidia-cuda-sdk-10.1.243, dev-util/nvidia-cuda-toolkit-10.1.243-r1 
+dev-util/intel-ocl-sdk-4.4.0.117-r1, and x11-drivers/nvidia-drivers-450.66.
 
 
 

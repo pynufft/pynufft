@@ -9,10 +9,10 @@ Welcome to PyNUFFT's User Manual!
    
    
    overview/init
+   installation/init
    tutor/init
    manu/init
    API/init
-   installation/init
    versionhistory
    acknow/init
 

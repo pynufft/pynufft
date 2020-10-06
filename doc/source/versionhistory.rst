@@ -1,6 +1,12 @@
 Version history
 ===============
 
+**v2020.1.2**
+
+- new_index: change the khatri_rao_k(), OMEGA_k() in helper.py; col += kindx[index];// + 1  
+- Add code of conduct of Contributor Covenant v2.0
+- Update some documentations
+
 **v2020.1.0**
 
 - add batch mode to nudft_cpu

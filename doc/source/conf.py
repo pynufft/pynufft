@@ -122,8 +122,8 @@ html_theme_options = {
     # Set the name of the project to appear in the sidebar
     #"project_nav_name": "pynufft",
 }
-html_theme = u'guzzle_sphinx_theme'
-#html_theme = u'sphinx_rtd_theme'
+# html_theme = u'guzzle_sphinx_theme'
+html_theme = u'sphinx_rtd_theme'
 #html_theme = u'hugo'
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -142,7 +142,7 @@ html_theme = u'guzzle_sphinx_theme'
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-#html_logo = None
+html_logo = 'figure/logo.jpeg'
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32

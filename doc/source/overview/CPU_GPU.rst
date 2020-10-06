@@ -16,7 +16,7 @@ The class methods are listed in :numref:`dimension_table`
 
    * - method name
      - NUFFT()
-     - NUFFT(helper.device_list[number])
+     - NUFFT(helper.device_list[0])
      - References
    * - __init__()
      - ✓
@@ -98,8 +98,8 @@ Below we summarize the required variables in :numref:`parameter_table`
    :header-rows: 1
 
    * - Parameter
-     - NUFFT_cpu
-     - NUFFT_hsa
+     - NUFFT
+     - NUFFT(helper.device_list()[0])
      - References
    * - om (Numpy Array)
      - ✓
@@ -121,10 +121,6 @@ Below we summarize the required variables in :numref:`parameter_table`
      - optional 
      - optional
      - FFT on the given axes (default = None (all axes))    
-   * - batch (int)
-     - optional 
-     - optional
-     - Batch NUFFT (default = None)       
    * - radix (int)
      - ×
      - optional

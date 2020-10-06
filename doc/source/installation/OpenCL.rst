@@ -200,11 +200,11 @@ NVIDIA also supports OpenCL 1.2. A successful installation made use of nvidia-dr
  
 **AMD GPU**
 
-AMD has very good support for OpenCL. See AMDGPU-PRO driver.
+AMD has a very good support for OpenCL. See AMDGPU-PRO driver. AMD usually performs very well for fp64 (double precision PyNUFFT is available on request).
 
 **Open-source Intel Compute OpenCL (Intel-NEO and Intel SDK)**
 
-Try to install Intel's proprietary OpenCL sdk.
+Try to install Intel's proprietary OpenCL sdk. 
  
 
 
