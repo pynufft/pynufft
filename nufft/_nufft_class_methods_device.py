@@ -5,7 +5,7 @@
 import numpy
 # import reikna
 from functools import wraps as _wraps
-from ..src._helper import helper, helper1
+from ..src._helper import helper#, helper1
 
 def push_cuda_context(hsa_method):
     """

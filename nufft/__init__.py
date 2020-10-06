@@ -1,3 +1,7 @@
+"""
+NUFFT class
+=======================================
+"""
 from __future__ import absolute_import
 import numpy
 import warnings
@@ -32,10 +36,11 @@ def push_cuda_context(hsa_method):
 
 class NUFFT:
     """
+    NUFFT class
+    =======================================
     A super class of cpu and gpu NUFFT functions. 
-    Note: NUFFT does NOT inherit NUFFT_cpu and NUFFT_hsa.
-    Multi-coil or single-coil memory reduced NUFFT.
-
+    
+    Note: NUFFT does not inherit NUFFT_cpu (deprecated) and NUFFT_hsa (deprecated).
     """
     #import cpu codes
     from ._nufft_class_methods_cpu import _init__cpu, _plan_cpu, _precompute_sp_cpu, _solve_cpu, _forward_cpu, _adjoint_cpu, _selfadjoint_cpu, _selfadjoint2_cpu, _x2xx_cpu, _xx2k_cpu, _xx2k_one2one_cpu, _k2vec_cpu, _vec2y_cpu, _k2y_cpu, _y2vec_cpu, _vec2k_cpu, _y2k_cpu, _k2xx_cpu, _k2xx_one2one_cpu, _xx2x_cpu, _k2y2k_cpu
@@ -49,6 +54,25 @@ class NUFFT:
     from ._nufft_class_methods_cpu import _k2y_legacy_host,  _y2k_legacy_host, _selfadjoint_legacy_host, _forward_legacy_host, _adjoint_legacy_host,  _solve_legacy_host
     
     def __init__(self, device_indx=None, legacy=None):
+        """
+        Constructor.
+
+        :param None:
+        :type None: Python NoneType
+        :return: NUFFT: the pynufft_hsa.NUFFT instance
+        :rtype: NUFFT: the pynufft_hsa.NUFFT class
+        :Example:
+
+        >>> from pynufft import NUFFT
+        >>> NufftObj = NUFFT()
+        
+        or 
+        
+        >>> from pynufft import NUFFT, helper
+        >>> device = helper.device_list()[0]
+        >>> NufftObj = NUFFT(device) # for first acceleration device in the system
+        
+        """
         if device_indx is None:
             self._init__cpu()
             self.processor = 'cpu'
@@ -67,30 +91,106 @@ class NUFFT:
             pass
                 
     def plan(self,  *args, **kwargs):
+        """
+        Plan the NUFFT object with the geometry provided.
+
+        :param om: The M off-grid locates in the frequency domain,
+                    which is normalized between [-pi, pi]
+        :param Nd: The matrix size of the equispaced image.
+                   Example: Nd=(256,256) for a 2D image;
+                             Nd = (128,128,128) for a 3D image
+        :param Kd: The matrix size of the oversampled frequency grid.
+                   Example: Kd=(512,512) for 2D image;
+                            Kd = (256,256,256) for a 3D image
+        :param Jd: The interpolator size.
+                   Example: Jd=(6,6) for 2D image;
+                            Jd = (6,6,6) for a 3D image
+        :param ft_axes: (Optional) The axes for Fourier transform.
+                        The default is all axes if 'None' is given.
+        :type om: numpy.float array, matrix size = M * ndims
+        :type Nd: tuple, ndims integer elements.
+        :type Kd: tuple, ndims integer elements.
+        :type Jd: tuple, ndims integer elements.
+        :type ft_axes: None, or tuple with optional integer elements.
+        :returns: 0
+        :rtype: int, float
+
+        :ivar Nd: initial value: Nd
+        :ivar Kd: initial value: Kd
+        :ivar Jd: initial value: Jd
+        :ivar ft_axes: initial value: None
+
+        :Example:
+
+        >>> from pynufft import NUFFT
+        >>> NufftObj = NUFFT()
+        >>> NufftObj.plan(om, Nd, Kd, Jd)
+
+        or
+
+        >>> NufftObj.plan(om, Nd, Kd, Jd, ft_axes)
+
+        """        
         func = {'cpu': self._plan_cpu,
                     'hsa': self._plan_device,
                     'hsa_legacy': self._plan_legacy}
         return func.get(self.processor)(*args, **kwargs)
     
     def forward(self, *args, **kwargs):
+        """
+        Forward NUFFT (host code)
+
+        :param x: The input numpy array, with the size of Nd 
+        :type: numpy array with the dtype of numpy.complex64
+        :return: y: The output numpy array, with the size of (M,) 
+        :rtype: numpy array with the dtype of numpy.complex64
+        """        
         func = {'cpu': self._forward_cpu, 
                     'hsa': self._forward_host,
                     'hsa_legacy': self._forward_legacy_host}
         return func.get(self.processor)(*args, **kwargs)
     
     def adjoint(self, *args, **kwargs):
+        """
+        Adjoint NUFFT (host code)
+
+        :param y: The input numpy array, with the size of (M,) 
+        :type: numpy array with the dtype of numpy.complex64
+        :return: x: The output numpy array,
+                    with the size of Nd or Nd 
+        :rtype: numpy array with the dtype of numpy.complex64
+        """        
         func = {'cpu': self._adjoint_cpu,
                 'hsa': self._adjoint_host,
                 'hsa_legacy': self._adjoint_legacy_host}
         return func.get(self.processor)(*args, **kwargs)
     
     def selfadjoint(self, *args, **kwargs):
+        """
+        selfadjoint NUFFT (host code)
+
+        :param x: The input numpy array, with size=Nd
+        :type: numpy array with dtype =numpy.complex64
+        :return: x: The output numpy array, with size=Nd
+        :rtype: numpy array with dtype =numpy.complex64
+        """
         func = {'cpu': self._selfadjoint_cpu,
                 'hsa': self._selfadjoint_host,
                 'hsa_legacy': self._selfadjoint_legacy_host}
         return func.get(self.processor)(*args, **kwargs)
     
     def solve(self, *args, **kwargs):
+        """
+        Solve NUFFT (host code)
+        :param y: data, numpy.complex64. The shape = (M,) 
+        :param solver: 'cg', 'L1TVOLS', 'lsmr', 'lsqr', 'dc', 'bicg',
+                       'bicgstab', 'cg', 'gmres','lgmres'
+        :param maxiter: the number of iterations
+        :type y: numpy array, dtype = numpy.complex64
+        :type solver: string
+        :type maxiter: int
+        :return: numpy array with size Nd.
+        """        
         func = {'cpu': self._solve_cpu,
                 'hsa': self._solve_host,
                 'hsa_legacy': self._solve_legacy_host}

@@ -143,7 +143,6 @@ class NUFFT_cpu:
 
     def _precompute_sp(self):
         """
-
         Private: Precompute adjoint (gridding) and Toepitz interpolation
                  matrix.
 

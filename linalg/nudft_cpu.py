@@ -54,8 +54,8 @@ class NUDFT_cpu:
         :rtype: NUFFT: the pynufft_hsa.NUFFT class
         :Example:
 
-        >>> from pynufft import NUFFT_cpu
-        >>> NufftObj = NUFFT_cpu()
+        >>> from pynufft import NUDFT_cpu
+        >>> NufftObj = NUDFT_cpu()
         """
         self.dtype = numpy.complex64  # : initial value: numpy.complex64
         self.debug = 0  #: initial value: 0

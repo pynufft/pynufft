@@ -1,20 +1,14 @@
 API documentation
 =================
 
-.. inheritance-diagram:: pynufft.linalg.nufft_cpu
-   :parts: 2
-
-.. automodule:: pynufft.linalg
-
-.. automodule:: pynufft.linalg.nufft_cpu
+.. automodule:: pynufft.nufft.__init__
     :members:
     :private-members:
     :special-members:
-        
-.. automodule:: pynufft.linalg.nufft_hsa
-    :members:
-    :private-members:
-    :special-members:
+
+
+
+
 .. automodule:: pynufft.linalg.solve_cpu
     :members:
     :private-members:

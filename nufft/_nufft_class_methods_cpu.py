@@ -1,5 +1,5 @@
 import numpy
-from ..src._helper import helper, helper1
+from ..src._helper import helper#, helper1
 
 def _init__cpu(self):
         """
