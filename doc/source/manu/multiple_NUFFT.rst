@@ -72,7 +72,7 @@ module of Python.
 The mutliprocessing module relies on pickle to serialize the data, whereas 
 the PyCUDA and PyOpenCL contexts are "unpicklable". 
 Thus, I found that multiprocessing for PyNUFFT must fulfil the following conditions: (1)
-each NUFFT_hsa instance should be created and then executed in a separate process; 
+each NUFFT instance should be created and then executed in a separate process; 
 (2) any CUDA/PyOpenCL related object cannot be sent or planned in advance, and
 (3) taskset should be used to assign a process to a specified CPU core. 
 
@@ -81,7 +81,7 @@ It is the user's responsibility to take care of the hardware (total memory and I
 
 
 One example of working with multiprocessing (mixed CUDA and OpenCL backends) is as follows.
-In this example, an "atomic_NUFFT" class is created as a high-level wrapper for the creation and execution of NUFFT_hsa.
+In this example, an "atomic_NUFFT" class is created as a high-level wrapper for the creation and execution of NUFFT.
 This example has only been tested in Linux because parallel computing is highly platform dependent.
 
  

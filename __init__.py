@@ -1,6 +1,6 @@
 # from . import src 
 #from .linalg.nufft_cpu import NUFFT_cpu#, NUFFT_excalibur#, NUFFT_mCoil, NUFFT_excalibur
-from .linalg.nudft_cpu import NUDFT_cpu
+from .linalg.nudft_cpu import NUDFT
 from .nufft import NUFFT
 #from .linalg.nufft_hsa import NUFFT_hsa
 #from .linalg.nufft_hsa_legacy import NUFFT_hsa_legacy

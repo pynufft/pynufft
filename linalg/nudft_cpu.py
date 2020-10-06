@@ -40,9 +40,11 @@ def DFT_matrix(Nd, om=None):
         
     return numpy.exp(-1.0j* A)   
 
-class NUDFT_cpu:
+class NUDFT:
     """
-    Class NUDFT_cpu
+    Class NUDFT
+    =============================
+    The non-uniform DFT operator
    """
     def __init__(self):
         """
@@ -50,12 +52,12 @@ class NUDFT_cpu:
 
         :param None:
         :type None: Python NoneType
-        :return: NUFFT: the pynufft_hsa.NUFFT instance
-        :rtype: NUFFT: the pynufft_hsa.NUFFT class
+        :return: NUFFT: the pynufft.NUDFT instance
+        :rtype: NUFFT: the pynufft.NUFFT class
         :Example:
 
-        >>> from pynufft import NUDFT_cpu
-        >>> NufftObj = NUDFT_cpu()
+        >>> from pynufft import NUDFT
+        >>> NufftObj = NUDFT()
         """
         self.dtype = numpy.complex64  # : initial value: numpy.complex64
         self.debug = 0  #: initial value: 0
@@ -66,9 +68,9 @@ class NUDFT_cpu:
 #         self.ft_axes = ()  # : initial value: ()
         self.batch = None  # : initial value: None
         pass
-    def plan(self, om, Nd, batch=None):
-        if batch != None:
-            self.batch = numpy.int(batch)
+    def plan(self, om, Nd):
+#         if batch != None:
+#             self.batch = numpy.int(batch)
         self.Nd = Nd
         self.ndims = len(Nd)
         self.F_matrix = []
@@ -79,13 +81,12 @@ class NUDFT_cpu:
             compute_str_x += lower_case[dimid]
             F_str += ', m' + lower_case[dimid]
         
-        if type(batch)==numpy.int:
-            print('here')
-            self.compute_str_forward = compute_str_x +'z' + F_str + '-> mz'
-            self.compute_str_adj = 'm' + F_str + '->' + compute_str_x +'z'
-        else: 
-            self.compute_str_forward = compute_str_x + F_str + '-> m'
-            self.compute_str_adj = 'm' + F_str + '->' + compute_str_x
+#         if type(batch)==numpy.int:
+#             self.compute_str_forward = compute_str_x +'z' + F_str + '-> mz'
+#             self.compute_str_adj = 'm' + F_str + '->' + compute_str_x +'z'
+#         else: 
+        self.compute_str_forward = compute_str_x + F_str + '-> m'
+        self.compute_str_adj = 'm' + F_str + '->' + compute_str_x
         
         self.scale = numpy.prod(Nd)
     def forward(self, x):

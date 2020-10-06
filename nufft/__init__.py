@@ -59,8 +59,8 @@ class NUFFT:
 
         :param None:
         :type None: Python NoneType
-        :return: NUFFT: the pynufft_hsa.NUFFT instance
-        :rtype: NUFFT: the pynufft_hsa.NUFFT class
+        :return: NUFFT: the pynufft.NUFFT instance
+        :rtype: NUFFT: the pynufft.NUFFT class
         :Example:
 
         >>> from pynufft import NUFFT
