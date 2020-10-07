@@ -46,5 +46,24 @@ Type "help", "copyright", "credits" or "license" for more information.
 >>> x=numpy.random.randn(*Nd)
 >>> y = A2.forward(x)
 ```
+
+## Testing GPU acceleration
+
+```
+Python 3.6.11 (default, Aug 23 2020, 18:05:39) 
+[GCC 7.5.0] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> from pynufft import tests
+>>> tests.test_init(0)
+device name =  <reikna.cluda.cuda.Device object at 0x7f41d4098688>
+0.06576069355010987
+0.006289639472961426
+error gx2= 2.0638987e-07
+error gy= 1.0912560261408778e-07
+acceleration= 10.455399523742015
+17.97926664352417 2.710083246231079
+acceleration in solver= 6.634211944790991
+```
+
 ### Contact information
 email: pynufft@gamil.com
