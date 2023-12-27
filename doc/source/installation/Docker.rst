@@ -1,3 +1,0 @@
-Installation inside Docker
-==========================
-

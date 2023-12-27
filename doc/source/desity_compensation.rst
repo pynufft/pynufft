@@ -1,2 +1,0 @@
-Density compensation
-====================

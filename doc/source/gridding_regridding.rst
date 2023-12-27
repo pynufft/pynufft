@@ -1,2 +1,0 @@
-Gridding and regridding
-=======================
